@@ -1057,7 +1057,7 @@ function buildACG(planets,jd){
     var dr=R(dec);
     // MC longitude = RAMC - RA of planet, expressed as geographic longitude
     var ramc=gmst; // RAMC = GMST for longitude 0; shifts by 1° per degree of longitude
-    var mcL=n180(ra-gmst);
+    var mcL=n180(gmst-ra);
     var icL=n180(mcL+180);
     var mc=[],ic=[],asc=[],dsc=[];
     for(var lat=-80;lat<=80;lat+=1){mc.push([lat,mcL]);ic.push([lat,icL]);}
@@ -1065,8 +1065,8 @@ function buildACG(planets,jd){
       var cH=-Math.tan(R(lat2))*Math.tan(dr);
       if(Math.abs(cH)>1)continue;
       var H=Math.acos(Math.max(-1,Math.min(1,cH)))*180/Math.PI;
-      asc.push([lat2,n180(ra-H-gmst)]);
-      dsc.push([lat2,n180(ra+H-gmst)]);
+      asc.push([lat2,n180(gmst-ra+H)]);
+      dsc.push([lat2,n180(gmst-ra-H)]);
     }
     lines[nm]={MC:mc,IC:ic,ASC:asc,DSC:dsc,mcLon:mcL,ra:ra,dec:dec};
   });
