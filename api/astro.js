@@ -198,56 +198,107 @@ function lonToRaDec(lon) {
 //
 // IC line: MC + 180°
 
+// Light-time correction: find where planet was when light left it
+function lightTimeCorrected(helioFn, jd, E) {
+  let p = helioFn(jd);
+  for (let i = 0; i < 3; i++) {
+    const dx = p.x - E.x, dy = p.y - E.y, dz = p.z - E.z;
+    const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+    const lt = 0.0057755 * dist;
+    p = helioFn(jd - lt);
+  }
+  return p;
+}
+
 function buildACG(jd) {
   const G = gmst(jd);
   const tau = (jd - 2451545) / 365250;
   const E = helio(EL0, EL1, EL2, EB0, null, ER0, ER1, tau);
 
-  // Compute geocentric ecliptic longitude for each planet
+  function helioAtJD(L0,L1,L2,B0,B1,R0,R1,jdT) {
+    const t = (jdT - 2451545) / 365250;
+    return helio(L0,L1,L2,B0,B1,R0,R1,t);
+  }
+
   const lons = {
     Sun:     sunLon(jd),
     Moon:    moonLon(jd),
     Mercury: kepGeo(252.250906,149472.6746358,0.20563175,-0.000020407,77.45779628,0.15940013,7.00498625,-0.00594749,48.33076593,-0.12534081,0.387098310,jd,E.x,E.y),
-    Venus:   geoLon(helio(VL0,VL1,VL2,VB0,VB1,VR0,VR1,tau), E),
-    Mars:    geoLon(helio(MaL0,MaL1,MaL2,MaB0,MaB1,MaR0,MaR1,tau), E),
-    Jupiter: geoLon(helio(JuL0,JuL1,JuL2,JuB0,JuB1,JuR0,JuR1,tau), E),
-    Saturn:  geoLon(helio(SaL0,SaL1,SaL2,SaB0,SaB1,SaR0,SaR1,tau), E),
-    Uranus:  geoLon(helio(UrL0,UrL1,UrL2,UrB0,UrB1,UrR0,UrR1,tau), E),
-    Neptune: geoLon(helio(NeL0,NeL1,NeL2,NeB0,NeB1,NeR0,NeR1,tau), E),
+    Venus:   geoLon(lightTimeCorrected(jdT => helioAtJD(VL0,VL1,VL2,VB0,VB1,VR0,VR1,jdT), jd, E), E),
+    Mars:    geoLon(lightTimeCorrected(jdT => helioAtJD(MaL0,MaL1,MaL2,MaB0,MaB1,MaR0,MaR1,jdT), jd, E), E),
+    Jupiter: geoLon(lightTimeCorrected(jdT => helioAtJD(JuL0,JuL1,JuL2,JuB0,JuB1,JuR0,JuR1,jdT), jd, E), E),
+    Saturn:  geoLon(lightTimeCorrected(jdT => helioAtJD(SaL0,SaL1,SaL2,SaB0,SaB1,SaR0,SaR1,jdT), jd, E), E),
+    Uranus:  geoLon(lightTimeCorrected(jdT => helioAtJD(UrL0,UrL1,UrL2,UrB0,UrB1,UrR0,UrR1,jdT), jd, E), E),
+    Neptune: geoLon(lightTimeCorrected(jdT => helioAtJD(NeL0,NeL1,NeL2,NeB0,NeB1,NeR0,NeR1,jdT), jd, E), E),
     Pluto:   kepGeo(238.929038,145.2078051,0.24880766,0,224.068916,0,17.1410426,0,110.3034700,0,39.48211675,jd,E.x,E.y),
   };
 
   const lines = {};
+  const e = R(OBL);
 
   for (const [name, lon] of Object.entries(lons)) {
     const { ra, dec } = lonToRaDec(lon);
-    const dr = R(dec);
 
-    // MC longitude: where this planet is on the Midheaven
-    // RAMC = GMST + L → L = RA - GMST
+    // ── Zodiacal method (matches Astro.com / Swiss Ephemeris) ──────────────
+    // MC: find geographic longitude where RAMC = planet RA
+    // RAMC at lng L = GMST + L → mcLon = RA - GMST
     const mcLon = n180(ra - G);
     const icLon = n180(mcLon + 180);
 
     const mc = [], ic = [], asc = [], dsc = [];
 
-    // MC and IC: vertical lines at all latitudes
     for (let lat = -85; lat <= 85; lat += 1) {
       mc.push([lat, mcLon]);
       ic.push([lat, icLon]);
     }
 
-    // ASC and DSC: curved lines, one point per latitude
+    // ASC/DSC: zodiacal method
+    // For each latitude and each test longitude, cast a relocated chart.
+    // Find where the ecliptic longitude of the ASC/DSC equals the planet's longitude.
+    // We scan longitudes and interpolate for the crossing point.
+    const planetLon = lon; // ecliptic longitude of planet
+    const latR = R;
+
     for (let lat = -85; lat <= 85; lat += 1) {
-      const cosH = -Math.tan(R(lat)) * Math.tan(dr);
-      if (Math.abs(cosH) > 1) continue; // circumpolar or never rises
-      const H = Math.acos(Math.max(-1, Math.min(1, cosH))) * 180 / Math.PI;
-      // ASC: planet rises, hour angle = -H (east of meridian)
-      // Geographic longitude = RA - H - GMST
-      asc.push([lat, n180(ra - H - G)]);
-      // DSC: planet sets, hour angle = +H (west of meridian)
-      // Geographic longitude = RA + H - GMST
-      dsc.push([lat, n180(ra + H - G)]);
+      const lr = R(lat);
+      // At each geographic longitude, compute the ASC ecliptic longitude
+      // and find where it equals the planet's ecliptic longitude
+      // ASC elon: atan2(cos(RAMC), -(sin(RAMC)*cos(e) + tan(lat)*sin(e)))
+      // Scan with 0.1° step and interpolate
+      let prevAscLon = null, prevLng = null;
+      let prevDscLon = null;
+      for (let lng = -180; lng <= 181; lng += 0.5) {
+        const ramc = R(n360(G + lng));
+        const cosRamc = Math.cos(ramc), sinRamc = Math.sin(ramc);
+        const ascElon = n360(Math.atan2(cosRamc, -(sinRamc * Math.cos(e) + Math.tan(lr) * Math.sin(e))) * 180 / Math.PI);
+        const dscElon = n360(ascElon + 180);
+
+        if (prevAscLon !== null) {
+          // Check for ASC crossing
+          let d1 = n180(prevAscLon - planetLon);
+          let d2 = n180(ascElon - planetLon);
+          if (d1 * d2 < 0 && Math.abs(d1 - d2) < 10) {
+            // Interpolate
+            const f = d1 / (d1 - d2);
+            asc.push([lat, prevLng + f * 0.5]);
+          }
+          // Check for DSC crossing
+          d1 = n180(prevDscLon - planetLon);
+          d2 = n180(dscElon - planetLon);
+          if (d1 * d2 < 0 && Math.abs(d1 - d2) < 10) {
+            const f = d1 / (d1 - d2);
+            dsc.push([lat, prevLng + f * 0.5]);
+          }
+        }
+        prevAscLon = ascElon;
+        prevDscLon = dscElon;
+        prevLng = lng;
+      }
     }
+
+    // Sort ASC/DSC by latitude for proper line rendering
+    asc.sort((a, b) => a[0] - b[0]);
+    dsc.sort((a, b) => a[0] - b[0]);
 
     lines[name] = { MC: mc, IC: ic, ASC: asc, DSC: dsc, mcLon, ra, dec };
   }
