@@ -234,14 +234,13 @@ function buildACG(jd) {
   };
 
   const lines = {};
-  const e = R(OBL);
 
   for (const [name, lon] of Object.entries(lons)) {
     const { ra, dec } = lonToRaDec(lon);
+    const dr = R(dec);
 
-    // ── Zodiacal method (matches Astro.com / Swiss Ephemeris) ──────────────
-    // MC: find geographic longitude where RAMC = planet RA
-    // RAMC at lng L = GMST + L → mcLon = RA - GMST
+    // MC longitude: geographic longitude where planet culminates
+    // RAMC = GMST + lng → mcLon = RA - GMST
     const mcLon = n180(ra - G);
     const icLon = n180(mcLon + 180);
 
@@ -252,53 +251,17 @@ function buildACG(jd) {
       ic.push([lat, icLon]);
     }
 
-    // ASC/DSC: zodiacal method
-    // For each latitude and each test longitude, cast a relocated chart.
-    // Find where the ecliptic longitude of the ASC/DSC equals the planet's longitude.
-    // We scan longitudes and interpolate for the crossing point.
-    const planetLon = lon; // ecliptic longitude of planet
-    const latR = R;
-
+    // ASC/DSC: hour angle method
+    // cos(H) = -tan(lat) * tan(dec)
+    // ASC longitude = RA - H - GMST
+    // DSC longitude = RA + H - GMST
     for (let lat = -85; lat <= 85; lat += 1) {
-      const lr = R(lat);
-      // At each geographic longitude, compute the ASC ecliptic longitude
-      // and find where it equals the planet's ecliptic longitude
-      // ASC elon: atan2(cos(RAMC), -(sin(RAMC)*cos(e) + tan(lat)*sin(e)))
-      // Scan with 0.1° step and interpolate
-      let prevAscLon = null, prevLng = null;
-      let prevDscLon = null;
-      for (let lng = -180; lng <= 181; lng += 0.5) {
-        const ramc = R(n360(G + lng));
-        const cosRamc = Math.cos(ramc), sinRamc = Math.sin(ramc);
-        const ascElon = n360(Math.atan2(cosRamc, -(sinRamc * Math.cos(e) + Math.tan(lr) * Math.sin(e))) * 180 / Math.PI);
-        const dscElon = n360(ascElon + 180);
-
-        if (prevAscLon !== null) {
-          // Check for ASC crossing
-          let d1 = n180(prevAscLon - planetLon);
-          let d2 = n180(ascElon - planetLon);
-          if (d1 * d2 < 0 && Math.abs(d1 - d2) < 10) {
-            // Interpolate
-            const f = d1 / (d1 - d2);
-            asc.push([lat, prevLng + f * 0.5]);
-          }
-          // Check for DSC crossing
-          d1 = n180(prevDscLon - planetLon);
-          d2 = n180(dscElon - planetLon);
-          if (d1 * d2 < 0 && Math.abs(d1 - d2) < 10) {
-            const f = d1 / (d1 - d2);
-            dsc.push([lat, prevLng + f * 0.5]);
-          }
-        }
-        prevAscLon = ascElon;
-        prevDscLon = dscElon;
-        prevLng = lng;
-      }
+      const cosH = -Math.tan(R(lat)) * Math.tan(dr);
+      if (Math.abs(cosH) > 1) continue;
+      const H = Math.acos(Math.max(-1, Math.min(1, cosH))) * 180 / Math.PI;
+      asc.push([lat, n180(ra - H - G)]);
+      dsc.push([lat, n180(ra + H - G)]);
     }
-
-    // Sort ASC/DSC by latitude for proper line rendering
-    asc.sort((a, b) => a[0] - b[0]);
-    dsc.sort((a, b) => a[0] - b[0]);
 
     lines[name] = { MC: mc, IC: ic, ASC: asc, DSC: dsc, mcLon, ra, dec };
   }
