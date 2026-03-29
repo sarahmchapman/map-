@@ -996,14 +996,9 @@ function _handleMapClick(lat,lng){
     });
   });
   if(!bestP){bestP='Sun';bestLT='MC';}
-  var nearCity='',bestCD=Infinity;
-  CITY_DB.forEach(function(city){
-    var dlat=city.lat-lat,dlng=city.lng-lng;
-    if(dlng>180)dlng-=360;if(dlng<-180)dlng+=360;
-    var d=Math.sqrt(dlat*dlat+dlng*dlng);
-    if(d<bestCD){bestCD=d;nearCity=city.n+(city.c?', '+city.c:'');}
-  });
-  openCard(nearCity||'This location',bestP,bestLT,lat,lng);
+  // Show coordinates immediately, then replace with real place name from GeoNames
+  var coordLabel=Math.abs(lat).toFixed(2)+(lat>=0?'°N':'°S')+', '+Math.abs(lng).toFixed(2)+(lng>=0?'°E':'°W');
+  openCard(coordLabel,bestP,bestLT,lat,lng);
   fetch('/api/geonames?type=reverse&lat='+lat.toFixed(5)+'&lng='+lng.toFixed(5))
     .then(function(r){return r.json();})
     .then(function(data){
