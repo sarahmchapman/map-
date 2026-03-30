@@ -1216,7 +1216,7 @@ function renderChart(){
     grid.innerHTML+='<div class="chart-row"><span class="cr-glyph" style="color:'+col+'">'+PSYM[p]+'</span><span class="cr-name">'+p+'<span style="font-size:.65rem;color:var(--ink-3);font-style:italic;margin-left:.4rem">'+(PDESC[p]||'')+'</span></span><span class="cr-pos">'+d.deg+'°'+pad(d.min)+"'"+'<span class="cr-sign"> '+d.sign+'</span></span></div>';
   });
   var ag=document.getElementById('anglesGrid');ag.innerHTML='';
-  [{k:'Ascendant',l:'Ascendant (AC — identity, first impressions, physical presence)'},{k:'Midheaven',l:'Midheaven (MC — career, public life, reputation)'},{k:'IC',l:'IC (Imum Coeli — home, roots, ancestry)'},{k:'Descendant',l:'Descendant (DC — relationships, partnerships)'}].forEach(function(a){
+  [{k:'Ascendant',l:'Ascendant (AC — identity, first impressions, physical presence)'},{k:'Midheaven',l:'Midheaven (MC — career, public life, reputation)'},{k:'IC',l:'Imum Coeli (IC — home, roots, ancestry)'},{k:'Descendant',l:'Descendant (DC — relationships, partnerships)'}].forEach(function(a){
     var d=chart.planets[a.k];if(!d||d.sign==='?')return;
     ag.innerHTML+='<div class="chart-row"><span class="cr-glyph" style="color:var(--gold);font-size:.65rem;font-family:var(--sans);font-weight:600">'+a.k.slice(0,2).toUpperCase()+'</span><span class="cr-name">'+a.l+'</span><span class="cr-pos">'+d.deg+'°'+pad(d.min)+"'"+'<span class="cr-sign"> '+d.sign+'</span></span></div>';
   });
