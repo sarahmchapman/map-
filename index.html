@@ -213,8 +213,6 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
         <button class="ltype-btn on" id="lt-DSC" onclick="toggleLT('DSC',this)">DSC</button>
       </div>
       <div class="filter-divider"></div>
-      <div class="filter-group" id="filterLegend" style="margin-left:auto;flex-wrap:wrap;max-width:320px"></div>
-      <div class="filter-divider"></div>
       <div class="filter-group">
         <span class="filter-lbl">Focus</span>
         <button class="focus-filter-btn on" id="ff-All"     onclick="setFocusFilter('All',this)">All</button>
@@ -234,7 +232,7 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
       </div>
       <div class="map-coords" id="mapCoords"></div>
     </div>
-    <div class="map-legend" id="mapLegend" style="display:none"></div>
+    <div class="map-legend" id="mapLegend"></div>
     <div style="padding:0 1.5rem 1.5rem;max-width:700px;margin:0 auto">
       <div id="readingCard">
         <div class="rc-accent" id="rcAccent"></div>
@@ -1217,7 +1215,7 @@ function renderChart(){
     grid.innerHTML+='<div class="chart-row"><span class="cr-glyph" style="color:'+col+'">'+PSYM[p]+'</span><span class="cr-name">'+p+'</span><span class="cr-pos">'+d.deg+'°'+pad(d.min)+"'"+'<span class="cr-sign"> '+d.sign+'</span></span></div>';
   });
   var ag=document.getElementById('anglesGrid');ag.innerHTML='';
-  [{k:'Ascendant',l:'Ascendant (AC)'},{k:'Midheaven',l:'Midheaven (MC)'},{k:'IC',l:'Imum Coeli (IC)'},{k:'Descendant',l:'Descendant (DC)'}].forEach(function(a){
+  [{k:'Ascendant',l:'Ascendant (AC)'},{k:'Midheaven',l:'Midheaven (MC)'},{k:'IC',l:'IC (Imum Coeli — home, roots, ancestry)'},{k:'Descendant',l:'Descendant (DC)'}].forEach(function(a){
     var d=chart.planets[a.k];if(!d||d.sign==='?')return;
     ag.innerHTML+='<div class="chart-row"><span class="cr-glyph" style="color:var(--gold);font-size:.65rem;font-family:var(--sans);font-weight:600">'+a.k.slice(0,2).toUpperCase()+'</span><span class="cr-name">'+a.l+'</span><span class="cr-pos">'+d.deg+'°'+pad(d.min)+"'"+'<span class="cr-sign"> '+d.sign+'</span></span></div>';
   });
@@ -1244,14 +1242,13 @@ function buildToggleBar(){
   });
 }
 function buildLegend(){
-  var leg=document.getElementById('filterLegend');
-  if(!leg)return;
-  leg.innerHTML='';
+  var leg=document.getElementById('mapLegend');leg.innerHTML='';
   var allP=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto'];
   allP.forEach(function(p){
     if(!toggleState[p])return;
-    leg.innerHTML+='<span class="leg-item"><span class="leg-dot" style="background:'+PCOL[p]+'"></span><span style="font-size:.6rem;color:var(--ink-2)">'+PSYM[p]+'</span></span>';
+    leg.innerHTML+='<span class="leg-item"><span class="leg-dot" style="background:'+PCOL[p]+'"></span><span style="font-size:.68rem;color:var(--ink-2)">'+PSYM[p]+' '+p+'</span></span>';
   });
+  leg.innerHTML+='<span class="leg-item" style="margin-left:auto;color:var(--ink-3);font-size:.65rem">solid=MC/ASC &nbsp; dashed=IC/DSC</span>';
 }
 function togglePlanet(p,btn){toggleState[p]=!toggleState[p];btn.classList.toggle('off',!toggleState[p]);drawLines();buildLegend();}
 function toggleLT(lt,btn){ltypeState[lt]=!ltypeState[lt];btn.classList.toggle('on',ltypeState[lt]);drawLines();}
@@ -1272,7 +1269,7 @@ function setFocusFilter(focus,btn){
 // ═══════════════════════════════════════════════════════════
 var LINE_DESC={
   MC:'The Midheaven line crowns this planet overhead — your public self, reputation, and life calling are fully illuminated here.',
-  IC:'The IC line roots this planet beneath the earth — themes of home, ancestry, and your deepest private self surface with unusual clarity.',
+  IC:'The IC line roots this planet at the base of the chart — one of the most sensitive points for home, family, roots and ancestry. Themes of your private world and inner foundations surface with unusual clarity here.',
   ASC:'The Rising line places this planet on the eastern horizon — your physical presence and first impressions carry its full signature here.',
   DSC:'The Descendant line mirrors this energy into your relationship axis — partners you attract here tend to embody this planetary quality.'
 };
@@ -1360,7 +1357,7 @@ function openCard(cityName,planet,ltype,_lat,_lng){
   document.getElementById('rcAccent').style.background=col;
   document.getElementById('rcCity').innerHTML=(cityName||'This location')+'<br><em>'+quality+'</em>';
   document.getElementById('rcBody').innerHTML=
-    '<div class="rc-planet-row"><span class="rc-glyph" style="color:'+col+'">'+PSYM[planet]+'</span><div><div class="rc-pname" style="color:'+col+'">'+planet+' in '+pd.sign+' '+pd.deg+'°'+pad(pd.min)+"'"+'</div><div class="rc-ltype">'+{MC:'Midheaven (MC)',IC:'IC (Imum Coeli)',ASC:'Rising (ASC)',DSC:'Descendant (DSC)'}[ltype]+' line</div></div></div>'
+    '<div class="rc-planet-row"><span class="rc-glyph" style="color:'+col+'">'+PSYM[planet]+'</span><div><div class="rc-pname" style="color:'+col+'">'+planet+' in '+pd.sign+' '+pd.deg+'°'+pad(pd.min)+"'"+'</div><div class="rc-ltype">'+{MC:'Midheaven (MC)',IC:'IC — Imum Coeli',ASC:'Rising (ASC)',DSC:'Descendant (DSC)'}[ltype]+' line</div></div></div>'
     +(distNote?'<div class="rc-rule"></div><div class="rc-prose" style="font-size:.82rem">'+distNote+'</div>':'')
     +'<div class="rc-rule"></div>'
     +'<div class="rc-slbl">In this place you feel</div><div class="rc-feeling">'+((FEELING[planet]||{})[focus]||'powerfully present')+'.</div>'
