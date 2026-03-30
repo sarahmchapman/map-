@@ -813,38 +813,37 @@ function _renderOverlay(){
   var fs=Math.round(Math.max(9,Math.min(13,m.zoomF*2.2)));
   var MARGIN=22; // left/right edge margin for labels
 
-  // Helper: draw a label with background pill
+  // Draw a compact label with pill background
   function drawLabel(text,x,y,col,align){
     ctx.save();
-    ctx.font='600 '+fs+'px Jost,sans-serif';
+    ctx.font='500 '+fs+'px Jost,sans-serif';
     ctx.textAlign=align||'center';
     ctx.textBaseline='middle';
     var tw=ctx.measureText(text).width;
-    var pad=3;
-    var bx=align==='left'?x-pad:(align==='right'?x-tw-pad:x-tw/2-pad);
-    ctx.fillStyle='rgba(250,248,244,0.88)';
+    var pad=2;
+    var bx=align==='left'?x:align==='right'?x-tw-pad*2:x-tw/2-pad;
+    ctx.fillStyle='rgba(250,248,244,0.9)';
     ctx.fillRect(bx,y-fs/2-pad,tw+pad*2,fs+pad*2);
     ctx.fillStyle=col;
-    ctx.fillText(text,x,y);
+    ctx.fillText(text,align==='left'?x+pad:align==='right'?x-pad:x,y);
     ctx.restore();
   }
 
-  // Helper: draw glyph+type label e.g. "☉ MC"
-  function lineLabel(p,lt,col){
-    return PSYM[p]+' '+lt;
-  }
-
-  // Track edge labels (left/right sides)
-  var leftLabels=[], rightLabels=[];
+  // Collect all top/bottom/edge labels, deduplicate by x position
+  var topLabels=[], botLabels=[], leftLabels=[], rightLabels=[];
+  var TOP_BAND=fs*3; // only label if line enters/exits within top band
 
   PALL.forEach(function(p){
     if(!toggleState[p]||!acgData[p])return;
     var col=PCOL[p];
+    var label=PSYM[p]+' ';
 
     ['MC','IC','ASC','DSC'].forEach(function(lt){
       if(!ltypeState[lt])return;
       var pts=acgData[p][lt];if(!pts||pts.length<2)return;
       var isDash=(lt==='IC'||lt==='DSC');
+      var ltype=lt==='ASC'?'AC':lt==='DSC'?'DC':lt;
+      var fullLabel=PSYM[p]+' '+ltype;
 
       ctx.strokeStyle=col;
       ctx.globalAlpha=isDash?0.55:0.92;
@@ -853,14 +852,13 @@ function _renderOverlay(){
       ctx.lineJoin='round';
       ctx.lineCap='round';
 
-      // Draw line — split at antimeridian jumps
+      // Split into segments at antimeridian
       var segments=[[]];
       for(var i=0;i<pts.length;i++){
         var pp=_ll2px(pts[i][0],pts[i][1]);
         var seg=segments[segments.length-1];
         if(seg.length>0&&Math.abs(pp.x-seg[seg.length-1].x)>W*0.4){
-          segments.push([]);
-          seg=segments[segments.length-1];
+          segments.push([]);seg=segments[segments.length-1];
         }
         seg.push(pp);
       }
@@ -872,37 +870,34 @@ function _renderOverlay(){
         for(var i=1;i<seg.length;i++) ctx.lineTo(seg[i].x,seg[i].y);
         ctx.stroke();
 
-        // Top label: glyph + line type at top of each visible segment
-        var topPt=null;
+        var first=seg[0], last=seg[seg.length-1];
+
+        // Find topmost and bottommost visible points
+        var topPt=null, botPt=null;
         for(var i=0;i<seg.length;i++){
-          if(seg[i].y>=0&&seg[i].y<=H){topPt=seg[i];break;}
-        }
-        if(topPt&&topPt.x>MARGIN&&topPt.x<W-MARGIN){
-          var labelY=Math.max(fs+6,topPt.y);
-          drawLabel(lineLabel(p,lt,col),topPt.x,labelY,col,'center');
+          if(seg[i].x<0||seg[i].x>W)continue;
+          if(!topPt||seg[i].y<topPt.y)topPt=seg[i];
+          if(!botPt||seg[i].y>botPt.y)botPt=seg[i];
         }
 
-        // Bottom label: at bottom of each visible segment
-        var botPt=null;
-        for(var i=seg.length-1;i>=0;i--){
-          if(seg[i].y>=0&&seg[i].y<=H){botPt=seg[i];break;}
+        // Top label — at the topmost point of this segment
+        if(topPt&&topPt.y<H*0.55){
+          topLabels.push({x:topPt.x,y:Math.max(fs+4,topPt.y-2),text:fullLabel,col:col});
         }
-        if(botPt&&botPt.x>MARGIN&&botPt.x<W-MARGIN){
-          var labelY2=Math.min(H-fs-6,botPt.y);
-          drawLabel(lineLabel(p,lt,col),botPt.x,labelY2,col,'center');
+        // Bottom label — at the bottommost point
+        if(botPt&&botPt.y>H*0.45){
+          botLabels.push({x:botPt.x,y:Math.min(H-fs-4,botPt.y+2),text:fullLabel,col:col});
         }
 
-        // Left/right edge labels: if line exits left or right edge
-        var firstPt=seg[0], lastPt=seg[seg.length-1];
-        if(firstPt.x<=MARGIN){
-          leftLabels.push({y:firstPt.y,text:lineLabel(p,lt,col),col:col});
-        } else if(firstPt.x>=W-MARGIN){
-          rightLabels.push({y:firstPt.y,text:lineLabel(p,lt,col),col:col});
+        // Left edge label
+        if(first.x<=2||last.x<=2){
+          var ept=first.x<=2?first:last;
+          if(ept.y>=0&&ept.y<=H) leftLabels.push({y:ept.y,text:fullLabel,col:col});
         }
-        if(lastPt.x<=MARGIN){
-          leftLabels.push({y:lastPt.y,text:lineLabel(p,lt,col),col:col});
-        } else if(lastPt.x>=W-MARGIN){
-          rightLabels.push({y:lastPt.y,text:lineLabel(p,lt,col),col:col});
+        // Right edge label
+        if(first.x>=W-2||last.x>=W-2){
+          var ept2=first.x>=W-2?first:last;
+          if(ept2.y>=0&&ept2.y<=H) rightLabels.push({y:ept2.y,text:fullLabel,col:col});
         }
       });
 
@@ -911,15 +906,42 @@ function _renderOverlay(){
     });
   });
 
-  // Draw left edge labels
-  leftLabels.forEach(function(lb){
-    if(lb.y<0||lb.y>H)return;
-    drawLabel(lb.text,4,lb.y,lb.col,'left');
+  // Draw top labels (deduplicate by proximity)
+  topLabels.sort(function(a,b){return a.x-b.x;});
+  var lastTopX=-999;
+  topLabels.forEach(function(lb){
+    if(lb.x<0||lb.x>W)return;
+    if(Math.abs(lb.x-lastTopX)<fs*3)return; // skip if too close to previous
+    drawLabel(lb.text,lb.x,lb.y,lb.col,'center');
+    lastTopX=lb.x;
   });
+
+  // Draw bottom labels
+  botLabels.sort(function(a,b){return a.x-b.x;});
+  var lastBotX=-999;
+  botLabels.forEach(function(lb){
+    if(lb.x<0||lb.x>W)return;
+    if(Math.abs(lb.x-lastBotX)<fs*3)return;
+    drawLabel(lb.text,lb.x,lb.y,lb.col,'center');
+    lastBotX=lb.x;
+  });
+
+  // Draw left edge labels
+  leftLabels.sort(function(a,b){return a.y-b.y;});
+  var lastLeftY=-999;
+  leftLabels.forEach(function(lb){
+    if(Math.abs(lb.y-lastLeftY)<fs*2)return;
+    drawLabel(lb.text,2,lb.y,lb.col,'left');
+    lastLeftY=lb.y;
+  });
+
   // Draw right edge labels
+  rightLabels.sort(function(a,b){return a.y-b.y;});
+  var lastRightY=-999;
   rightLabels.forEach(function(lb){
-    if(lb.y<0||lb.y>H)return;
-    drawLabel(lb.text,W-4,lb.y,lb.col,'right');
+    if(Math.abs(lb.y-lastRightY)<fs*2)return;
+    drawLabel(lb.text,W-2,lb.y,lb.col,'right');
+    lastRightY=lb.y;
   });
 
   ctx.globalAlpha=1;
