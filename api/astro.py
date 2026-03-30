@@ -39,14 +39,16 @@ def build_acg_swe(jd):
     PLANETS={'Sun':swe.SUN,'Moon':swe.MOON,'Mercury':swe.MERCURY,
              'Venus':swe.VENUS,'Mars':swe.MARS,'Jupiter':swe.JUPITER,
              'Saturn':swe.SATURN,'Uranus':swe.URANUS,'Neptune':swe.NEPTUNE,'Pluto':swe.PLUTO}
-    IFLAG=swe.FLG_SWIEPH|swe.FLG_SPEED
-    try: r,_=swe.calc_ut(jd,swe.ECL_NUT,0); obl=r[0]
-    except: obl=OBL
+    # Use equatorial coordinates directly - bypasses manual ecliptic->RA conversion
+    # SEFLG_SWIEPH=2, SEFLG_SPEED=256, SEFLG_EQUATORIAL=2048
+    IFLAG_EQU = swe.FLG_SWIEPH | swe.FLG_SPEED | swe.FLG_EQUATORIAL
     lines={}
     for name,pid in PLANETS.items():
-        try: r,_=swe.calc_ut(jd,pid,IFLAG); lon=r[0]
+        try:
+            r,_=swe.calc_ut(jd,pid,IFLAG_EQU)
+            ra=r[0]   # right ascension in degrees
+            dec=r[1]  # declination in degrees
         except: continue
-        ra,dec=lon_to_ra_dec(lon,obl)
         lines[name]=make_lines(ra,dec,G)
     return lines
 
