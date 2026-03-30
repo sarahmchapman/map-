@@ -1120,7 +1120,7 @@ function drawMap(){
   var overlayCanvas=document.getElementById('lineCanvas');
   if(!tileCanvas||!overlayCanvas)return;
   var W=wrap.clientWidth||800;
-  var H=parseInt(getComputedStyle(tileCanvas).height)||520;
+ var H=parseInt(getComputedStyle(tileCanvas).height)||600;
   tileCanvas.width=W;tileCanvas.height=H;
   overlayCanvas.width=W;overlayCanvas.height=H;
   _map.W=W;_map.H=H;
@@ -1131,7 +1131,7 @@ function drawMap(){
     _map.ready=true;
     _map.cx=(activeChart&&activeChart.geo&&activeChart.geo.lat!=null)?activeChart.geo.lng:0;
     _map.cy=(activeChart&&activeChart.geo&&activeChart.geo.lat!=null)?activeChart.geo.lat:20;
-    _map.zoomF=2.0;
+_map.zoomF=2.2;
     _setupMapEvents();
   }
   _redraw();
