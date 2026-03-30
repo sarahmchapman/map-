@@ -213,6 +213,8 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
         <button class="ltype-btn on" id="lt-DSC" onclick="toggleLT('DSC',this)">DSC</button>
       </div>
       <div class="filter-divider"></div>
+      <div class="filter-group" id="filterLegend" style="margin-left:auto;flex-wrap:wrap;max-width:320px"></div>
+      <div class="filter-divider"></div>
       <div class="filter-group">
         <span class="filter-lbl">Focus</span>
         <button class="focus-filter-btn on" id="ff-All"     onclick="setFocusFilter('All',this)">All</button>
@@ -232,7 +234,7 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
       </div>
       <div class="map-coords" id="mapCoords"></div>
     </div>
-    <div class="map-legend" id="mapLegend"></div>
+    <div class="map-legend" id="mapLegend" style="display:none"></div>
     <div style="padding:0 1.5rem 1.5rem;max-width:700px;margin:0 auto">
       <div id="readingCard">
         <div class="rc-accent" id="rcAccent"></div>
@@ -1120,7 +1122,7 @@ function drawMap(){
   var overlayCanvas=document.getElementById('lineCanvas');
   if(!tileCanvas||!overlayCanvas)return;
   var W=wrap.clientWidth||800;
- var H=parseInt(getComputedStyle(tileCanvas).height)||600;
+  var H=parseInt(getComputedStyle(tileCanvas).height)||520;
   tileCanvas.width=W;tileCanvas.height=H;
   overlayCanvas.width=W;overlayCanvas.height=H;
   _map.W=W;_map.H=H;
@@ -1131,7 +1133,7 @@ function drawMap(){
     _map.ready=true;
     _map.cx=(activeChart&&activeChart.geo&&activeChart.geo.lat!=null)?activeChart.geo.lng:0;
     _map.cy=(activeChart&&activeChart.geo&&activeChart.geo.lat!=null)?activeChart.geo.lat:20;
-_map.zoomF=2.2;
+    _map.zoomF=2.0;
     _setupMapEvents();
   }
   _redraw();
@@ -1242,13 +1244,14 @@ function buildToggleBar(){
   });
 }
 function buildLegend(){
-  var leg=document.getElementById('mapLegend');leg.innerHTML='';
+  var leg=document.getElementById('filterLegend');
+  if(!leg)return;
+  leg.innerHTML='';
   var allP=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto'];
   allP.forEach(function(p){
     if(!toggleState[p])return;
-    leg.innerHTML+='<span class="leg-item"><span class="leg-dot" style="background:'+PCOL[p]+'"></span><span style="font-size:.68rem;color:var(--ink-2)">'+PSYM[p]+' '+p+'</span></span>';
+    leg.innerHTML+='<span class="leg-item"><span class="leg-dot" style="background:'+PCOL[p]+'"></span><span style="font-size:.6rem;color:var(--ink-2)">'+PSYM[p]+'</span></span>';
   });
-  leg.innerHTML+='<span class="leg-item" style="margin-left:auto;color:var(--ink-3);font-size:.65rem">solid=MC/ASC &nbsp; dashed=IC/DSC</span>';
 }
 function togglePlanet(p,btn){toggleState[p]=!toggleState[p];btn.classList.toggle('off',!toggleState[p]);drawLines();buildLegend();}
 function toggleLT(lt,btn){ltypeState[lt]=!ltypeState[lt];btn.classList.toggle('on',ltypeState[lt]);drawLines();}
