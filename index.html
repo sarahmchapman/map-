@@ -1203,6 +1203,7 @@ function _buildChart(day,month,year,hour,min,name,tz){
     });
 }
 
+var PDESC={Sun:'identity, vitality, core self',Moon:'emotions, instincts, inner world',Mercury:'mind, communication, thinking',Venus:'love, beauty, values',Mars:'drive, action, desire',Jupiter:'growth, luck, expansion',Saturn:'discipline, structure, karma',Uranus:'change, rebellion, awakening',Neptune:'dreams, spirituality, illusion',Pluto:'transformation, power, rebirth'};
 function renderChart(){
   var chart=activeChart;
   document.getElementById('barName').innerHTML='<em>'+chart.name+'</em>';
@@ -1212,10 +1213,10 @@ function renderChart(){
   PORDER.forEach(function(p){
     var d=chart.planets[p];if(!d||d.sign==='?')return;
     var col=PCOL[p];
-    grid.innerHTML+='<div class="chart-row"><span class="cr-glyph" style="color:'+col+'">'+PSYM[p]+'</span><span class="cr-name">'+p+'</span><span class="cr-pos">'+d.deg+'°'+pad(d.min)+"'"+'<span class="cr-sign"> '+d.sign+'</span></span></div>';
+    grid.innerHTML+='<div class="chart-row"><span class="cr-glyph" style="color:'+col+'">'+PSYM[p]+'</span><span class="cr-name">'+p+'<span style="font-size:.65rem;color:var(--ink-3);font-style:italic;margin-left:.4rem">'+(PDESC[p]||'')+'</span></span><span class="cr-pos">'+d.deg+'°'+pad(d.min)+"'"+'<span class="cr-sign"> '+d.sign+'</span></span></div>';
   });
   var ag=document.getElementById('anglesGrid');ag.innerHTML='';
-  [{k:'Ascendant',l:'Ascendant (AC)'},{k:'Midheaven',l:'Midheaven (MC)'},{k:'IC',l:'IC (Imum Coeli — home, roots, ancestry)'},{k:'Descendant',l:'Descendant (DC)'}].forEach(function(a){
+  [{k:'Ascendant',l:'Ascendant (AC — identity, first impressions, physical presence)'},{k:'Midheaven',l:'Midheaven (MC — career, public life, reputation)'},{k:'IC',l:'IC (Imum Coeli — home, roots, ancestry)'},{k:'Descendant',l:'Descendant (DC — relationships, partnerships)'}].forEach(function(a){
     var d=chart.planets[a.k];if(!d||d.sign==='?')return;
     ag.innerHTML+='<div class="chart-row"><span class="cr-glyph" style="color:var(--gold);font-size:.65rem;font-family:var(--sans);font-weight:600">'+a.k.slice(0,2).toUpperCase()+'</span><span class="cr-name">'+a.l+'</span><span class="cr-pos">'+d.deg+'°'+pad(d.min)+"'"+'<span class="cr-sign"> '+d.sign+'</span></span></div>';
   });
@@ -1357,7 +1358,7 @@ function openCard(cityName,planet,ltype,_lat,_lng){
   document.getElementById('rcAccent').style.background=col;
   document.getElementById('rcCity').innerHTML=(cityName||'This location')+'<br><em>'+quality+'</em>';
   document.getElementById('rcBody').innerHTML=
-    '<div class="rc-planet-row"><span class="rc-glyph" style="color:'+col+'">'+PSYM[planet]+'</span><div><div class="rc-pname" style="color:'+col+'">'+planet+' in '+pd.sign+' '+pd.deg+'°'+pad(pd.min)+"'"+'</div><div class="rc-ltype">'+{MC:'Midheaven (MC)',IC:'IC — Imum Coeli',ASC:'Rising (ASC)',DSC:'Descendant (DSC)'}[ltype]+' line</div></div></div>'
+    '<div class="rc-planet-row"><span class="rc-glyph" style="color:'+col+'">'+PSYM[planet]+'</span><div><div class="rc-pname" style="color:'+col+'">'+planet+' in '+pd.sign+' '+pd.deg+'°'+pad(pd.min)+"'"+'</div><div class="rc-ltype">'+{MC:'MC — Midheaven',IC:'IC — Imum Coeli',ASC:'AC — Ascendant',DSC:'DC — Descendant'}[ltype]+' line</div></div></div>'
     +(distNote?'<div class="rc-rule"></div><div class="rc-prose" style="font-size:.82rem">'+distNote+'</div>':'')
     +'<div class="rc-rule"></div>'
     +'<div class="rc-slbl">In this place you feel</div><div class="rc-feeling">'+((FEELING[planet]||{})[focus]||'powerfully present')+'.</div>'
