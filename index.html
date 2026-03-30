@@ -809,63 +809,133 @@ function _renderOverlay(){
   var ctx=m.octx,W=m.W,H=m.H;
   ctx.clearRect(0,0,W,H);
   var PALL=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto'];
-  var lw=Math.max(1.2,Math.min(2.8,m.zoomF*0.5));
+  var lw=Math.max(1.2,Math.min(2.5,m.zoomF*0.45));
+  var fs=Math.round(Math.max(9,Math.min(13,m.zoomF*2.2)));
+  var MARGIN=22; // left/right edge margin for labels
+
+  // Helper: draw a label with background pill
+  function drawLabel(text,x,y,col,align){
+    ctx.save();
+    ctx.font='600 '+fs+'px Jost,sans-serif';
+    ctx.textAlign=align||'center';
+    ctx.textBaseline='middle';
+    var tw=ctx.measureText(text).width;
+    var pad=3;
+    var bx=align==='left'?x-pad:(align==='right'?x-tw-pad:x-tw/2-pad);
+    ctx.fillStyle='rgba(250,248,244,0.88)';
+    ctx.fillRect(bx,y-fs/2-pad,tw+pad*2,fs+pad*2);
+    ctx.fillStyle=col;
+    ctx.fillText(text,x,y);
+    ctx.restore();
+  }
+
+  // Helper: draw glyph+type label e.g. "☉ MC"
+  function lineLabel(p,lt,col){
+    return PSYM[p]+' '+lt;
+  }
+
+  // Track edge labels (left/right sides)
+  var leftLabels=[], rightLabels=[];
 
   PALL.forEach(function(p){
     if(!toggleState[p]||!acgData[p])return;
     var col=PCOL[p];
+
     ['MC','IC','ASC','DSC'].forEach(function(lt){
       if(!ltypeState[lt])return;
       var pts=acgData[p][lt];if(!pts||pts.length<2)return;
       var isDash=(lt==='IC'||lt==='DSC');
+
       ctx.strokeStyle=col;
-      ctx.globalAlpha=isDash?0.45:0.88;
-      ctx.lineWidth=lw*(isDash?0.7:1);
-      ctx.setLineDash(isDash?[7,5]:[]);
-      ctx.beginPath();
-      var started=false,prevX=null;
+      ctx.globalAlpha=isDash?0.55:0.92;
+      ctx.lineWidth=lw*(isDash?0.75:1);
+      ctx.setLineDash(isDash?[6,4]:[]);
+      ctx.lineJoin='round';
+      ctx.lineCap='round';
+
+      // Draw line — split at antimeridian jumps
+      var segments=[[]];
       for(var i=0;i<pts.length;i++){
         var pp=_ll2px(pts[i][0],pts[i][1]);
-        // Break line if it wraps across the antimeridian
-        if(prevX!==null&&Math.abs(pp.x-prevX)>W*0.4){
-          ctx.stroke();ctx.beginPath();started=false;
+        var seg=segments[segments.length-1];
+        if(seg.length>0&&Math.abs(pp.x-seg[seg.length-1].x)>W*0.4){
+          segments.push([]);
+          seg=segments[segments.length-1];
         }
-        if(!started){ctx.moveTo(pp.x,pp.y);started=true;}
-        else ctx.lineTo(pp.x,pp.y);
-        prevX=pp.x;
+        seg.push(pp);
       }
-      ctx.stroke();ctx.setLineDash([]);
-    });
-    ctx.globalAlpha=1;
 
-    // Planet glyph at TOP of MC line (near north pole edge)
-    if(ltypeState.MC&&acgData[p].mcLon!=null){
-      // Find the topmost visible point of the MC line
-      var topPt=_ll2px(78,acgData[p].mcLon);
-      if(topPt.x>-20&&topPt.x<W+20&&topPt.y>0&&topPt.y<H){
-        var fs=Math.round(Math.max(10,Math.min(15,m.zoomF*2.5)));
-        ctx.font=fs+'px serif';
-        ctx.fillStyle=col;ctx.textAlign='center';
-        ctx.globalAlpha=1;
-        // Small background pill for readability
-        var tw=ctx.measureText(PSYM[p]).width+4;
-        ctx.fillStyle='rgba(250,248,244,0.85)';
-        ctx.fillRect(topPt.x-tw/2,topPt.y-fs,tw,fs+2);
-        ctx.fillStyle=col;
-        ctx.fillText(PSYM[p],topPt.x,topPt.y-1);
-      }
-    }
+      segments.forEach(function(seg){
+        if(seg.length<2)return;
+        ctx.beginPath();
+        ctx.moveTo(seg[0].x,seg[0].y);
+        for(var i=1;i<seg.length;i++) ctx.lineTo(seg[i].x,seg[i].y);
+        ctx.stroke();
+
+        // Top label: glyph + line type at top of each visible segment
+        var topPt=null;
+        for(var i=0;i<seg.length;i++){
+          if(seg[i].y>=0&&seg[i].y<=H){topPt=seg[i];break;}
+        }
+        if(topPt&&topPt.x>MARGIN&&topPt.x<W-MARGIN){
+          var labelY=Math.max(fs+6,topPt.y);
+          drawLabel(lineLabel(p,lt,col),topPt.x,labelY,col,'center');
+        }
+
+        // Bottom label: at bottom of each visible segment
+        var botPt=null;
+        for(var i=seg.length-1;i>=0;i--){
+          if(seg[i].y>=0&&seg[i].y<=H){botPt=seg[i];break;}
+        }
+        if(botPt&&botPt.x>MARGIN&&botPt.x<W-MARGIN){
+          var labelY2=Math.min(H-fs-6,botPt.y);
+          drawLabel(lineLabel(p,lt,col),botPt.x,labelY2,col,'center');
+        }
+
+        // Left/right edge labels: if line exits left or right edge
+        var firstPt=seg[0], lastPt=seg[seg.length-1];
+        if(firstPt.x<=MARGIN){
+          leftLabels.push({y:firstPt.y,text:lineLabel(p,lt,col),col:col});
+        } else if(firstPt.x>=W-MARGIN){
+          rightLabels.push({y:firstPt.y,text:lineLabel(p,lt,col),col:col});
+        }
+        if(lastPt.x<=MARGIN){
+          leftLabels.push({y:lastPt.y,text:lineLabel(p,lt,col),col:col});
+        } else if(lastPt.x>=W-MARGIN){
+          rightLabels.push({y:lastPt.y,text:lineLabel(p,lt,col),col:col});
+        }
+      });
+
+      ctx.setLineDash([]);
+      ctx.globalAlpha=1;
+    });
   });
+
+  // Draw left edge labels
+  leftLabels.forEach(function(lb){
+    if(lb.y<0||lb.y>H)return;
+    drawLabel(lb.text,4,lb.y,lb.col,'left');
+  });
+  // Draw right edge labels
+  rightLabels.forEach(function(lb){
+    if(lb.y<0||lb.y>H)return;
+    drawLabel(lb.text,W-4,lb.y,lb.col,'right');
+  });
+
   ctx.globalAlpha=1;
 
-  // Birth marker
+  // Birth marker — circle style like reference
   if(activeChart.geo&&activeChart.geo.lat!=null){
     var bp=_ll2px(activeChart.geo.lat,activeChart.geo.lng);
-    ctx.beginPath();ctx.arc(bp.x,bp.y,7,0,Math.PI*2);
-    ctx.fillStyle='#c9973f';ctx.fill();
-    ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
-    ctx.font='10px Jost,sans-serif';ctx.fillStyle='#1a1714';ctx.textAlign='center';
-    ctx.fillText('Birth',bp.x,bp.y-11);
+    if(bp.x>0&&bp.x<W&&bp.y>0&&bp.y<H){
+      ctx.beginPath();ctx.arc(bp.x,bp.y,8,0,Math.PI*2);
+      ctx.strokeStyle='#b8955a';ctx.lineWidth=2.5;ctx.stroke();
+      ctx.beginPath();ctx.arc(bp.x,bp.y,2,0,Math.PI*2);
+      ctx.fillStyle='#b8955a';ctx.fill();
+      ctx.font='500 10px Jost,sans-serif';
+      ctx.fillStyle='#1a1714';ctx.textAlign='center';ctx.textBaseline='bottom';
+      ctx.fillText('Birth',bp.x,bp.y-11);
+    }
   }
 }
 
