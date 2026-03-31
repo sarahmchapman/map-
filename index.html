@@ -987,7 +987,7 @@ function _setupMapEvents(){
       return;
     }
     var dx=e.clientX-_map.lastX,dy=e.clientY-_map.lastY;
-    if(Math.abs(dx)+Math.abs(dy)>3)_map.hasDragged=true;
+    if(Math.abs(dx)+Math.abs(dy)>8)_map.hasDragged=true;
     _map.lastX=e.clientX;_map.lastY=e.clientY;
     var z=_map.zoomF,tileSize=256,scale=Math.pow(2,z)*tileSize;
     _map.cx-=dx/scale*360;
@@ -1033,7 +1033,7 @@ function _setupMapEvents(){
     e.preventDefault();
     if(e.touches.length===1&&_map.dragging){
       var dx=e.touches[0].clientX-_map.lastX,dy=e.touches[0].clientY-_map.lastY;
-      if(Math.abs(dx)+Math.abs(dy)>4)_map.hasDragged=true;
+      if(Math.abs(dx)+Math.abs(dy)>10)_map.hasDragged=true;
       _map.lastX=e.touches[0].clientX;_map.lastY=e.touches[0].clientY;
       var z=_map.zoomF,tileSize=256,scale=Math.pow(2,z)*tileSize;
       _map.cx-=dx/scale*360;
@@ -1094,7 +1094,7 @@ function _handleMapClick(lat,lng){
   // Show coordinates immediately, then replace with real place name from GeoNames
   var coordLabel=Math.abs(lat).toFixed(2)+(lat>=0?'°N':'°S')+', '+Math.abs(lng).toFixed(2)+(lng>=0?'°E':'°W');
   openCard(coordLabel,bestP,bestLT,lat,lng);
-  fetch('/api/geonames?type=reverse&lat='+lat.toFixed(5)+'&lng='+lng.toFixed(5))
+  fetch('/api/geonames?type=reverse&lat='+lat.toFixed(5)+'&lng='+lng.toFixed(5)+'&zoom='+Math.round(_map.zoomF))
     .then(function(r){return r.json();})
     .then(function(data){
       var g=data.geonames&&data.geonames[0];if(!g)return;
