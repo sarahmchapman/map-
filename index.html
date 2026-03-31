@@ -1188,6 +1188,7 @@ function _buildChart(day,month,year,hour,min,name,tz){
   activeChart={name:name,birthDate:day+' '+MONTH_NAMES[month-1]+' '+year,birthTime:pad(hour)+':'+pad(min)+' (UTC'+(tz>=0?'+':'')+tz+')',birthPlace:selectedGeo.display,geo:selectedGeo,planets:planets,aspects:aspects};
   document.getElementById('formScreen').style.display='none';
   document.getElementById('mapScreen').style.display='block';
+  window.scrollTo(0,0);
   ['All','Love','Career','Healing','Self'].forEach(function(f){var b=document.getElementById('ff-'+f);if(b)b.classList.toggle('on',f==='All');});
   ['MC','IC','ASC','DSC'].forEach(function(lt){var b=document.getElementById('lt-'+lt);if(b)b.classList.add('on');});
   renderChart();buildToggleBar();buildLegend();drawMap();
