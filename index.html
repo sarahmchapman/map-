@@ -252,6 +252,7 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
   </div>
 </div>
 
+<script src="/descriptions.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════════
 // CITY DATABASE (abbreviated — top global cities)
@@ -1270,68 +1271,6 @@ function setFocusFilter(focus,btn){
 // ═══════════════════════════════════════════════════════════
 // READING CONTENT
 // ═══════════════════════════════════════════════════════════
-var LINE_ACTIVATED={
-  Sun:{
-    MC:"In this place, the Sun crowns your public life — your sense of purpose and identity shines most visibly here. Career opportunities tend to find you, and you're more likely to be seen, recognised, and respected for who you truly are. This is one of the strongest lines for stepping into a leadership role or building a legacy.",
-    IC:"The Sun roots itself deep in your private world here — this place can feel like home in a profound way, as if something essential about you is mirrored back by the land and its people. Family life, self-understanding, and your relationship with your own history tend to deepen here.",
-    ASC:"You arrive as yourself here. The Sun on your Ascendant means your vitality, confidence, and core identity are right on the surface — people see you clearly, and you feel more alive and present than usual. This is a powerful line for self-expression, visibility, and stepping into your own light.",
-    DSC:"The Sun illuminates your relationships here — you're drawn to partners who embody warmth, confidence, or creative fire. This place tends to attract significant people into your life, and one-on-one connections carry more weight and meaning here than elsewhere."
-  },
-  Moon:{
-    MC:"The Moon on your Midheaven here brings your emotional world into public view — your career may involve nurturing, caretaking, or working with the public in an intimate way. You may feel more emotionally visible here, which can be both vulnerable and deeply rewarding.",
-    IC:"Few lines feel as homelike as the Moon IC. This place tends to feel deeply familiar, almost ancestral — as if your emotional roots belong here. Family life, private retreat, and inner healing are all supported. Many people feel more themselves here than anywhere else.",
-    ASC:"You come across as warm, intuitive, and deeply human here. The Moon on your Ascendant means others sense your emotional openness immediately — this can draw people to you or make you feel more emotionally exposed than usual. A powerful place for empathy, creativity, and connection.",
-    DSC:"Relationships here tend to be emotionally rich and nurturing. You may attract partners who are caring and intuitive, or find that existing relationships deepen into something more tender and vulnerable. This place softens the edges between you and those you love."
-  },
-  Mercury:{
-    MC:"Mercury on the Midheaven sharpens your professional voice here — writing, speaking, teaching, media, or any work that requires clear communication tends to flourish. You're more articulate and quick-thinking in public here, and your ideas are more likely to be heard and valued.",
-    IC:"Your mind becomes reflective and inward here. Mercury IC is a good line for journaling, study, processing old memories, or having important conversations with family. You may find yourself thinking more deeply about your roots and the stories you carry.",
-    ASC:"You come across as sharp, curious, and communicative here — people want to talk to you. Mercury on the Ascendant gives your presence an animated, mentally engaged quality. This is a great line for networking, learning, meeting new people, and environments that reward quick thinking.",
-    DSC:"Conversations matter more here. Mercury on the Descendant draws you toward mentally stimulating partners and collaborators — people who challenge your thinking and keep you engaged. Contracts, negotiations, and intellectual partnerships tend to go well in this place."
-  },
-  Venus:{
-    MC:"In this place, Venus crowns your public life — you may find yourself drawn to creative work, beauty, or people-focused roles that feel genuinely fulfilling. Others tend to perceive you as charming and magnetic here. A strong placement for visibility in the arts, design, fashion, or anything that requires grace under a public eye.",
-    IC:"Venus at the base of your chart here softens your private world — home feels beautiful, family relationships carry more ease and affection, and you may find a deep aesthetic pleasure in the land itself. This is a cherished line for creating a sanctuary and feeling genuinely at peace.",
-    ASC:"You arrive differently here — more magnetic, more at ease in your skin. Venus on your Ascendant means others are drawn to you, and you to them. Beauty seems to find you here. Romance, creativity, and social ease all flow more naturally in this place.",
-    DSC:"Relationships bloom here — Venus on the Descendant is one of the most celebrated lines for love and meaningful partnership. You may meet someone significant, feel a deepened attraction to a current partner, or simply find that people here appreciate and reflect your value back to you."
-  },
-  Mars:{
-    MC:"Mars drives your ambitions to the surface here — this is a powerful line for career momentum, taking bold professional risks, and being seen as someone who gets things done. Competition tends to sharpen you rather than drain you. Strong for entrepreneurship, athletics, or any field that rewards initiative.",
-    IC:"Mars at the root of the chart here can stir things up at home — this place may bring up old family tensions, a drive to renovate or rebuild, or a fierce protectiveness of your private space. It's a line that demands honesty about where you come from and what you're building.",
-    ASC:"You arrive differently here. Mars on the Ascendant charges your physical presence — people notice you, you feel more driven and direct, and life tends to move faster. This place wakes something up in you. Great for starting things, taking bold action, or physical pursuits — though conflict can come more easily too.",
-    DSC:"Relationships here carry more intensity — passion, friction, and chemistry all run hotter. Mars on the Descendant can attract bold, driven partners, but it can also bring power struggles. This is a place where relationships push you to grow through honest confrontation and genuine desire."
-  },
-  Jupiter:{
-    MC:"Jupiter expands everything it touches here, and on the Midheaven that means your career and public reputation. Opportunities tend to arrive more easily, doors open that stay closed elsewhere, and others perceive you as someone worth investing in. One of the most celebrated lines for professional growth and recognition.",
-    IC:"In this place, Jupiter expands your sense of home and belonging. You may find it easier to put down roots here, feel a deep sense of abundance in your private life, or experience a profound connection to the land and its people. Family life tends to flourish, and there's often a feeling of being held by something larger than yourself.",
-    ASC:"Jupiter on your Ascendant here is one of the most expansive lines there is — you feel more optimistic, more open, more like your best self. Others perceive you as generous and full of life. Travel, learning, and new possibilities tend to come easily. This place simply feels good.",
-    DSC:"Relationships expand in this place. You may meet people who feel larger than life, find yourself drawn into partnerships that open new worlds, or attract a partner who embodies abundance and optimism. This is one of the most celebrated lines for love and meaningful connection."
-  },
-  Saturn:{
-    MC:"Saturn on the Midheaven here asks something of you — this place tends to bring serious professional ambition, a desire to build something lasting, or a confrontation with authority and structure. Recognition comes slowly but it sticks. This isn't an easy line, but it's one of the most powerful for long-term career building.",
-    IC:"Saturn at the root of the chart here calls you to do serious inner work — confronting family patterns, building genuine emotional foundations, or sitting with parts of your history that need to be acknowledged. This place asks for depth and honesty. What you build here tends to last.",
-    ASC:"Saturn on your Ascendant here gives you a certain gravity — people perceive you as serious, reliable, and grounded. You may feel more self-disciplined and focused here, but also more aware of your limitations. This place tends to reward commitment and patience over spontaneity.",
-    DSC:"Relationships here tend to be serious and long-lasting — Saturn on the Descendant draws you toward partners who are dependable and mature, or brings a sobering quality to existing partnerships. This is a place where commitment is tested and, if it holds, becomes something truly solid."
-  },
-  Uranus:{
-    MC:"Uranus on the Midheaven here can completely reshape your sense of career and calling — expect the unexpected professionally, a sudden change of direction, or a pull toward unconventional work. This is a powerful line for innovation, disruption, and breaking free from a path that no longer fits.",
-    IC:"Uranus at the base of the chart here can feel unsettling at first — home life may be unpredictable, or you may find it hard to stay put. But for the right person, this line brings liberation from old family patterns and a radical sense of inner freedom. It shakes things loose.",
-    ASC:"You come across as electric here — original, unpredictable, and alive with ideas. Uranus on the Ascendant means you don't quite fit the expected mould in this place, and that can be exhilarating. People find you fascinating. This is a strong line for reinvention and living outside convention.",
-    DSC:"Relationships here are anything but predictable — Uranus on the Descendant attracts unconventional partners, open arrangements, or sudden and electric connections. This place challenges your assumptions about what love and partnership should look like. Freeing, if sometimes unstable."
-  },
-  Neptune:{
-    MC:"Neptune on the Midheaven here dissolves the edges of your public identity — your calling here tends to be spiritual, artistic, or service-oriented. You may feel drawn toward healing, music, film, or any work that requires surrender to something beyond the self. Inspiration flows, but so does confusion about direction.",
-    IC:"Neptune at the root of your chart here gives home a dreamy, almost otherworldly quality. This place can feel deeply healing and spiritually resonant — as if you've arrived somewhere your soul recognises. A beautiful line for retreat, creative solitude, and connecting to what's sacred in your private life.",
-    ASC:"You arrive softly here — Neptune on the Ascendant gives you a certain ethereal quality that others find both magnetic and mysterious. You may feel more open, more permeable, more attuned to the invisible currents of a place. Beautiful for spiritual practice, creativity, and compassion, though boundaries can thin.",
-    DSC:"Relationships here carry a spiritual or romantic depth that can feel transcendent — Neptune on the Descendant dissolves the usual distance between you and others, creating a sense of deep soul connection. But it can also blur what's real. Idealism in love runs high here; so does the capacity for genuine compassion."
-  },
-  Pluto:{
-    MC:"Pluto on the Midheaven here is one of the most transformative career lines there is — this place tends to bring a complete reinvention of your public identity, a confrontation with power, or a calling toward work that involves depth, shadow, or radical change. Not easy, but unforgettable.",
-    IC:"Pluto at the root of the chart here reaches into the deepest layers of who you are — old wounds, ancestral patterns, and buried truths tend to surface in this place. This is powerful territory for shadow work and genuine psychological transformation. What you heal here goes all the way down.",
-    ASC:"Your presence carries real intensity here — Pluto on the Ascendant means people feel your depth before you say a word. This place tends to bring profound personal transformation, a shedding of old identities, and an encounter with your own power. Not always comfortable, but deeply revelatory.",
-    DSC:"Relationships in this place tend to be transformative and intense — Pluto on the Descendant draws you toward partners who challenge you at the deepest level, or brings existing relationships into a crucible of change. Power dynamics, obsession, and profound soul-level bonding are all possible here."
-  }
-};
 var LINE_DESC={
   MC:'The Midheaven line crowns this planet overhead.',
   IC:'The IC line roots this planet at the base of the chart.',
@@ -1426,11 +1365,47 @@ function openCard(cityName,planet,ltype,_lat,_lng){
     +(distNote?'<div class="rc-rule"></div><div class="rc-prose" style="font-size:.82rem">'+distNote+'</div>':'')
     +'<div class="rc-rule"></div>'
     +'<div class="rc-slbl">In this place you feel</div><div class="rc-feeling">'+((FEELING[planet]||{})[focus]||'powerfully present')+'.</div>'
-    +'<div class="rc-slbl">What\'s activated</div><div class="rc-prose">'+((LINE_ACTIVATED[planet]&&LINE_ACTIVATED[planet][ltype])||LINE_DESC[ltype]||'')+'</div>'
+    +'<div class="rc-slbl">What\'s activated</div><div class="rc-prose" id="rcActivated">'+((LINE_ACTIVATED[planet]&&LINE_ACTIVATED[planet][ltype])||LINE_DESC[ltype]||'')+' '+((SIGN_MODIFIERS[planet]&&SIGN_MODIFIERS[planet][pd.sign])||'')+'</div>'
     +'<div class="rc-slbl">Your natal signature</div><div class="rc-prose">'+personText+'</div>'
     +'<div class="rc-irow"><div class="rc-ibox"><div class="rc-ilbl">Best for</div><div class="rc-itext">'+((BEST_FOR[planet]||{})[focus]||'')+'</div></div><div class="rc-ibox"><div class="rc-ilbl">Watch for</div><div class="rc-itext">'+((WATCH_FOR[planet]||{})[focus]||'')+'</div></div></div>';
   document.getElementById('readingCard').classList.add('open');
   document.getElementById('readingCard').scrollIntoView({behavior:'smooth',block:'nearest'});
+
+  // Fire AI personalised reading
+  var aspects=[];
+  if(chart.aspects){
+    chart.aspects.filter(function(a){return a.p1===planet||a.p2===planet;}).slice(0,2).forEach(function(a){
+      var other=a.p1===planet?a.p2:a.p1;
+      var od=chart.planets[other];
+      aspects.push({type:a.type,other:other,otherSign:od?od.sign:'',orb:a.orb});
+    });
+  }
+  var readingEl=document.getElementById('rcActivated');
+  if(readingEl){
+    readingEl.innerHTML='<span style="opacity:.5;font-style:italic">Reading your chart…</span>';
+    fetch('/api/reading',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        planet:planet,
+        sign:pd.sign,
+        degree:pd.deg+'°'+pad(pd.min)+"'",
+        angle:ltype,
+        location:cityName||'this location',
+        aspects:aspects,
+        focus:focus
+      })
+    })
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(data.reading&&readingEl&&document.getElementById('readingCard').classList.contains('open')){
+        readingEl.innerHTML=data.reading;
+      }
+    })
+    .catch(function(){
+      if(readingEl) readingEl.innerHTML=((LINE_ACTIVATED[planet]&&LINE_ACTIVATED[planet][ltype])||LINE_DESC[ltype]||'');
+    });
+  }
 }
 function closeCard(){document.getElementById('readingCard').classList.remove('open');}
 
