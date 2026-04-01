@@ -1,7 +1,8 @@
 // elsewhere — astrocartography
 // Pre-generated reading descriptions
-// 40 base descriptions (planet x angle) + 120 sign modifiers (planet x sign)
 
+
+// SIGN_MODIFIERS
 var SIGN_MODIFIERS={
   Sun:{
     Aries:"With the Sun in Aries, this visibility carries real fire — you're seen as bold, pioneering, and willing to go first. This place rewards your directness.",
@@ -144,6 +145,9 @@ var SIGN_MODIFIERS={
     Pisces:"With Pluto in Pisces, the deepest layers of the unconscious are stirred here — spiritual dissolution and regeneration at the soul level are both possible."
   }
 };
+
+
+// LINE_ACTIVATED
 var LINE_ACTIVATED={
   Sun:{
     MC:"In this place, the Sun crowns your public life — your sense of purpose and identity shines most visibly here. Career opportunities tend to find you, and you're more likely to be seen, recognised, and respected for who you truly are. This is one of the strongest lines for stepping into a leadership role or building a legacy.",
@@ -208,7 +212,7 @@ var LINE_ACTIVATED={
 };
 
 
-// Best for: 40 planet x angle descriptions
+// BEST_FOR
 var BEST_FOR={
   "Sun":{
     "MC":"Places where your identity and career can fully align \u2014 cities that reward leadership, visibility, and genuine authority. This line supports being recognised not just for what you do but for who you are. Strong for building a public reputation that actually reflects your values.",
@@ -272,7 +276,8 @@ var BEST_FOR={
   }
 };
 
-// Watch for: 40 planet x angle descriptions
+
+// WATCH_FOR
 var WATCH_FOR={
   "Sun":{
     "MC":"This line can make public approval feel like oxygen \u2014 watch for shaping your career around what looks impressive rather than what genuinely fulfils you. The Midheaven asks for authenticity; the Sun here can sometimes seduce you into performance over presence.",
