@@ -1372,41 +1372,6 @@ function openCard(cityName,planet,ltype,_lat,_lng){
   document.getElementById('readingCard').classList.add('open');
   document.getElementById('readingCard').scrollIntoView({behavior:'smooth',block:'nearest'});
 
-  // Fire AI personalised reading
-  var aspects=[];
-  if(chart.aspects){
-    chart.aspects.filter(function(a){return a.p1===planet||a.p2===planet;}).slice(0,2).forEach(function(a){
-      var other=a.p1===planet?a.p2:a.p1;
-      var od=chart.planets[other];
-      aspects.push({type:a.type,other:other,otherSign:od?od.sign:'',orb:a.orb});
-    });
-  }
-  var readingEl=document.getElementById('rcActivated');
-  if(readingEl){
-    readingEl.innerHTML='<span style="opacity:.5;font-style:italic">Reading your chart…</span>';
-    fetch('/api/reading',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        planet:planet,
-        sign:pd.sign,
-        degree:pd.deg+'°'+pad(pd.min)+"'",
-        angle:ltype,
-        location:cityName||'this location',
-        aspects:aspects,
-        focus:focus
-      })
-    })
-    .then(function(r){return r.json();})
-    .then(function(data){
-      if(data.reading&&readingEl&&document.getElementById('readingCard').classList.contains('open')){
-        readingEl.innerHTML=data.reading;
-      }
-    })
-    .catch(function(){
-      if(readingEl) readingEl.innerHTML=((LINE_ACTIVATED[planet]&&LINE_ACTIVATED[planet][ltype])||LINE_DESC[ltype]||'');
-    });
-  }
 }
 function closeCard(){document.getElementById('readingCard').classList.remove('open');}
 
