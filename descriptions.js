@@ -206,3 +206,132 @@ var LINE_ACTIVATED={
     DSC:"Relationships in this place tend to be transformative and intense — Pluto on the Descendant draws you toward partners who challenge you at the deepest level, or brings existing relationships into a crucible of change. Power dynamics, obsession, and profound soul-level bonding are all possible here."
   }
 };
+
+
+// Best for: 40 planet x angle descriptions
+var BEST_FOR={
+  'Sun':{
+    'MC':'Places where your identity and career can fully align — cities that reward leadership, visibility, and genuine authority. This line supports being recognised not just for what you do but for who you are. Strong for building a public reputation that actually reflects your values.',
+    'IC':'Putting down deep roots in a place that feels ancestrally right — somewhere your private self can fully exhale. This line supports healing your relationship with your origins, creating a home that genuinely reflects who you are, and doing the inner work that makes everything else possible.',
+    'ASC':'Anywhere you want to arrive as yourself — fully seen, fully present, fully alive. This line puts your core identity right on the surface, making it ideal for new beginnings, bold self-expression, and environments where your confidence can set the tone.',
+    'DSC':'Significant one-on-one relationships — romantic, professional, or creative — where both people show up as equals. This line draws people toward you who can genuinely see and reflect your light. Strong for partnerships built on mutual recognition.',
+  },
+  'Moon':{
+    'MC':'Careers that involve genuine human connection — counselling, teaching, caretaking, the arts, or any public role where emotional intelligence is the real skill. This line supports being known for your empathy and depth, not just your output.',
+    'IC':'The deepest kind of homecoming — a place where your emotional body finally relaxes. This line is ideal for healing, retreat, family reconnection, and building a private life that genuinely nourishes you. Many people feel more themselves here than anywhere else.',
+    'ASC':'Environments where emotional openness is an asset — creative communities, healing spaces, intimate gatherings. This line makes you deeply approachable and draws people who want real connection rather than surface engagement.',
+    'DSC':'Emotionally rich partnerships where both people feel genuinely held. This line draws nurturing, intuitive people toward you and supports relationships built on real care. Strong for deepening existing bonds or finding someone who truly gets you.',
+  },
+  'Mercury':{
+    'MC':'Cities with strong intellectual, media, or communications cultures — places where ideas and words carry real weight. This line supports writing, speaking, teaching, journalism, or any career that requires you to be heard. Your professional voice finds its fullest expression here.',
+    'IC':'Deep study, journaling, processing old stories, and conversations with family that actually go somewhere. This line supports the kind of reflective thinking that changes how you understand your own history. A quiet line — powerful for inner work.',
+    'ASC':'Fast-moving, socially rich environments where curiosity and quick thinking are rewarded. This line makes you more articulate, more socially alive, and more able to connect across different worlds. Great for networking, learning, or anywhere you need to make a strong first impression.',
+    'DSC':'Intellectual partnerships and collaborations where ideas are genuinely exchanged. This line draws articulate, mentally stimulating people toward you — and supports contracts, negotiations, and any professional relationship built on clear communication.',
+  },
+  'Venus':{
+    'MC':'Places where your public life and creative identity can fully merge — cities with strong arts, fashion, design, or beauty industries. This line supports being recognised for your taste and warmth, not just your output. Strong for any career that requires charm, aesthetics, or genuine people skills.',
+    'IC':'Creating a home that feels genuinely beautiful and nourishing — this line supports putting down roots somewhere that feeds your soul privately. Healing family relationships, finding deep domestic contentment, and building a sanctuary that truly reflects your values.',
+    'ASC':'Anywhere you want to be seen, loved, and received warmly. Romance, creative confidence, and social magnetism all flow naturally here. Great for new beginnings where first impressions matter, or anywhere you want to show up as your most magnetic self.',
+    'DSC':'Significant romantic partnerships, creative collaborations, and business relationships that feel genuinely harmonious. The Descendant is the relationship axis — Venus here draws meaningful people toward you and supports connections built on genuine mutual appreciation.',
+  },
+  'Mars':{
+    'MC':'Cities that reward ambition, initiative, and the willingness to compete — entrepreneurial hubs, athletic environments, or any field where drive is the differentiator. This line supports bold career moves, leadership, and being known as someone who makes things happen.',
+    'IC':'Channelling your drive into building something private and lasting — renovating a home, establishing strong family foundations, or doing the physical and emotional work of creating real security. This line rewards effort directed inward.',
+    'ASC':'Environments that reward directness, physical presence, and the willingness to go first. Sports, startups, activism, physical training — anywhere that energy and initiative are the currency. This line makes you feel fully alive and ready to act.',
+    'DSC':'Relationships that carry genuine passion and honest challenge — partners who push you to be better rather than just comfortable. This line supports dynamics where both people show up fully and aren\'t afraid of productive conflict.',
+  },
+  'Jupiter':{
+    'MC':'Cities where opportunity flows freely and your reputation can grow without friction — places with strong networks, optimistic cultures, and room for expansion. This line supports career leaps, public recognition, and being in the right place at the right time.',
+    'IC':'Building a home life that feels genuinely abundant — not just materially but spiritually and emotionally. This line supports finding a place that feels bigger than you expected, where family life flourishes and private joy comes easily.',
+    'ASC':'Anywhere you want to feel like your best self — open, generous, full of possibility. This line makes life feel easier and more expansive. Great for travel, study, spiritual exploration, or simply being in a place that reminds you how much is possible.',
+    'DSC':'Partnerships that genuinely expand your world — romantic connections that introduce you to new philosophies, business partners who open unexpected doors, or collaborators who make you feel like anything is possible. This line draws big-hearted, generous people toward you.',
+  },
+  'Saturn':{
+    'MC':'Cities that reward long-term thinking, discipline, and the willingness to earn your place — established institutions, traditional industries, or any environment where credibility is built over time. This line supports career legacies that actually last.',
+    'IC':'Doing the serious inner work of building real emotional foundations — confronting family patterns, creating genuine security, and becoming someone you can rely on. This line rewards honesty about where you come from and what you\'re actually building.',
+    'ASC':'Environments that value gravitas, reliability, and substance over flash — law, academia, architecture, or any field where being taken seriously matters. This line gives you a quiet authority that earns genuine respect over time.',
+    'DSC':'Committed, long-term relationships built on mutual respect and genuine reliability. This line draws mature, dependable people toward you and supports partnerships that are tested by time and emerge stronger for it.',
+  },
+  'Uranus':{
+    'MC':'Cities on the cutting edge — tech hubs, creative capitals, activist communities, or anywhere that rewards original thinking and the willingness to disrupt. This line supports reinventing your career, breaking from convention, and being known for doing something genuinely new.',
+    'IC':'Breaking free from inherited family patterns and creating a home life that looks nothing like what you grew up with — and feels completely right. This line supports radical private reinvention and the liberation that comes from finally living on your own terms.',
+    'ASC':'Environments that celebrate originality, eccentricity, and the courage to be different. This line makes you electric and unforgettable — ideal for creative communities, tech cultures, or anywhere that rewards thinking outside every available box.',
+    'DSC':'Unconventional relationships and partnerships that break the expected mould — open arrangements, unexpected connections, or collaborators who challenge every assumption you have about what relationship can look like.',
+  },
+  'Neptune':{
+    'MC':'Cities with strong creative, spiritual, or healing cultures — places where art, music, film, or service to others is taken seriously as a calling. This line supports careers built on imagination, compassion, and the willingness to work with the invisible.',
+    'IC':'Retreat, creative solitude, and deep spiritual nourishment in private. This line makes home feel sacred — a place for meditation, creative practice, or simply the kind of quiet that allows you to hear yourself think. Profound for healing.',
+    'ASC':'Environments that value sensitivity, creativity, and spiritual depth — artistic communities, healing spaces, or anywhere that welcomes the full range of human feeling. This line makes you deeply magnetic in a subtle, ethereal way.',
+    'DSC':'Soul-level partnerships built on genuine spiritual or creative resonance — connections that feel fated, transcendent, or simply unlike anything you\'ve experienced before. This line draws deeply sensitive and imaginative people toward you.',
+  },
+  'Pluto':{
+    'MC':'Cities where power, transformation, and depth are taken seriously — finance, psychology, politics, research, or any field that deals with what\'s beneath the surface. This line supports careers that involve real stakes and the courage to go where others won\'t.',
+    'IC':'The deepest possible inner work — confronting ancestral wounds, buried family truths, and the psychological foundations that everything else rests on. This line is demanding but offers the kind of transformation that reaches all the way down.',
+    'ASC':'Environments that welcome intensity, depth, and the willingness to be radically honest. This line makes you unforgettable — ideal for situations where you need to show your full power or effect genuine change in the people around you.',
+    'DSC':'Transformative relationships that change you at the core — connections that strip away pretence and demand total honesty. This line draws intense, perceptive people toward you and supports partnerships that are genuinely alchemical.',
+  },
+};
+
+// Watch for: 40 planet x angle descriptions
+var WATCH_FOR={
+  'Sun':{
+    'MC':'This line can make public approval feel like oxygen — watch for shaping your career around what looks impressive rather than what genuinely fulfils you. The Midheaven asks for authenticity; the Sun here can sometimes seduce you into performance over presence.',
+    'IC':'The IC is the most private point in the chart — the Sun here can make it tempting to stay inward, avoiding the visibility your full self requires. Watch for using home and family as a retreat from the world rather than a foundation for engaging with it.',
+    'ASC':'The Sun on the Ascendant can make you overly self-referential — the most vibrant version of this line is generous, not consuming. Watch for needing to be the centre, or for letting ego get in the way of genuine connection.',
+    'DSC':'The Descendant represents what we project onto others — the Sun here can mean you see your own light in partners rather than developing it fully in yourself. Watch for relationships that feel empowering but subtly keep you small.',
+  },
+  'Moon':{
+    'MC':'The Moon on the Midheaven brings your emotional world into public — which can leave you feeling overexposed or reactive to criticism in ways that feel disproportionate. Watch for letting your mood dictate your professional presence, or needing external validation to feel competent.',
+    'IC':'This line can make the private world feel so nourishing that leaving it becomes genuinely hard. Watch for emotional over-attachment to home or family, or for using the comfort of this place to avoid the growth that requires friction.',
+    'ASC':'The Moon on the Ascendant can make you emotionally porous — absorbing the moods of everyone around you. Watch for losing your own emotional ground in the presence of others, or for being so open that you attract people who consume rather than reciprocate.',
+    'DSC':'Emotional dependency can run high here — watch for attracting partners you need to mother or be mothered by, or for relationships where emotional need is mistaken for depth. The healthiest version of this line is mutual care, not merged identity.',
+  },
+  'Mercury':{
+    'MC':'Mercury on the Midheaven can make you overly focused on how your ideas are received — watch for editing yourself into acceptability, or for prioritising cleverness over genuine insight. The best work here comes from thinking freely, not strategically.',
+    'IC':'This line can send the mind into anxious loops — too much introspection without action. Watch for overthinking old stories, getting lost in analysis, or having conversations with family that go in circles without resolution.',
+    'ASC':'Mercury on the Ascendant can make you scattered — too many ideas, too many directions, not enough follow-through. Watch for using wit and charm to keep people at a surface level, or for being so mentally busy that you miss what\'s actually happening in the room.',
+    'DSC':'Watch for attracting partners who stimulate your mind but don\'t meet you emotionally — or for relationships that are all conversation and no depth. Mercury on the Descendant can also bring contractual complications; read everything carefully here.',
+  },
+  'Venus':{
+    'MC':'This line can make public approval feel like a need rather than a bonus — watch for shaping your career around what looks good rather than what genuinely fulfils you. The Midheaven asks for authenticity; Venus here can sometimes seduce you into performance.',
+    'IC':'Venus on the IC can make it tempting to retreat entirely into comfort and beauty, avoiding the friction that growth requires. Watch for idealising home or family in ways that close you off from the world, or for spending on aesthetics to fill an emotional gap.',
+    'ASC':'Venus on the Ascendant can make approval feel essential to your sense of self. Watch for people-pleasing, or for attracting admirers without the discernment to know who actually deserves your time and energy. Charm is a gift — use it consciously.',
+    'DSC':'The Descendant represents what we project onto others — Venus here can mean you see beauty and harmony in partners that isn\'t fully there yet. Watch for staying in relationships past their natural end for the sake of keeping the peace.',
+  },
+  'Mars':{
+    'MC':'Mars on the Midheaven can make you come across as aggressive or impatient in professional settings — watch for burning bridges in the pursuit of speed, or for letting competitive energy turn into unnecessary conflict with colleagues or authority figures.',
+    'IC':'Mars at the root of the chart can stir up old family anger or make home feel like a battlefield. Watch for bringing work stress home, for power struggles in domestic life, or for channelling drive into restlessness rather than genuine building.',
+    'ASC':'Mars on the Ascendant can make you come on too strong — watch for leading with aggression rather than confidence, or for attracting conflict simply because your energy is so charged. The most effective version of this line is directed, not reactive.',
+    'DSC':'Relationships here can tip into power struggles — watch for attracting partners who fight you rather than stand beside you, or for mistaking intensity for chemistry. Passion is present on this line; make sure it\'s mutual and chosen, not compulsive.',
+  },
+  'Jupiter':{
+    'MC':'Jupiter on the Midheaven can encourage overreach — promising more than you can deliver, expanding too fast, or mistaking opportunity for inevitability. Watch for bypassing the discipline that real recognition requires, or for letting optimism substitute for preparation.',
+    'IC':'Jupiter on the IC can make home life feel so abundant that genuine contentment becomes complacency. Watch for excess in private life — overindulgence, over-spending on the home, or using comfort to avoid the challenges that would actually grow you.',
+    'ASC':'Jupiter on the Ascendant can tip into excess — too much of everything, too many directions, too much promise without follow-through. Watch for overconfidence, or for attracting people who want to ride your expansive energy rather than contribute their own.',
+    'DSC':'Jupiter on the Descendant can lead to idealising partners or expanding into relationships that aren\'t as golden as they appear. Watch for over-giving in partnerships, or for attracting people who take more than they offer under the cover of big personalities.',
+  },
+  'Saturn':{
+    'MC':'Saturn on the Midheaven can make the climb feel relentlessly hard — watch for letting perfectionism or fear of failure keep you from acting at all. This line rewards consistent effort, not waiting until everything is perfect before you begin.',
+    'IC':'Saturn on the IC can bring up deep feelings of not being enough, or of home never feeling quite safe enough. Watch for being overly critical of yourself in private, or for replicating cold or distant family dynamics rather than consciously building something warmer.',
+    'ASC':'Saturn on the Ascendant can make you come across as guarded or overly serious — watch for keeping people at a distance through formality, or for being so focused on being taken seriously that you forget to let people actually know you.',
+    'DSC':'Saturn on the Descendant can attract relationships that feel more like duty than desire, or partners who are withholding rather than warm. Watch for staying in commitments out of obligation, or for choosing reliability over genuine connection.',
+  },
+  'Uranus':{
+    'MC':'Uranus on the Midheaven can make stability feel impossible — careers here may start and stop suddenly, or professional reinventions can happen before the last one has had time to land. Watch for disrupting things before they\'ve had a chance to grow.',
+    'IC':'Uranus on the IC can make it genuinely hard to settle — home may change frequently, relationships with family may be unpredictable, or the need for freedom can make putting down roots feel like a trap. Watch for mistaking restlessness for liberation.',
+    'ASC':'Uranus on the Ascendant can make you come across as erratic or hard to pin down — watch for being so committed to originality that you alienate people who might genuinely support you, or for using unconventionality as a shield against intimacy.',
+    'DSC':'Uranus on the Descendant can attract unstable or unavailable partners, or create a pattern of relationships that are electric at the start and chaotic shortly after. Watch for mistaking unpredictability for excitement, or freedom for avoidance of real commitment.',
+  },
+  'Neptune':{
+    'MC':'Neptune on the Midheaven can make your career direction genuinely hard to pin down — watch for drifting between callings without committing to any of them, or for building a public image that\'s more about impression than substance. Clarity of purpose requires real effort here.',
+    'IC':'Neptune on the IC can blur the line between sanctuary and escapism — watch for using home as a place to disappear rather than restore, or for idealising family members in ways that prevent honest relationship. This line asks for gentle but clear-eyed honesty in private.',
+    'ASC':'Neptune on the Ascendant can make your boundaries genuinely porous — watch for absorbing other people\'s energy to the point of losing your own, or for being seen as something you\'re not because you unconsciously mirror what others want to see.',
+    'DSC':'Neptune on the Descendant is one of the most romantically idealising placements — watch for falling for who someone could be rather than who they are, or for attracting people who are unavailable, addicted, or in need of saving. Compassion is beautiful here; discernment is essential.',
+  },
+  'Pluto':{
+    'MC':'Pluto on the Midheaven can attract power struggles with authority figures, or bring professional crises that feel like destruction but are actually clearing the ground for something real. Watch for becoming obsessive about control in your career, or for letting ambition override integrity.',
+    'IC':'Pluto on the IC stirs what\'s deepest and most buried — watch for this process becoming overwhelming without adequate support. Shadow work is powerful here, but it\'s not something to do alone. Make sure you have people or practices that can hold you through what comes up.',
+    'ASC':'Pluto on the Ascendant can make your intensity feel threatening to people who aren\'t ready for it — watch for unconsciously using your power to control rather than connect, or for attracting people who are drawn to your depth but can\'t actually meet it.',
+    'DSC':'Pluto on the Descendant can attract obsessive or controlling relationship dynamics — watch for intensity that crosses into possession, or for staying in relationships past the point of health because the bond feels impossible to break. Transformation is available here; so is entanglement.',
+  },
+};
