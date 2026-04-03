@@ -888,7 +888,7 @@ function _renderOverlay(){
       for(var i=0;i<pts.length;i++){
         var pp=_ll2px(pts[i][0],pts[i][1]);
         var seg=segments[segments.length-1];
-        if(seg.length>0&&Math.abs(pp.x-seg[seg.length-1].x)>W*0.4){
+        if(seg.length>0&&Math.abs(pp.x-seg[seg.length-1].x)>W*0.45){
           segments.push([]);seg=segments[segments.length-1];
         }
         seg.push(pp);
@@ -911,13 +911,15 @@ function _renderOverlay(){
           if(!botPt||seg[i].y>botPt.y)botPt=seg[i];
         }
 
-        // Top label — at the topmost point of this segment
-        if(topPt&&topPt.y<H*0.55){
-          topLabels.push({x:topPt.x,y:Math.max(fs+4,topPt.y-2),text:fullLabel,col:col});
+        // Top label — pin to top edge if line exits top of map
+        if(topPt){
+          var topY=topPt.y<fs+8?fs+6:topPt.y-2;
+          if(topY<H*0.6) topLabels.push({x:topPt.x,y:topY,text:fullLabel,col:col});
         }
-        // Bottom label — at the bottommost point
-        if(botPt&&botPt.y>H*0.45){
-          botLabels.push({x:botPt.x,y:Math.min(H-fs-4,botPt.y+2),text:fullLabel,col:col});
+        // Bottom label — pin to bottom edge if line exits bottom of map
+        if(botPt){
+          var botY=botPt.y>H-fs-8?H-fs-6:botPt.y+2;
+          if(botY>H*0.4) botLabels.push({x:botPt.x,y:botY,text:fullLabel,col:col});
         }
 
         // Left edge label
