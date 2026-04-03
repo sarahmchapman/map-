@@ -1047,10 +1047,10 @@ function _setupMapEvents(){
   cv.addEventListener('touchstart',function(e){
     e.preventDefault();_map.hasDragged=false;
     if(e.touches.length===1){
-      _map.dragging=true;
+      _map.dragging=true;_map.pinching=false;
       _map.lastX=e.touches[0].clientX;_map.lastY=e.touches[0].clientY;
     }else if(e.touches.length===2){
-      _map.dragging=false;
+      _map.dragging=false;_map.pinching=true;_map.hasDragged=true;
       _map.pinchDist=Math.hypot(e.touches[1].clientX-e.touches[0].clientX,e.touches[1].clientY-e.touches[0].clientY);
       _map.pinchZoom=_map.zoomF;
     }
@@ -1085,6 +1085,13 @@ function _setupMapEvents(){
   },{passive:false});
   cv.addEventListener('touchend',function(e){
     _map.dragging=false;
+    // Don't open card after pinch zoom — wait 400ms after last pinch
+    if(_map.pinching){
+      _map.pinching=false;_map.hasDragged=true;
+      clearTimeout(_map.pinchTimer);
+      _map.pinchTimer=setTimeout(function(){_map.hasDragged=false;},400);
+      return;
+    }
     if(!_map.hasDragged&&e.changedTouches.length===1&&acgData&&activeChart){
       var r=cv.getBoundingClientRect();
       var ll=_px2ll(e.changedTouches[0].clientX-r.left,e.changedTouches[0].clientY-r.top);
