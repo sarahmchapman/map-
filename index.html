@@ -687,6 +687,42 @@ function computePlanets(jd,lat,lng){
   var mc=n360(Math.atan2(Math.tan(rr),Math.cos(er))*180/Math.PI);
   if(Math.cos(rr)<0)mc=n360(mc+180);
   var asc=n360(Math.atan2(Math.cos(rr),-(Math.sin(rr)*Math.cos(er)+Math.tan(lr)*Math.sin(er)))*180/Math.PI);
+  // Chiron — Keplerian approximation (~6° accuracy)
+  (function(){
+    var T=(jd-2451545)/36525;
+    var a=13.6605,ec=0.3316+0.0002*T;
+    var ii=R(6.9316-0.003*T);
+    var OO=R(n360(209.3724+0.7*T));
+    var wb=339.5971+1.5*T;
+    var Ld=n360(209.0+(360/50.45)*(jd-2451545)/365.25);
+    var Mr=R(n360(Ld-wb));
+    var Ev=Mr,dv;
+    for(var k=0;k<50;k++){dv=(Mr-Ev+ec*Math.sin(Ev))/(1-ec*Math.cos(Ev));Ev+=dv;if(Math.abs(dv)<1e-10)break;}
+    var nu2=2*Math.atan2(Math.sqrt(1+ec)*Math.sin(Ev/2),Math.sqrt(1-ec)*Math.cos(Ev/2));
+    var rr=a*(1-ec*Math.cos(Ev));
+    var wr=R(wb-209.3724);
+    var uu=nu2+wr;
+    var cx=rr*(Math.cos(OO)*Math.cos(uu)-Math.sin(OO)*Math.sin(uu)*Math.cos(ii));
+    var cy=rr*(Math.sin(OO)*Math.cos(uu)+Math.cos(OO)*Math.sin(uu)*Math.cos(ii));
+    var cz=rr*Math.sin(uu)*Math.sin(ii);
+    var ELd=n360(100.466457+36000.7698278*T);
+    var EMr2=R(n360(357.529+35999.050*T));
+    var Ek=EMr2;for(var k=0;k<10;k++){var dk=(EMr2-Ek+0.016709*Math.sin(Ek))/(1-0.016709*Math.cos(Ek));Ek+=dk;if(Math.abs(dk)<1e-10)break;}
+    var Er=1.000001*(1-0.016709*Math.cos(Ek));
+    var ELt=n360(ELd+(1.9146-0.004817*T)*Math.sin(EMr2)+0.020*Math.sin(2*EMr2));
+    var Ex=Er*Math.cos(R(ELt)),Ey=Er*Math.sin(R(ELt));
+    var dx2=cx-Ex,dy2=cy-Ey,dz2=cz;
+    var clon=n360(Math.atan2(dy2,dx2)*180/Math.PI);
+    var eb=Math.atan2(dz2,Math.sqrt(dx2*dx2+dy2*dy2));
+    var er=R(OBL);
+    var cl=R(clon);
+    var cra=n360(Math.atan2(Math.sin(cl)*Math.cos(er)-Math.tan(eb)*Math.sin(er),Math.cos(cl))*180/Math.PI);
+    var cdec=Math.asin(Math.sin(eb)*Math.cos(er)+Math.cos(eb)*Math.sin(er)*Math.sin(cl))*180/Math.PI;
+    // Store Chiron RA/Dec for line drawing via acgData sync
+    p.Chiron=parseLon(clon);
+    p._chironRA=cra;
+    p._chironDec=cdec;
+  })();
   p.Midheaven=parseLon(mc);
   p.IC=parseLon(n360(mc+180));
   p.Ascendant=parseLon(asc);
@@ -1230,7 +1266,7 @@ function _buildChart(day,month,year,hour,min,name,tz){
   ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode','SNode'].forEach(function(p){toggleState[p]=true;});
   ltypeState={MC:true,IC:true,ASC:true,DSC:true};
   selectedFocus='Love';
-  activeChart={name:name,birthDate:day+' '+MONTH_NAMES[month-1]+' '+year,birthTime:pad(hour)+':'+pad(min)+' (UTC'+(tz>=0?'+':'')+tz+')',birthPlace:selectedGeo.display,geo:selectedGeo,planets:planets,aspects:aspects};
+  activeChart={name:name,_jd:jd,birthDate:day+' '+MONTH_NAMES[month-1]+' '+year,birthTime:pad(hour)+':'+pad(min)+' (UTC'+(tz>=0?'+':'')+tz+')',birthPlace:selectedGeo.display,geo:selectedGeo,planets:planets,aspects:aspects};
   document.getElementById('formScreen').style.display='none';
   document.getElementById('mapScreen').style.display='block';
   window.scrollTo(0,0);
@@ -1242,12 +1278,29 @@ function _buildChart(day,month,year,hour,min,name,tz){
     .then(function(r){return r.json();})
     .then(function(data){
       acgData=data.lines;
-      // Derive natal positions for Chiron and Nodes from API data
+      // Build Chiron lines client-side since API can't compute them
+      if(activeChart&&activeChart.planets._chironRA!=null){
+        var cRA=activeChart.planets._chironRA;
+        var cDec=activeChart.planets._chironDec;
+        var G=n360(280.46061837+360.98564736629*(activeChart._jd-2451545));
+        var mcLon=n180(cRA-G);
+        var icLon=n180(mcLon+180);
+        var mc=[],ic=[],asc=[],dsc=[];
+        for(var lt=-89;lt<=89;lt++){mc.push([lt,mcLon]);ic.push([lt,icLon]);}
+        for(var lt=-89;lt<=89;lt++){
+          var ch=-Math.tan(R(lt))*Math.tan(R(cDec));
+          if(Math.abs(ch)>1)continue;
+          var H=Math.acos(Math.max(-1,Math.min(1,ch)))*180/Math.PI;
+          asc.push([lt,n180(cRA-H-G)]);
+          dsc.push([lt,n180(cRA+H-G)]);
+        }
+        acgData.Chiron={MC:mc,IC:ic,ASC:asc,DSC:dsc,mcLon:mcLon,ra:cRA,dec:cDec};
+      }
+      // Derive NNode/SNode natal positions from API data
       if(activeChart&&acgData){
-        ['Chiron','NNode','SNode'].forEach(function(p){
+        ['NNode','SNode'].forEach(function(p){
           if(acgData[p]&&acgData[p].ra!=null){
-            var ra=acgData[p].ra, dec=acgData[p].dec;
-            // Convert RA back to ecliptic longitude approximation
+            var ra=acgData[p].ra,dec=acgData[p].dec;
             var e=23.4365*Math.PI/180;
             var lon=n360(Math.atan2(Math.sin(ra*Math.PI/180)*Math.cos(e)+Math.tan(dec*Math.PI/180)*Math.sin(e),Math.cos(ra*Math.PI/180))*180/Math.PI);
             activeChart.planets[p]=parseLon(lon);
