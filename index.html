@@ -572,8 +572,8 @@ function _localSearch(q){
 // EPHEMERIS — Meeus algorithms
 // ═══════════════════════════════════════════════════════════
 var SIGNS=['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
-var PCOL={Sun:'#c9973f',Moon:'#5a7aa8',Mercury:'#4a8a6a',Venus:'#c0607a',Mars:'#9b3535',Jupiter:'#7a5a30',Saturn:'#6a6055',Uranus:'#3a7a7a',Neptune:'#4a4a9a',Pluto:'#7a4a6a'};
-var PSYM={Sun:'☉',Moon:'☽',Mercury:'☿',Venus:'♀',Mars:'♂',Jupiter:'♃',Saturn:'♄',Uranus:'♅',Neptune:'♆',Pluto:'♇'};
+var PCOL={Sun:'#c9973f',Moon:'#5a7aa8',Mercury:'#4a8a6a',Venus:'#c0607a',Mars:'#9b3535',Jupiter:'#7a5a30',Saturn:'#6a6055',Uranus:'#3a7a7a',Neptune:'#4a4a9a',Pluto:'#7a4a6a',Chiron:'#9b2335',NNode:'#2c6e49',SNode:'#5a9e7a'};
+var PSYM={Sun:'☉',Moon:'☽',Mercury:'☿',Venus:'♀',Mars:'♂',Jupiter:'♃',Saturn:'♄',Uranus:'♅',Neptune:'♆',Pluto:'♇',Chiron:'⚷',NNode:'☊',SNode:'☋'};
 var FOCUS_PLANETS={Love:['Venus','Moon','Neptune','Jupiter'],Career:['Saturn','Sun','Mars','Jupiter'],Healing:['Moon','Neptune','Venus','Pluto'],Self:['Sun','Mars','Mercury','Uranus']};
 var OBL=23.4365;
 
@@ -839,7 +839,7 @@ function _renderOverlay(){
   if(!m.octx||!acgData||!activeChart){if(m.octx)m.octx.clearRect(0,0,m.W,m.H);return;}
   var ctx=m.octx,W=m.W,H=m.H;
   ctx.clearRect(0,0,W,H);
-  var PALL=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto'];
+  var PALL=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode','SNode'];
   var lw=Math.max(1.2,Math.min(2.5,m.zoomF*0.45));
   var fs=Math.round(Math.max(9,Math.min(13,m.zoomF*2.2)));
   var MARGIN=22; // left/right edge margin for labels
@@ -1112,7 +1112,7 @@ function _setupMapEvents(){
 
 function _handleMapClick(lat,lng){
   if(!acgData||!activeChart)return;
-  var PALL=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto'];
+  var PALL=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode','SNode'];
   var bestP=null,bestLT='MC',bestD=Infinity;
   PALL.forEach(function(p){
     if(!toggleState[p]||!acgData[p])return;
@@ -1277,7 +1277,7 @@ function renderChart(){
 
 function buildToggleBar(){
   var tb=document.getElementById('togBtns');tb.innerHTML='';
-  var allP=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto'];
+  var allP=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode','SNode'];
   allP.forEach(function(p){
     if(!toggleState.hasOwnProperty(p))toggleState[p]=true;
     var col=PCOL[p];
@@ -1291,7 +1291,7 @@ function buildToggleBar(){
 }
 function buildLegend(){
   var leg=document.getElementById('mapLegend');leg.innerHTML='';
-  var allP=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto'];
+  var allP=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode','SNode'];
   allP.forEach(function(p){
     if(!toggleState[p])return;
     leg.innerHTML+='<span class="leg-item"><span class="leg-dot" style="background:'+PCOL[p]+'"></span><span style="font-size:.68rem;color:var(--ink-2)">'+PSYM[p]+' '+p+'</span></span>';
@@ -1304,7 +1304,7 @@ function setFocusFilter(focus,btn){
   selectedFocus=(focus==='All'?'Love':focus);
   ['All','Love','Career','Healing','Self'].forEach(function(f){var b=document.getElementById('ff-'+f);if(b)b.classList.toggle('on',f===focus);});
   var show=focus==='All'?null:(FOCUS_PLANETS[focus]||null);
-  var allP=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto'];
+  var allP=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode','SNode'];
   allP.forEach(function(p){
     toggleState[p]=show?show.indexOf(p)>=0:true;
     var b=document.getElementById('togBtn-'+p);if(b)b.classList.toggle('off',!toggleState[p]);
