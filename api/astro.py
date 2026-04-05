@@ -44,14 +44,17 @@ def build_acg_swe(jd):
     # SEFLG_MOSEPH=4, SEFLG_SPEED=256, SEFLG_EQUATORIAL=2048
     IFLAG = 4 | 256 | 2048
     lines={}
+    errors={}
     for name,pid in PLANETS.items():
         try:
             r,_=swe.calc_ut(jd,pid,IFLAG)
-            ra=r[0]   # right ascension in degrees
-            dec=r[1]  # declination in degrees
-        except:
-            continue
-        lines[name]=make_lines(ra,dec,G)
+            ra=r[0]
+            dec=r[1]
+            lines[name]=make_lines(ra,dec,G)
+        except Exception as ex:
+            errors[name]=str(ex)
+    if errors:
+        lines['_errors']=errors
         # South Node = opposite of North Node
     if 'NNode' in lines:
         nn = lines['NNode']
