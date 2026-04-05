@@ -39,7 +39,7 @@ def build_acg_swe(jd):
     PLANETS={'Sun':swe.SUN,'Moon':swe.MOON,'Mercury':swe.MERCURY,
              'Venus':swe.VENUS,'Mars':swe.MARS,'Jupiter':swe.JUPITER,
              'Saturn':swe.SATURN,'Uranus':swe.URANUS,'Neptune':swe.NEPTUNE,'Pluto':swe.PLUTO,
-             'Chiron':swe.CHIRON,'NNode':swe.TRUE_NODE}
+             'Chiron':15,'NNode':11}
     # Use Moshier ephemeris (built-in, no data files needed) + equatorial coords
     # SEFLG_MOSEPH=4, SEFLG_SPEED=256, SEFLG_EQUATORIAL=2048
     IFLAG = 4 | 256 | 2048
