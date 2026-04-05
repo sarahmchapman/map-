@@ -1227,7 +1227,7 @@ function _buildChart(day,month,year,hour,min,name,tz){
   var jd=jdFromDate(utY,utMo,utD,utH,min);
   var planets=computePlanets(jd,selectedGeo.lat,selectedGeo.lng);
   var aspects=computeAspects(planets);
-  ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto'].forEach(function(p){toggleState[p]=true;});
+  ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode','SNode'].forEach(function(p){toggleState[p]=true;});
   ltypeState={MC:true,IC:true,ASC:true,DSC:true};
   selectedFocus='Love';
   activeChart={name:name,birthDate:day+' '+MONTH_NAMES[month-1]+' '+year,birthTime:pad(hour)+':'+pad(min)+' (UTC'+(tz>=0?'+':'')+tz+')',birthPlace:selectedGeo.display,geo:selectedGeo,planets:planets,aspects:aspects};
@@ -1242,6 +1242,18 @@ function _buildChart(day,month,year,hour,min,name,tz){
     .then(function(r){return r.json();})
     .then(function(data){
       acgData=data.lines;
+      // Derive natal positions for Chiron and Nodes from API data
+      if(activeChart&&acgData){
+        ['Chiron','NNode','SNode'].forEach(function(p){
+          if(acgData[p]&&acgData[p].ra!=null){
+            var ra=acgData[p].ra, dec=acgData[p].dec;
+            // Convert RA back to ecliptic longitude approximation
+            var e=23.4365*Math.PI/180;
+            var lon=n360(Math.atan2(Math.sin(ra*Math.PI/180)*Math.cos(e)+Math.tan(dec*Math.PI/180)*Math.sin(e),Math.cos(ra*Math.PI/180))*180/Math.PI);
+            activeChart.planets[p]=parseLon(lon);
+          }
+        });
+      }
       drawLines();buildLegend();
     })
     .catch(function(){
@@ -1250,7 +1262,7 @@ function _buildChart(day,month,year,hour,min,name,tz){
     });
 }
 
-var PDESC={Sun:'identity, vitality, core self',Moon:'emotions, instincts, inner world',Mercury:'mind, communication, thinking',Venus:'love, beauty, values',Mars:'drive, action, desire',Jupiter:'growth, luck, expansion',Saturn:'discipline, structure, karma',Uranus:'change, rebellion, awakening',Neptune:'dreams, spirituality, illusion',Pluto:'transformation, power, rebirth'};
+var PDESC={Sun:'identity, vitality, core self',Moon:'emotions, instincts, inner world',Mercury:'mind, communication, thinking',Venus:'love, beauty, values',Mars:'drive, action, desire',Jupiter:'growth, luck, expansion',Saturn:'discipline, structure, karma',Uranus:'change, rebellion, awakening',Neptune:'dreams, spirituality, illusion',Pluto:'transformation, power, rebirth',Chiron:'healing, wounds, integration',NNode:'karmic direction, soul growth',SNode:'karmic past, natural gifts'};
 function renderChart(){
   var chart=activeChart;
   document.getElementById('barName').innerHTML='<em>'+chart.name+'</em>';
