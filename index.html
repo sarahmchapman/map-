@@ -1289,7 +1289,7 @@ function renderChart(){
 
 function buildToggleBar(){
   var tb=document.getElementById('togBtns');tb.innerHTML='';
-  var allP=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode','SNode'];
+  var allP=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode'];
   allP.forEach(function(p){
     if(!toggleState.hasOwnProperty(p))toggleState[p]=true;
     var col=PCOL[p];
@@ -1303,7 +1303,7 @@ function buildToggleBar(){
 }
 function buildLegend(){
   var leg=document.getElementById('mapLegend');leg.innerHTML='';
-  var allP=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode','SNode'];
+  var allP=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode'];
   allP.forEach(function(p){
     if(!toggleState[p])return;
     leg.innerHTML+='<span class="leg-item"><span class="leg-dot" style="background:'+PCOL[p]+'"></span><span style="font-size:.68rem;color:var(--ink-2)">'+PSYM[p]+' '+p+'</span></span>';
@@ -1316,7 +1316,7 @@ function setFocusFilter(focus,btn){
   selectedFocus=(focus==='All'?'Love':focus);
   ['All','Love','Career','Healing','Self'].forEach(function(f){var b=document.getElementById('ff-'+f);if(b)b.classList.toggle('on',f===focus);});
   var show=focus==='All'?null:(FOCUS_PLANETS[focus]||null);
-  var allP=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode','SNode'];
+  var allP=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode'];
   allP.forEach(function(p){
     toggleState[p]=show?show.indexOf(p)>=0:true;
     var b=document.getElementById('togBtn-'+p);if(b)b.classList.toggle('off',!toggleState[p]);
