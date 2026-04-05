@@ -572,7 +572,7 @@ function _localSearch(q){
 // EPHEMERIS — Meeus algorithms
 // ═══════════════════════════════════════════════════════════
 var SIGNS=['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
-var PCOL={Sun:'#c9973f',Moon:'#5a7aa8',Mercury:'#4a8a6a',Venus:'#c0607a',Mars:'#9b3535',Jupiter:'#7a5a30',Saturn:'#6a6055',Uranus:'#3a7a7a',Neptune:'#4a4a9a',Pluto:'#7a4a6a',Chiron:'#9b2335',NNode:'#2c6e49',SNode:'#5a9e7a'};
+var PCOL={Sun:'#c9973f',Moon:'#5a7aa8',Mercury:'#4a8a6a',Venus:'#c0607a',Mars:'#9b3535',Jupiter:'#7a5a30',Saturn:'#6a6055',Uranus:'#3a7a7a',Neptune:'#4a4a9a',Pluto:'#7a4a6a',Chiron:'#2a2a2a',NNode:'#2c6e49',SNode:'#5a9e7a'};
 var PSYM={Sun:'☉',Moon:'☽',Mercury:'☿',Venus:'♀',Mars:'♂',Jupiter:'♃',Saturn:'♄',Uranus:'♅',Neptune:'♆',Pluto:'♇',Chiron:'⚷',NNode:'☊',SNode:'☋'};
 var FOCUS_PLANETS={Love:['Venus','Moon','Neptune','Jupiter'],Career:['Saturn','Sun','Mars','Jupiter'],Healing:['Moon','Neptune','Venus','Pluto'],Self:['Sun','Mars','Mercury','Uranus']};
 var OBL=23.4365;
@@ -1343,7 +1343,10 @@ var FEELING={
   Saturn:{Love:'serious, building something lasting',Career:'disciplined, respected, earning authority',Healing:'confronting what must be released',Self:'becoming who you\'re supposed to be'},
   Uranus:{Love:'electrically alive, unconventional, free',Career:'innovative, disrupting old patterns',Healing:'suddenly liberated from what felt fixed',Self:'awakened, original, untameable'},
   Neptune:{Love:'dissolving into another, spiritually bonded',Career:'inspired, guided by invisible currents',Healing:'surrendered, compassionately restored',Self:'permeable to beauty, brushing the transcendent'},
-  Pluto:{Love:'compelled, transformed, irrevocably bonded',Career:'reborn professionally, power reclaimed',Healing:'in the crucible, burning toward regeneration',Self:'confronting the shadow, emerging reforged'}
+  Pluto:{Love:'compelled, transformed, irrevocably bonded',Career:'reborn professionally, power reclaimed',Healing:'in the crucible, burning toward regeneration',Self:'confronting the shadow, emerging reforged'},
+  Chiron:{Love:'tender and open, wounds and gifts arriving together',Career:'called to serve through what you have healed',Healing:'seen in your wholeness, not just your wounds',Self:'integrating the wound into wisdom'},
+  NNode:{Love:'drawn toward what feels fated and growth-inducing',Career:'aligned with your soul\'s true direction',Healing:'moving toward what your soul most needs',Self:'becoming who you are here to be'},
+  SNode:{Love:'meeting souls who feel familiar and deeply known',Career:'drawing on natural gifts that feel effortless',Healing:'honouring your past while releasing what no longer serves',Self:'grounded in your deepest nature'}
 };
 
 
@@ -1358,6 +1361,10 @@ var QUALITY={
   Uranus:{MC:'awakened',IC:'liberated',ASC:'electric',DSC:'free'},
   Neptune:{MC:'inspired',IC:'dissolved',ASC:'dreaming',DSC:'merged'},
   Pluto:{MC:'transformed',IC:'excavated',ASC:'intense',DSC:'compelled'}
+,
+  Chiron:{MC:'healing',IC:'tender',ASC:'wounded and wise',DSC:'mirroring'},
+  NNode:{MC:'aligned',IC:'rooted in purpose',ASC:'becoming',DSC:'fated'},
+  SNode:{MC:'gifted',IC:'ancestral',ASC:'familiar',DSC:'karmic'}
 };
 
 function _lineDistance(lat,lng,pts){
