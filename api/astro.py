@@ -38,7 +38,8 @@ def build_acg_swe(jd):
     G=gmst(jd)
     PLANETS={'Sun':swe.SUN,'Moon':swe.MOON,'Mercury':swe.MERCURY,
              'Venus':swe.VENUS,'Mars':swe.MARS,'Jupiter':swe.JUPITER,
-             'Saturn':swe.SATURN,'Uranus':swe.URANUS,'Neptune':swe.NEPTUNE,'Pluto':swe.PLUTO}
+             'Saturn':swe.SATURN,'Uranus':swe.URANUS,'Neptune':swe.NEPTUNE,'Pluto':swe.PLUTO,
+             'Chiron':swe.CHIRON,'NNode':swe.TRUE_NODE}
     # Use Moshier ephemeris (built-in, no data files needed) + equatorial coords
     # SEFLG_MOSEPH=4, SEFLG_SPEED=256, SEFLG_EQUATORIAL=2048
     IFLAG = 4 | 256 | 2048
@@ -51,6 +52,16 @@ def build_acg_swe(jd):
         except:
             continue
         lines[name]=make_lines(ra,dec,G)
+        # South Node = opposite of North Node
+    if 'NNode' in lines:
+        nn = lines['NNode']
+        lines['SNode'] = {
+            'MC':  [[pt[0], n180(pt[1]+180)] for pt in nn['MC']],
+            'IC':  [[pt[0], n180(pt[1]+180)] for pt in nn['IC']],
+            'ASC': [[pt[0], n180(pt[1]+180)] for pt in nn['ASC']],
+            'DSC': [[pt[0], n180(pt[1]+180)] for pt in nn['DSC']],
+            'mcLon': n180(nn['mcLon']+180), 'ra': nn['ra'], 'dec': nn['dec']
+        }
     return lines
 
 S=1e-8
