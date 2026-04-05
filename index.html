@@ -1298,14 +1298,18 @@ function _buildChart(day,month,year,hour,min,name,tz){
       }
       // Derive NNode/SNode natal positions from API data
       if(activeChart&&acgData){
-        ['NNode','SNode'].forEach(function(p){
-          if(acgData[p]&&acgData[p].ra!=null){
-            var ra=acgData[p].ra,dec=acgData[p].dec;
-            var e=23.4365*Math.PI/180;
-            var lon=n360(Math.atan2(Math.sin(ra*Math.PI/180)*Math.cos(e)+Math.tan(dec*Math.PI/180)*Math.sin(e),Math.cos(ra*Math.PI/180))*180/Math.PI);
-            activeChart.planets[p]=parseLon(lon);
-          }
-        });
+        if(acgData.NNode&&acgData.NNode.ra!=null){
+          var nra=acgData.NNode.ra, ndec=acgData.NNode.dec;
+          var ee=23.4365*Math.PI/180;
+          // Correct RA+Dec -> ecliptic longitude
+          var nlon=n360(Math.atan2(
+            Math.sin(nra*Math.PI/180)*Math.cos(ee)+Math.tan(ndec*Math.PI/180)*Math.sin(ee),
+            Math.cos(nra*Math.PI/180)
+          )*180/Math.PI);
+          activeChart.planets.NNode=parseLon(nlon);
+          // South Node is always exactly opposite
+          activeChart.planets.SNode=parseLon(n360(nlon+180));
+        }
       }
       drawLines();buildLegend();
     })
@@ -1434,6 +1438,8 @@ function openCard(cityName,planet,ltype,_lat,_lng){
   if(!planet||!ltype||!activeChart)return;
   var chart=activeChart,pd=chart.planets[planet],col=PCOL[planet];
   var focus=selectedFocus;
+  var PNAMES={NNode:'North Node',SNode:'South Node',Chiron:'Chiron'};
+  var displayName=PNAMES[planet]||planet;
   var quality=((QUALITY[planet]||{})[ltype])||'transformed';
   var distNote='';
   if(_lat!=null&&_lng!=null&&acgData&&acgData[planet]&&acgData[planet][ltype]){
@@ -1449,13 +1455,13 @@ function openCard(cityName,planet,ltype,_lat,_lng){
     ?relA.slice(0,3).map(function(a){
         var other=a.p1===planet?a.p2:a.p1,od=chart.planets[other];
         var tone=a.type==='square'?'creates productive tension':a.type==='opposition'?'calls for balance':a.type==='trine'?'flows with ease':a.type==='conjunction'?'merges and amplifies':'opens a quiet door';
-        return PSYM[planet]+' '+planet+' in '+pd.sign+' '+a.sym+' '+PSYM[other]+' '+other+' in '+od.sign+' <span style="color:var(--ink-3);font-size:.8em">('+a.type+', '+tone+')</span>';
+        return PSYM[planet]+' '+(PNAMES[planet]||planet)+' in '+pd.sign+' '+a.sym+' '+PSYM[other]+' '+other+' in '+od.sign+' <span style="color:var(--ink-3);font-size:.8em">('+a.type+', '+tone+')</span>';
       }).join('<br>')
     :PSYM[planet]+' '+planet+' in '+pd.sign+' — unaspected, its energy expresses purely here.';
   document.getElementById('rcAccent').style.background=col;
   document.getElementById('rcCity').innerHTML=(cityName||'This location')+'<br><em>'+quality+'</em>';
   document.getElementById('rcBody').innerHTML=
-    '<div class="rc-planet-row"><span class="rc-glyph" style="color:'+col+'">'+PSYM[planet]+'</span><div><div class="rc-pname" style="color:'+col+'">'+planet+' in '+pd.sign+' '+pd.deg+'°'+pad(pd.min)+"'"+'</div><div class="rc-ltype">'+{MC:'MC — Midheaven',IC:'IC — Imum Coeli',ASC:'AC — Ascendant',DSC:'DC — Descendant'}[ltype]+' line</div></div></div>'
+    '<div class="rc-planet-row"><span class="rc-glyph" style="color:'+col+'">'+PSYM[planet]+'</span><div><div class="rc-pname" style="color:'+col+'">'+displayName+' in '+pd.sign+' '+pd.deg+'°'+pad(pd.min)+"'"+'</div><div class="rc-ltype">'+{MC:'MC — Midheaven',IC:'IC — Imum Coeli',ASC:'AC — Ascendant',DSC:'DC — Descendant'}[ltype]+' line</div></div></div>'
     +(distNote?'<div class="rc-rule"></div><div class="rc-prose" style="font-size:.82rem">'+distNote+'</div>':'')
     +'<div class="rc-rule"></div>'
     +'<div class="rc-slbl">In this place you feel</div><div class="rc-feeling">'+((FEELING[planet]||{})[focus]||'powerfully present')+'.</div>'
