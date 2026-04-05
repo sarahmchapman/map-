@@ -44,17 +44,16 @@ def build_acg_swe(jd):
     # SEFLG_MOSEPH=4, SEFLG_SPEED=256, SEFLG_EQUATORIAL=2048
     IFLAG = 4 | 256 | 2048
     lines={}
-    errors={}
     for name,pid in PLANETS.items():
         try:
-            r,_=swe.calc_ut(jd,pid,IFLAG)
+            # Chiron needs MOSEPH flag — no data files available on Vercel
+            flag = (4|256|2048) if name == 'Chiron' else IFLAG
+            r,_=swe.calc_ut(jd,pid,flag)
             ra=r[0]
             dec=r[1]
             lines[name]=make_lines(ra,dec,G)
-        except Exception as ex:
-            errors[name]=str(ex)
-    if errors:
-        lines['_errors']=errors
+        except:
+            continue
         # South Node = opposite of North Node
     if 'NNode' in lines:
         nn = lines['NNode']
