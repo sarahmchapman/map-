@@ -209,6 +209,9 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     <div class="submit-area">
       <button type="submit" class="submit-btn" id="submitBtn">Reveal My Map</button>
       <p class="footer-note">Your chart is cast in silence and held in confidence.</p>
+      <p style="font-family:var(--serif);font-size:.75rem;color:var(--ink-3);margin-top:.8rem;text-align:center">
+        <a href="mailto:elsewhereastro@gmail.com?subject=elsewhere feedback" style="color:var(--gold);text-decoration:none;border-bottom:1px solid var(--gold)">Share your feedback</a>
+      </p>
       <p style="font-family:var(--serif);font-style:italic;font-size:.75rem;color:var(--ink-3);margin-top:1.2rem;line-height:1.7;max-width:380px;margin-left:auto;margin-right:auto;text-align:center">Astrocartography is a tool for reflection and exploration, not a prescription for where to live or travel. The lines on your map are invitations to consider — not instructions to follow. Major life decisions around relocation involve many factors beyond astrology. If you're working with a professional astrocartographer, this map can be a helpful starting point for that conversation.</p>
     </div>
   </form>
@@ -255,6 +258,9 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
       <div class="map-coords" id="mapCoords"></div>
     </div>
     <div class="map-legend" id="mapLegend"></div>
+  <div style="text-align:center;padding:.5rem 0 .8rem;font-family:var(--serif);font-size:.72rem;color:var(--ink-3)">
+    <a href="mailto:elsewhereastro@gmail.com?subject=elsewhere feedback" style="color:var(--ink-3);text-decoration:none;border-bottom:1px solid var(--paper-3)">share feedback</a>
+  </div>
     <div style="padding:0 1.5rem 1.5rem;max-width:700px;margin:0 auto">
       <div id="readingCard">
         <div class="rc-accent" id="rcAccent"></div>
@@ -947,6 +953,19 @@ function _renderOverlay(){
         }
         seg.push(pp);
       }
+      // Extend each segment beyond canvas edges so lines reach the border
+      segments.forEach(function(seg){
+        if(seg.length<2)return;
+        // Extend start backward
+        var dx=seg[0].x-seg[1].x, dy=seg[0].y-seg[1].y;
+        var dist=Math.sqrt(dx*dx+dy*dy);
+        if(dist>0){var ext=200/dist;seg.unshift({x:seg[0].x+dx*ext,y:seg[0].y+dy*ext});}
+        // Extend end forward
+        var n=seg.length-1;
+        dx=seg[n].x-seg[n-1].x;dy=seg[n].y-seg[n-1].y;
+        dist=Math.sqrt(dx*dx+dy*dy);
+        if(dist>0){var ext2=200/dist;seg.push({x:seg[n].x+dx*ext2,y:seg[n].y+dy*ext2});}
+      });
 
       segments.forEach(function(seg){
         if(seg.length<2)return;
