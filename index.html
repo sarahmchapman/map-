@@ -1,6 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>elsewhere — where in the world will the stars find you?</title>
+<meta name="description" content="Your personalised astrocartography map. Discover where in the world each planet's energy is strongest for you — and what it means when you get there.">
+
+<!-- Open Graph / social sharing -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://elsewhereastro.com">
+<meta property="og:title" content="elsewhere — where in the world will the stars find you?">
+<meta property="og:description" content="Your personalised astrocartography map. Discover where in the world each planet's energy is strongest for you — and what it means when you get there.">
+<meta property="og:image" content="https://elsewhereastro.com/og-image.png">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="elsewhere — where in the world will the stars find you?">
+<meta name="twitter:description" content="Your personalised astrocartography map. Discover where in the world each planet's energy is strongest for you.">
+<meta name="twitter:image" content="https://elsewhereastro.com/og-image.png">
+
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/favicon.svg">
 <meta charset="UTF-8">
@@ -939,23 +957,23 @@ function _renderOverlay(){
 
         var first=seg[0], last=seg[seg.length-1];
 
-        // Find topmost and bottommost visible points
+        // Find topmost and bottommost points (include slightly off-canvas)
         var topPt=null, botPt=null;
         for(var i=0;i<seg.length;i++){
-          if(seg[i].x<0||seg[i].x>W)continue;
+          if(seg[i].x<-20||seg[i].x>W+20)continue;
           if(!topPt||seg[i].y<topPt.y)topPt=seg[i];
           if(!botPt||seg[i].y>botPt.y)botPt=seg[i];
         }
 
-        // Top label — pin to top edge if line exits top of map
+        // Top label — always at top edge for lines that exit top
         if(topPt){
-          var topY=topPt.y<fs+8?fs+6:topPt.y-2;
-          if(topY<H*0.6) topLabels.push({x:topPt.x,y:topY,text:fullLabel,col:col});
+          var topY=topPt.y<=2?fs+6:Math.min(topPt.y,fs+6);
+          topLabels.push({x:topPt.x,y:topY,text:fullLabel,col:col});
         }
-        // Bottom label — pin to bottom edge if line exits bottom of map
+        // Bottom label — always at bottom edge for lines that exit bottom
         if(botPt){
-          var botY=botPt.y>H-fs-8?H-fs-6:botPt.y+2;
-          if(botY>H*0.4) botLabels.push({x:botPt.x,y:botY,text:fullLabel,col:col});
+          var botY=botPt.y>=H-2?H-fs-6:Math.max(botPt.y,H-fs-6);
+          botLabels.push({x:botPt.x,y:botY,text:fullLabel,col:col});
         }
 
         // Left edge label
