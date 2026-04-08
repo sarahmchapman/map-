@@ -26,8 +26,11 @@ def lon_to_ra_dec(lon,obl=OBL):
 def make_lines(ra,dec,G):
     dr=R(dec); mc_lon=n180(ra-G); ic_lon=n180(mc_lon+180)
     mc,ic,asc,dsc=[],[],[],[]
-    for lat in range(-89,90): mc.append([lat,mc_lon]); ic.append([lat,ic_lon])
-    for lat in range(-89,90):
+    # Extended latitude range with finer steps near poles
+    lats = list(range(-89,90)) + [-89.5, -89.9, 89.5, 89.9]
+    lats.sort()
+    for lat in lats: mc.append([lat,mc_lon]); ic.append([lat,ic_lon])
+    for lat in lats:
         ch=-math.tan(R(lat))*math.tan(dr)
         if abs(ch)>1: continue
         H=math.acos(max(-1,min(1,ch)))*180/math.pi
