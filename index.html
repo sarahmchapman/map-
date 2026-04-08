@@ -948,11 +948,9 @@ function _renderOverlay(){
       ctx.lineCap='round';
 
       // Split into segments at antimeridian
-      // Sort points by latitude so lines draw south-to-north smoothly
-      var sortedPts = pts.slice().sort(function(a,b){return a[0]-b[0];});
       var segments=[[]];
-      for(var i=0;i<sortedPts.length;i++){
-        var pp=_ll2px(sortedPts[i][0],sortedPts[i][1]);
+      for(var i=0;i<pts.length;i++){
+        var pp=_ll2px(pts[i][0],pts[i][1]);
         var seg=segments[segments.length-1];
         if(seg.length>0&&Math.abs(pp.x-seg[seg.length-1].x)>W*0.45){
           segments.push([]);seg=segments[segments.length-1];
@@ -964,42 +962,28 @@ function _renderOverlay(){
       segments.forEach(function(seg){
         if(seg.length<2)return;
         ctx.beginPath();
-        // Draw segment, clipping to canvas bounds with interpolation
-        var started=false;
+        // Draw with edge clipping so lines reach canvas boundaries
+        var moved=false;
         for(var i=0;i<seg.length;i++){
           var p=seg[i];
-          var inBounds=(p.y>=-50&&p.y<=H+50);
-          if(inBounds){
-            if(!started){
-              // Interpolate entry point from previous point if outside
-              if(i>0){
-                var prev=seg[i-1];
-                if(prev.y<-50){
-                  var t=(-50-prev.y)/(p.y-prev.y);
-                  ctx.moveTo(prev.x+t*(p.x-prev.x),-50);
-                } else if(prev.y>H+50){
-                  var t=(H+50-prev.y)/(p.y-prev.y);
-                  ctx.moveTo(prev.x+t*(p.x-prev.x),H+50);
-                } else {
-                  ctx.moveTo(p.x,p.y);
-                }
-              } else {
-                ctx.moveTo(p.x,p.y);
-              }
-              started=true;
-            }
-            ctx.lineTo(p.x,p.y);
-          } else if(started&&i>0){
-            // Interpolate exit point
+          if(!moved){
+            ctx.moveTo(p.x,p.y);
+            moved=true;
+          } else {
             var prev=seg[i-1];
-            if(p.y<-50){
-              var t=(-50-prev.y)/(p.y-prev.y);
-              ctx.lineTo(prev.x+t*(p.x-prev.x),-50);
-            } else {
-              var t=(H+50-prev.y)/(p.y-prev.y);
-              ctx.lineTo(prev.x+t*(p.x-prev.x),H+50);
+            // If crossing top edge, interpolate to y=0
+            if((prev.y>=0&&p.y<0)||(prev.y<0&&p.y>=0)){
+              var t=(0-prev.y)/(p.y-prev.y);
+              var ix=prev.x+t*(p.x-prev.x);
+              if(p.y<0){ctx.lineTo(ix,0);} else {ctx.moveTo(ix,0);}
             }
-            started=false;
+            // If crossing bottom edge, interpolate to y=H
+            if((prev.y<=H&&p.y>H)||(prev.y>H&&p.y<=H)){
+              var t=(H-prev.y)/(p.y-prev.y);
+              var ix=prev.x+t*(p.x-prev.x);
+              if(p.y>H){ctx.lineTo(ix,H);} else {ctx.moveTo(ix,H);}
+            }
+            if(p.y>=0&&p.y<=H) ctx.lineTo(p.x,p.y);
           }
         }
         ctx.stroke();
