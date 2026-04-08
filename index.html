@@ -209,12 +209,14 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     <div class="submit-area">
       <button type="submit" class="submit-btn" id="submitBtn">Reveal My Map</button>
       <p class="footer-note">Your chart is cast in silence and held in confidence.</p>
-      <p style="font-family:var(--serif);font-size:.75rem;color:var(--ink-3);margin-top:.8rem;text-align:center">
-        <a href="mailto:elsewhereastro@gmail.com?subject=elsewhere feedback" style="color:var(--gold);text-decoration:none;border-bottom:1px solid var(--gold)">Share your feedback</a>
-      </p>
       <p style="font-family:var(--serif);font-style:italic;font-size:.75rem;color:var(--ink-3);margin-top:1.2rem;line-height:1.7;max-width:380px;margin-left:auto;margin-right:auto;text-align:center">Astrocartography is a tool for reflection and exploration, not a prescription for where to live or travel. The lines on your map are invitations to consider — not instructions to follow. Major life decisions around relocation involve many factors beyond astrology. If you're working with a professional astrocartographer, this map can be a helpful starting point for that conversation.</p>
     </div>
   </form>
+  <div style="text-align:center;padding:1.5rem 0 1rem;border-top:1px solid var(--paper-3);margin-top:1rem">
+    <a href="mailto:elsewhereastro@gmail.com?subject=elsewhere feedback" style="font-family:var(--serif);font-size:.78rem;color:var(--ink-3);text-decoration:none;border-bottom:1px solid var(--paper-3)">share feedback</a>
+    <span style="color:var(--paper-3);margin:0 .8rem">·</span>
+    <span style="font-family:var(--serif);font-size:.78rem;color:var(--ink-3)">© 2025 elsewhere</span>
+  </div>
 </div>
 </div>
 
@@ -258,9 +260,6 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
       <div class="map-coords" id="mapCoords"></div>
     </div>
     <div class="map-legend" id="mapLegend"></div>
-  <div style="text-align:center;padding:.5rem 0 .8rem;font-family:var(--serif);font-size:.72rem;color:var(--ink-3)">
-    <a href="mailto:elsewhereastro@gmail.com?subject=elsewhere feedback" style="color:var(--ink-3);text-decoration:none;border-bottom:1px solid var(--paper-3)">share feedback</a>
-  </div>
     <div style="padding:0 1.5rem 1.5rem;max-width:700px;margin:0 auto">
       <div id="readingCard">
         <div class="rc-accent" id="rcAccent"></div>
@@ -276,6 +275,11 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     <div class="chart-grid" id="anglesGrid"></div>
     <div class="chart-heading">Aspects</div>
     <div class="aspect-list" id="aspectList"></div>
+  </div>
+  <div style="text-align:center;padding:1.5rem 0 1rem;border-top:1px solid var(--paper-3);margin-top:1rem">
+    <a href="mailto:elsewhereastro@gmail.com?subject=elsewhere feedback" style="font-family:var(--serif);font-size:.78rem;color:var(--ink-3);text-decoration:none;border-bottom:1px solid var(--paper-3)">share feedback</a>
+    <span style="color:var(--paper-3);margin:0 .8rem">·</span>
+    <span style="font-family:var(--serif);font-size:.78rem;color:var(--ink-3)">© 2025 elsewhere</span>
   </div>
 </div>
 
@@ -944,9 +948,11 @@ function _renderOverlay(){
       ctx.lineCap='round';
 
       // Split into segments at antimeridian
+      // Sort points by latitude so lines draw south-to-north smoothly
+      var sortedPts = pts.slice().sort(function(a,b){return a[0]-b[0];});
       var segments=[[]];
-      for(var i=0;i<pts.length;i++){
-        var pp=_ll2px(pts[i][0],pts[i][1]);
+      for(var i=0;i<sortedPts.length;i++){
+        var pp=_ll2px(sortedPts[i][0],sortedPts[i][1]);
         var seg=segments[segments.length-1];
         if(seg.length>0&&Math.abs(pp.x-seg[seg.length-1].x)>W*0.45){
           segments.push([]);seg=segments[segments.length-1];
