@@ -283,7 +283,7 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
   </div>
 </div>
 
-<script src="/descriptions.js?v=4"></script>
+<script src="/descriptions.js?v=3"></script>
 <script>
 // elsewhere — astrocartography
 // Pre-generated reading descriptions
@@ -948,9 +948,11 @@ function _renderOverlay(){
       ctx.lineCap='round';
 
       // Split into segments at antimeridian
+      // Sort points by latitude so lines draw south-to-north smoothly
+      var sortedPts = pts.slice().sort(function(a,b){return a[0]-b[0];});
       var segments=[[]];
-      for(var i=0;i<pts.length;i++){
-        var pp=_ll2px(pts[i][0],pts[i][1]);
+      for(var i=0;i<sortedPts.length;i++){
+        var pp=_ll2px(sortedPts[i][0],sortedPts[i][1]);
         var seg=segments[segments.length-1];
         if(seg.length>0&&Math.abs(pp.x-seg[seg.length-1].x)>W*0.45){
           segments.push([]);seg=segments[segments.length-1];
@@ -961,41 +963,9 @@ function _renderOverlay(){
 
       segments.forEach(function(seg){
         if(seg.length<2)return;
-        // Skip tiny segments (cause short random lines)
-        if(seg.length<3) continue;
         ctx.beginPath();
-        var drawing=false;
-        for(var i=0;i<seg.length;i++){
-          var p=seg[i];
-          var prev=i>0?seg[i-1]:null;
-          var inBounds=p.y>=0&&p.y<=H;
-          if(inBounds){
-            if(!drawing){
-              // Interpolate entry from previous out-of-bounds point
-              if(prev&&prev.y<0&&p.y>=0){
-                var t=(0-prev.y)/(p.y-prev.y);
-                ctx.moveTo(prev.x+t*(p.x-prev.x),0);
-              } else if(prev&&prev.y>H&&p.y<=H){
-                var t=(H-prev.y)/(p.y-prev.y);
-                ctx.moveTo(prev.x+t*(p.x-prev.x),H);
-              } else {
-                ctx.moveTo(p.x,p.y);
-              }
-              drawing=true;
-            }
-            ctx.lineTo(p.x,p.y);
-          } else if(drawing&&prev){
-            // Interpolate exit to canvas edge
-            if(p.y<0&&prev.y>=0){
-              var t=(0-prev.y)/(p.y-prev.y);
-              ctx.lineTo(prev.x+t*(p.x-prev.x),0);
-            } else if(p.y>H&&prev.y<=H){
-              var t=(H-prev.y)/(p.y-prev.y);
-              ctx.lineTo(prev.x+t*(p.x-prev.x),H);
-            }
-            drawing=false;
-          }
-        }
+        ctx.moveTo(seg[0].x,seg[0].y);
+        for(var i=1;i<seg.length;i++) ctx.lineTo(seg[i].x,seg[i].y);
         ctx.stroke();
 
         var first=seg[0], last=seg[seg.length-1];
@@ -1254,7 +1224,7 @@ function mapReset(){
   if(activeChart&&activeChart.geo&&activeChart.geo.lat!=null){
     _map.cx=activeChart.geo.lng;_map.cy=activeChart.geo.lat;
   }else{_map.cx=0;_map.cy=20;}
-  _map.zoomF=2.3;_redraw();
+  _map.zoomF=2.0;_redraw();
 }
 
 function drawMap(){
@@ -1274,7 +1244,7 @@ function drawMap(){
     _map.ready=true;
     _map.cx=(activeChart&&activeChart.geo&&activeChart.geo.lat!=null)?activeChart.geo.lng:0;
     _map.cy=(activeChart&&activeChart.geo&&activeChart.geo.lat!=null)?activeChart.geo.lat:20;
-    _map.zoomF=2.3;
+    _map.zoomF=2.0;
     _setupMapEvents();
   }
   _redraw();
