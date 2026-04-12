@@ -283,7 +283,7 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
   </div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="/descriptions.js?v=3"></script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="/descriptions.js?v=5"></script>
 <script>
 // elsewhere — astrocartography
 // Pre-generated reading descriptions
@@ -899,8 +899,7 @@ function _renderTiles(){
 }
 
 function _renderOverlay(){
-  var m=_map;
-  var svg=m.svg;
+  var m=_map,svg=m.svg;
   if(!svg||!acgData||!activeChart){if(svg)svg.innerHTML='';return;}
   var W=m.W,H=m.H;
   var lw=Math.max(1.2,Math.min(2.5,m.zoomF*0.45));
@@ -913,15 +912,12 @@ function _renderOverlay(){
     var paths=[],seg=[];
     for(var i=0;i<pts.length;i++){
       var p=_ll2px(pts[i][0],pts[i][1]);
-      if(seg.length>0&&Math.abs(p.x-seg[seg.length-1].x)>W*0.45){
-        if(seg.length>1)paths.push(seg);seg=[];
-      }
+      if(seg.length>0&&Math.abs(p.x-seg[seg.length-1].x)>W*0.45){if(seg.length>1)paths.push(seg);seg=[];}
       seg.push(p);
     }
     if(seg.length>1)paths.push(seg);
     return paths;
   }
-
   function segToD(seg){
     var d='M'+seg[0].x.toFixed(1)+','+seg[0].y.toFixed(1);
     for(var i=1;i<seg.length;i++)d+=' L'+seg[i].x.toFixed(1)+','+seg[i].y.toFixed(1);
@@ -940,15 +936,11 @@ function _renderOverlay(){
       var opacity=isDash?0.55:0.92;
       var sw=lw*(isDash?0.75:1);
       var dash=isDash?'stroke-dasharray="6,4"':'';
-      var paths=buildPaths(pts);
-      paths.forEach(function(seg){
+      buildPaths(pts).forEach(function(seg){
         if(seg.length<2)return;
         html+='<path d="'+segToD(seg)+'" stroke="'+col+'" stroke-width="'+sw+'" fill="none" opacity="'+opacity+'" '+dash+' stroke-linecap="round" stroke-linejoin="round"/>';
         var topPt=null,botPt=null;
-        seg.forEach(function(pt){
-          if(!topPt||pt.y<topPt.y)topPt=pt;
-          if(!botPt||pt.y>botPt.y)botPt=pt;
-        });
+        seg.forEach(function(pt){if(!topPt||pt.y<topPt.y)topPt=pt;if(!botPt||pt.y>botPt.y)botPt=pt;});
         if(topPt)topLabels.push({x:topPt.x,y:topPt.y,text:fullLabel,col:col});
         if(botPt)botLabels.push({x:botPt.x,y:botPt.y,text:fullLabel,col:col});
         var first=seg[0],last=seg[seg.length-1];
@@ -968,41 +960,15 @@ function _renderOverlay(){
            '<text x="'+tx+'" y="'+y+'" fill="'+col+'" font-size="'+fs+'" font-family="Jost,sans-serif" font-weight="500" dominant-baseline="middle" text-anchor="'+(anchor||'middle')+'">'+text+'</text>';
   }
 
-  topLabels.sort(function(a,b){return a.x-b.x;});
-  var lastTX=-999;
-  topLabels.forEach(function(lb){
-    if(lb.x<0||lb.x>W)return;
-    var ty=Math.max(fs+4,Math.min(lb.y,fs+4));
-    if(Math.abs(lb.x-lastTX)<fs*3)return;
-    html+=svgLabel(lb.text,lb.x,ty,lb.col,'center');lastTX=lb.x;
-  });
+  topLabels.sort(function(a,b){return a.x-b.x;});var lastTX=-999;
+  topLabels.forEach(function(lb){if(lb.x<0||lb.x>W)return;var ty=Math.max(fs+4,Math.min(lb.y,fs+4));if(Math.abs(lb.x-lastTX)<fs*3)return;html+=svgLabel(lb.text,lb.x,ty,lb.col,'center');lastTX=lb.x;});
+  botLabels.sort(function(a,b){return a.x-b.x;});var lastBX=-999;
+  botLabels.forEach(function(lb){if(lb.x<0||lb.x>W)return;var by=Math.min(H-fs-4,Math.max(lb.y,H-fs-4));if(Math.abs(lb.x-lastBX)<fs*3)return;html+=svgLabel(lb.text,lb.x,by,lb.col,'center');lastBX=lb.x;});
+  leftLabels.sort(function(a,b){return a.y-b.y;});var lastLY=-999;
+  leftLabels.forEach(function(lb){if(lb.y<0||lb.y>H)return;if(Math.abs(lb.y-lastLY)<fs*2)return;html+=svgLabel(lb.text,4,lb.y,lb.col,'start');lastLY=lb.y;});
+  rightLabels.sort(function(a,b){return a.y-b.y;});var lastRY=-999;
+  rightLabels.forEach(function(lb){if(lb.y<0||lb.y>H)return;if(Math.abs(lb.y-lastRY)<fs*2)return;html+=svgLabel(lb.text,W-4,lb.y,lb.col,'end');lastRY=lb.y;});
 
-  botLabels.sort(function(a,b){return a.x-b.x;});
-  var lastBX=-999;
-  botLabels.forEach(function(lb){
-    if(lb.x<0||lb.x>W)return;
-    var by=Math.min(H-fs-4,Math.max(lb.y,H-fs-4));
-    if(Math.abs(lb.x-lastBX)<fs*3)return;
-    html+=svgLabel(lb.text,lb.x,by,lb.col,'center');lastBX=lb.x;
-  });
-
-  leftLabels.sort(function(a,b){return a.y-b.y;});
-  var lastLY=-999;
-  leftLabels.forEach(function(lb){
-    if(lb.y<0||lb.y>H)return;
-    if(Math.abs(lb.y-lastLY)<fs*2)return;
-    html+=svgLabel(lb.text,4,lb.y,lb.col,'start');lastLY=lb.y;
-  });
-
-  rightLabels.sort(function(a,b){return a.y-b.y;});
-  var lastRY=-999;
-  rightLabels.forEach(function(lb){
-    if(lb.y<0||lb.y>H)return;
-    if(Math.abs(lb.y-lastRY)<fs*2)return;
-    html+=svgLabel(lb.text,W-4,lb.y,lb.col,'end');lastRY=lb.y;
-  });
-
-  // Birth marker
   if(activeChart.geo&&activeChart.geo.lat!=null){
     var bp=_ll2px(activeChart.geo.lat,activeChart.geo.lng);
     if(bp.x>0&&bp.x<W&&bp.y>0&&bp.y<H){
@@ -1435,8 +1401,6 @@ function openCard(cityName,planet,ltype,_lat,_lng){
     else distNote='The nearest '+planet+' '+ltype+' line is approximately <strong>'+kmDist+'km</strong> away.';
   }
   var relA=chart.aspects.filter(function(a){return a.p1===planet||a.p2===planet;});
-
-  // Aspect interpretation — plain English, no jargon
   var _aspG={
     'Sun-Moon-conjunction':"Your public face and your emotional self are unusually close — you don't have to perform much or hide how you really feel.",
     'Sun-Mercury-conjunction':"How you think and how you come across are essentially the same thing — your mind is very much on the surface.",
@@ -1518,56 +1482,24 @@ function openCard(cityName,planet,ltype,_lat,_lng){
     'Mars-Venus-sextile':"Passion and affection sit comfortably together — you love with genuine heat and genuine care.",
     'Jupiter-Saturn-sextile':"You have a good instinct for when to expand and when to hold back — a balance most people spend their whole lives trying to find."
   };
-
   var _aspAngle={
-    conjunction:{
-      MC:'In your public life and career here, that shows up directly — both sides of this are visible in how you work and how you're seen.',
-      IC:'In your home life and private world here, that shapes what you need and what grounds you.',
-      ASC:'In how you come across to people here, both sides arrive at once — people sense it the moment they meet you.',
-      DSC:'In your closest relationships here, that combination shows up in who you draw to you and what you create together.'
-    },
-    trine:{
-      MC:'In your public life and career here, that ease becomes visible — things come more naturally than they would elsewhere.',
-      IC:'In your home life and private world here, that translates into a genuine sense of comfort and belonging.',
-      ASC:'In how you come across to people here, it shows up effortlessly — you don't have to work at it.',
-      DSC:'In your closest relationships here, it attracts people and connections that feel genuinely easy and reciprocal.'
-    },
-    sextile:{
-      MC:'In your public life and career here, that quiet support adds up — small advantages that open doors.',
-      IC:'In your home life and private world here, it creates a gentle ease that's easy to take for granted.',
-      ASC:'In how you come across to people here, there's an openness and warmth that makes you easy to approach.',
-      DSC:'In your closest relationships here, it supports connections that grow steadily rather than dramatically.'
-    },
-    square:{
-      MC:'In your public life and career here, that friction becomes visible — drive and resistance play out where people can see it.',
-      IC:'In your home life and private world here, it surfaces in what you carry and what you're working through.',
-      ASC:'In how you come across to people here, the tension is right on the surface — an intensity that's hard to ignore.',
-      DSC:'In your closest relationships here, people tend to mirror that friction back — it's rarely comfortable but rarely dull.'
-    },
-    opposition:{
-      MC:'In your public life and career here, that polarity plays out openly — one pull against another, both real.',
-      IC:'In your home life and private world here, the tension surfaces between what you need and what you allow yourself.',
-      ASC:'In how you come across to people here, the competing pulls are immediately visible — others sense the tension in you.',
-      DSC:'In your closest relationships here, people tend to embody one side of that tension and hold it up for you.'
-    }
+    conjunction:{MC:'In your public life and career here, both sides of this show up directly — visible in how you work and how you are seen.',IC:'In your home life and private world here, it shapes what you need and what grounds you.',ASC:'In how you come across to people here, both sides arrive at once — people sense it the moment they meet you.',DSC:'In your closest relationships here, that combination shows up in who you draw to you and what you create together.'},
+    trine:{MC:'In your public life and career here, that ease becomes visible — things come more naturally than they would elsewhere.',IC:'In your home life and private world here, that translates into a genuine sense of comfort and belonging.',ASC:'In how you come across to people here, it shows up effortlessly — you don\'t have to work at it.',DSC:'In your closest relationships here, it attracts people and connections that feel genuinely easy and reciprocal.'},
+    sextile:{MC:'In your public life and career here, that quiet support adds up — small advantages that open doors.',IC:'In your home life and private world here, it creates a gentle ease that\'s easy to take for granted.',ASC:'In how you come across to people here, there\'s an openness and warmth that makes you easy to approach.',DSC:'In your closest relationships here, it supports connections that grow steadily rather than dramatically.'},
+    square:{MC:'In your public life and career here, that friction becomes visible — drive and resistance play out where people can see it.',IC:'In your home life and private world here, it surfaces in what you carry and what you\'re working through.',ASC:'In how you come across to people here, the tension is right on the surface — an intensity that\'s hard to ignore.',DSC:'In your closest relationships here, people tend to mirror that friction back — it\'s rarely comfortable but rarely dull.'},
+    opposition:{MC:'In your public life and career here, that tension plays out openly — one pull against another, both real.',IC:'In your home life and private world here, it surfaces between what you need and what you allow yourself.',ASC:'In how you come across to people here, the competing pulls are immediately visible — others sense the tension in you.',DSC:'In your closest relationships here, people tend to embody one side of that tension and hold it up for you.'}
   };
-
-  function _buildAspectText(a, plt, lt){
+  function _buildAspectText(a,plt,lt){
     var other=a.p1===plt?a.p2:a.p1;
-    var dn=PNAMES[plt]||plt;
-    var don=PNAMES[other]||other;
-    // Look up planet pair description (try both orderings)
-    var key1=plt+'-'+other+'-'+a.type;
-    var key2=other+'-'+plt+'-'+a.type;
+    var key1=plt+'-'+other+'-'+a.type,key2=other+'-'+plt+'-'+a.type;
     var gen=_aspG[key1]||_aspG[key2]||'';
     var angleCtx=(_aspAngle[a.type]||{})[lt]||'';
     if(!gen)return '';
     return '<p style="margin:0 0 .7rem;font-family:var(--serif);font-size:.86rem;color:var(--ink-2);line-height:1.65">'+gen+' '+angleCtx+'</p>';
   }
-
   var personText=relA.length
-    ?relA.slice(0,2).map(function(a){return _buildAspectText(a,planet,ltype);}).join('')
-    :'<p style="margin:0">Your '+((PNAMES[planet]||planet))+' stands alone in your chart — no other planet modifies or softens it. In this place, its energy arrives at full strength, unfiltered and pure.</p>';
+    ?relA.slice(0,2).map(function(a){return _buildAspectText(a,planet,ltype);}).filter(Boolean).join('')||('<p style="margin:0;font-family:var(--serif);font-size:.86rem;color:var(--ink-2);line-height:1.65">'+PSYM[planet]+' '+(PNAMES[planet]||planet)+' connects with other planets in your chart — its influence here is part of a larger pattern.</p>')
+    :'<p style="margin:0;font-family:var(--serif);font-size:.86rem;color:var(--ink-2);line-height:1.65">Your '+(PNAMES[planet]||planet)+' stands alone in your chart — nothing softens or complicates it. In this place its energy arrives at full strength, unfiltered and pure.</p>';
   document.getElementById('rcAccent').style.background=col;
   document.getElementById('rcCity').innerHTML=(cityName||'This location')+'<br><em>'+quality+'</em>';
   document.getElementById('rcBody').innerHTML=
