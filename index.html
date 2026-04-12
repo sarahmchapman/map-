@@ -1435,13 +1435,139 @@ function openCard(cityName,planet,ltype,_lat,_lng){
     else distNote='The nearest '+planet+' '+ltype+' line is approximately <strong>'+kmDist+'km</strong> away.';
   }
   var relA=chart.aspects.filter(function(a){return a.p1===planet||a.p2===planet;});
+
+  // Aspect interpretation — plain English, no jargon
+  var _aspG={
+    'Sun-Moon-conjunction':"Your public face and your emotional self are unusually close — you don't have to perform much or hide how you really feel.",
+    'Sun-Mercury-conjunction':"How you think and how you come across are essentially the same thing — your mind is very much on the surface.",
+    'Sun-Venus-conjunction':"Warmth and confidence arrive together in you — you tend to be someone people genuinely want to be around.",
+    'Sun-Mars-conjunction':"Drive and identity are fused in you — when you want something, you go after it without much internal debate.",
+    'Sun-Jupiter-conjunction':"There's a natural optimism and confidence in you that tends to make things expand — doors open more easily than they do for most.",
+    'Sun-Saturn-conjunction':"You take yourself seriously, sometimes more than others realise — ambition and discipline are baked into how you operate.",
+    'Sun-Uranus-conjunction':"You don't quite fit the expected mould, and you've probably stopped trying — originality is just how you're built.",
+    'Sun-Neptune-conjunction':"There's an idealistic, dreamy quality to how you move through the world — you see possibility where others see limits.",
+    'Sun-Pluto-conjunction':"You have an intensity that people sense before you speak — transformation isn't something that happens to you, it's something you do.",
+    'Moon-Mercury-conjunction':"Your feelings and your thoughts are hard to separate — you process emotion by talking or writing about it.",
+    'Moon-Venus-conjunction':"Warmth and emotional depth arrive together in you — people feel genuinely cared for in your presence.",
+    'Moon-Mars-conjunction':"You feel things with your whole body — emotion and action are fused, which means you move fast but sometimes react before you're ready.",
+    'Moon-Jupiter-conjunction':"There's a generosity to your emotional life — you tend to make people feel held and hopeful at the same time.",
+    'Moon-Saturn-conjunction':"You learned early that safety comes from self-sufficiency — there's an emotional self-containment that can look like strength or distance depending on the day.",
+    'Moon-Uranus-conjunction':"Your emotional responses are unpredictable even to you — you need freedom and change in your inner life as much as your outer one.",
+    'Moon-Neptune-conjunction':"You're highly sensitive to atmosphere — you absorb the mood of a place and the feelings of the people around you.",
+    'Moon-Pluto-conjunction':"Your emotional life runs deep and intense — you don't do surface-level feeling, and you can sense what others are hiding.",
+    'Venus-Mars-conjunction':"Passion and affection are fused in you — love tends to arrive with heat, and you don't separate desire from genuine care easily.",
+    'Venus-Jupiter-conjunction':"There's a natural abundance to how you love and connect — generosity and warmth are just how you show up.",
+    'Venus-Saturn-conjunction':"You're selective and serious about who you let in — love for you is something built, not just felt.",
+    'Venus-Neptune-conjunction':"You're a romantic in the deepest sense — you see beauty and potential in people, sometimes more than they see in themselves.",
+    'Venus-Pluto-conjunction':"Love for you tends to be all-or-nothing — you're drawn to depth and intensity, and surface-level connection leaves you cold.",
+    'Mars-Jupiter-conjunction':"Your ambition has an optimistic quality — you act big and tend to believe things will work out, which often makes them do exactly that.",
+    'Mars-Saturn-conjunction':"You have a slow-burning, relentless kind of drive — you don't give up easily and you're capable of real endurance.",
+    'Mars-Pluto-conjunction':"Your drive runs very deep — when you want something, there's a quiet ferocity to how you pursue it.",
+    'Jupiter-Saturn-conjunction':"You balance expansion and caution better than most — you know when to take a risk and when to hold back.",
+    'Sun-Moon-trine':"Your public face and your private self are unusually close — you don't have to perform much.",
+    'Sun-Venus-trine':"Warmth and confidence come naturally together in you — you're easy to like and you tend to know it.",
+    'Sun-Mars-trine':"Drive and identity are well-matched — you act decisively without a lot of internal second-guessing.",
+    'Sun-Jupiter-trine':"There's a natural confidence about you — things tend to work out, and you half-expect them to.",
+    'Sun-Saturn-trine':"You have discipline and ambition without being rigid — you know how to work hard and still enjoy the results.",
+    'Sun-Uranus-trine':"You're original and unconventional but not abrasively so — your difference is an asset you've learned to work with.",
+    'Sun-Neptune-trine':"You have a creative, idealistic quality that sits easily in you — imagination isn't a burden, it's just how you see.",
+    'Sun-Pluto-trine':"You have real psychological depth and the resilience that comes with it — you've been through things and it shows as strength.",
+    'Moon-Venus-trine':"Emotional warmth and genuine care come naturally — people feel held in your presence without you having to try.",
+    'Moon-Jupiter-trine':"There's a generosity and emotional expansiveness in you — you tend to make people feel more hopeful just by being around.",
+    'Moon-Saturn-trine':"You have emotional steadiness without being cold — you can hold your feelings and other people's without losing yourself.",
+    'Moon-Neptune-trine':"You're deeply intuitive and compassionate — you sense what people need before they say it.",
+    'Moon-Pluto-trine':"Your emotional instincts about people are rarely wrong — you see through the surface.",
+    'Venus-Saturn-trine':"You build love slowly and take it seriously — what lasts matters more to you than what dazzles.",
+    'Venus-Jupiter-trine':"There's a natural warmth and good fortune in how you connect — people tend to feel lucky around you.",
+    'Venus-Mars-trine':"Passion and affection are well-matched in you — you know what you want and you go after it with genuine warmth.",
+    'Venus-Neptune-trine':"You have a genuine romantic idealism that doesn't tip into delusion — you see beauty in people and you're usually right.",
+    'Venus-Pluto-trine':"Love for you has real depth — you're drawn to transformation in relationships and you tend to bring it out in others.",
+    'Mars-Jupiter-trine':"Your drive has an optimistic quality — you tend to back yourself and things tend to go your way.",
+    'Mars-Saturn-trine':"You have discipline and drive in equal measure — the ability to work hard over a long time without burning out.",
+    'Mars-Pluto-trine':"You have a focused, quiet intensity — when you commit to something you see it through completely.",
+    'Mercury-Jupiter-trine':"Your thinking runs big — you see patterns and possibilities that others miss, and you can communicate them clearly.",
+    'Mercury-Saturn-trine':"You think carefully before you speak — your words tend to be precise and people trust what you say.",
+    'Sun-Moon-square':"There's a tension between who you feel yourself to be and what you need emotionally — you push yourself hard sometimes.",
+    'Sun-Mars-square':"Drive and identity are in friction — you're ambitious but sometimes at war with yourself about it.",
+    'Sun-Saturn-square':"There's a demanding inner critic in you — you hold yourself to very high standards and sometimes struggle to feel like enough.",
+    'Sun-Uranus-square':"You resist conformity in ways that can make life harder than it needs to be — but it's also what makes you genuinely interesting.",
+    'Sun-Pluto-square':"There's an intensity and need for control in you that can serve you well or get in your way depending on how conscious you are of it.",
+    'Moon-Mars-square':"There's a tension between what you feel and what you do about it — you act on emotion, sometimes before you've fully processed it.",
+    'Moon-Saturn-square':"Emotional safety doesn't come easily — you've learned to be self-sufficient but sometimes at the cost of real vulnerability.",
+    'Moon-Uranus-square':"Your emotional needs and your need for freedom are in constant negotiation — closeness and space are both necessary and hard to balance.",
+    'Moon-Pluto-square':"Your emotional life is intense and sometimes overwhelming — you feel things at a depth that most people don't.",
+    'Venus-Saturn-square':"Love doesn't come easily or lightly for you — there's a fear of rejection underneath, and you test people before you trust them.",
+    'Venus-Mars-square':"Desire and affection are in friction — relationships tend to be passionate but not always easy.",
+    'Venus-Pluto-square':"Love is rarely simple for you — there's an all-or-nothing quality to how you connect that can be consuming.",
+    'Mars-Saturn-square':"Drive and caution are in friction — you have real ambition but something holds back right when you're about to move.",
+    'Mars-Pluto-square':"There's a power struggle in you between assertion and control — the intensity can be hard to manage when you want something.",
+    'Mercury-Saturn-square':"Your mind is exacting and sometimes harsh on yourself — you overthink and can be harder on your own ideas than they deserve.",
+    'Sun-Moon-opposition':"What looks successful from the outside doesn't always feel right inside — your need for recognition and your emotional needs pull in different directions.",
+    'Sun-Saturn-opposition':"Ambition and limitation are in dialogue in you — you're driven but regularly confronted with where you're not yet enough.",
+    'Sun-Jupiter-opposition':"Confidence and overreach are your poles — you can go very big, and sometimes too big.",
+    'Moon-Saturn-opposition':"The need for warmth and the fear of vulnerability are in tension — you want closeness but keep a certain distance.",
+    'Venus-Mars-opposition':"What you want and what you love are sometimes in opposition — desire and affection don't always point in the same direction.",
+    'Venus-Jupiter-opposition':"You can idealise love and people to a degree that sets you up for disappointment — the reality rarely matches the vision.",
+    'Mars-Jupiter-opposition':"Your drive and your optimism can tip into overconfidence — you sometimes take on more than you can deliver.",
+    'Sun-Moon-sextile':"Your sense of self and your emotional life support each other quietly — you're more integrated than you probably give yourself credit for.",
+    'Sun-Venus-sextile':"Warmth and confidence work together in you — you're likable without having to try too hard.",
+    'Sun-Jupiter-sextile':"There's a quiet confidence about you — things tend to open up when you engage with them.",
+    'Moon-Venus-sextile':"Emotional warmth comes naturally — people feel genuinely cared for without you having to perform it.",
+    'Venus-Saturn-sextile':"You approach love thoughtfully and with care — you're not reckless with people's hearts, including your own.",
+    'Mercury-Venus-sextile':"You communicate with warmth — people feel heard when they talk to you.",
+    'Mars-Venus-sextile':"Passion and affection sit comfortably together — you love with genuine heat and genuine care.",
+    'Jupiter-Saturn-sextile':"You have a good instinct for when to expand and when to hold back — a balance most people spend their whole lives trying to find."
+  };
+
+  var _aspAngle={
+    conjunction:{
+      MC:'In your public life and career here, that shows up directly — both sides of this are visible in how you work and how you're seen.',
+      IC:'In your home life and private world here, that shapes what you need and what grounds you.',
+      ASC:'In how you come across to people here, both sides arrive at once — people sense it the moment they meet you.',
+      DSC:'In your closest relationships here, that combination shows up in who you draw to you and what you create together.'
+    },
+    trine:{
+      MC:'In your public life and career here, that ease becomes visible — things come more naturally than they would elsewhere.',
+      IC:'In your home life and private world here, that translates into a genuine sense of comfort and belonging.',
+      ASC:'In how you come across to people here, it shows up effortlessly — you don't have to work at it.',
+      DSC:'In your closest relationships here, it attracts people and connections that feel genuinely easy and reciprocal.'
+    },
+    sextile:{
+      MC:'In your public life and career here, that quiet support adds up — small advantages that open doors.',
+      IC:'In your home life and private world here, it creates a gentle ease that's easy to take for granted.',
+      ASC:'In how you come across to people here, there's an openness and warmth that makes you easy to approach.',
+      DSC:'In your closest relationships here, it supports connections that grow steadily rather than dramatically.'
+    },
+    square:{
+      MC:'In your public life and career here, that friction becomes visible — drive and resistance play out where people can see it.',
+      IC:'In your home life and private world here, it surfaces in what you carry and what you're working through.',
+      ASC:'In how you come across to people here, the tension is right on the surface — an intensity that's hard to ignore.',
+      DSC:'In your closest relationships here, people tend to mirror that friction back — it's rarely comfortable but rarely dull.'
+    },
+    opposition:{
+      MC:'In your public life and career here, that polarity plays out openly — one pull against another, both real.',
+      IC:'In your home life and private world here, the tension surfaces between what you need and what you allow yourself.',
+      ASC:'In how you come across to people here, the competing pulls are immediately visible — others sense the tension in you.',
+      DSC:'In your closest relationships here, people tend to embody one side of that tension and hold it up for you.'
+    }
+  };
+
+  function _buildAspectText(a, plt, lt){
+    var other=a.p1===plt?a.p2:a.p1;
+    var dn=PNAMES[plt]||plt;
+    var don=PNAMES[other]||other;
+    // Look up planet pair description (try both orderings)
+    var key1=plt+'-'+other+'-'+a.type;
+    var key2=other+'-'+plt+'-'+a.type;
+    var gen=_aspG[key1]||_aspG[key2]||'';
+    var angleCtx=(_aspAngle[a.type]||{})[lt]||'';
+    if(!gen)return '';
+    return '<p style="margin:0 0 .7rem;font-family:var(--serif);font-size:.86rem;color:var(--ink-2);line-height:1.65">'+gen+' '+angleCtx+'</p>';
+  }
+
   var personText=relA.length
-    ?relA.slice(0,3).map(function(a){
-        var other=a.p1===planet?a.p2:a.p1,od=chart.planets[other];
-        var tone=a.type==='square'?'creates productive tension':a.type==='opposition'?'calls for balance':a.type==='trine'?'flows with ease':a.type==='conjunction'?'merges and amplifies':'opens a quiet door';
-        return PSYM[planet]+' '+(PNAMES[planet]||planet)+' in '+pd.sign+' '+a.sym+' '+PSYM[other]+' '+other+' in '+od.sign+' <span style="color:var(--ink-3);font-size:.8em">('+a.type+', '+tone+')</span>';
-      }).join('<br>')
-    :PSYM[planet]+' '+planet+' in '+pd.sign+' — unaspected, its energy expresses purely here.';
+    ?relA.slice(0,2).map(function(a){return _buildAspectText(a,planet,ltype);}).join('')
+    :'<p style="margin:0">Your '+((PNAMES[planet]||planet))+' stands alone in your chart — no other planet modifies or softens it. In this place, its energy arrives at full strength, unfiltered and pure.</p>';
   document.getElementById('rcAccent').style.background=col;
   document.getElementById('rcCity').innerHTML=(cityName||'This location')+'<br><em>'+quality+'</em>';
   document.getElementById('rcBody').innerHTML=
@@ -1450,7 +1576,7 @@ function openCard(cityName,planet,ltype,_lat,_lng){
     +'<div class="rc-rule"></div>'
     +'<div class="rc-slbl">In this place you feel</div><div class="rc-feeling">'+((FEELING[planet]||{})[focus]||'powerfully present')+'.</div>'
     +'<div class="rc-slbl">What\'s activated</div><div class="rc-prose" id="rcActivated">'+((LINE_ACTIVATED[planet]&&LINE_ACTIVATED[planet][ltype])||LINE_DESC[ltype]||'')+' '+((SIGN_MODIFIERS[planet]&&SIGN_MODIFIERS[planet][pd.sign])||'')+'</div>'
-    +'<div class="rc-slbl">Your natal signature</div><div class="rc-prose">'+personText+'</div>'
+    +'<div class="rc-slbl">Your chart here</div><div class="rc-prose">'+personText+'</div>'
     +'<div class="rc-irow"><div class="rc-ibox"><div class="rc-ilbl">Best for</div><div class="rc-itext">'+((BEST_FOR[planet]&&BEST_FOR[planet][ltype])||'')+'</div></div><div class="rc-ibox"><div class="rc-ilbl">Watch for</div><div class="rc-itext">'+((WATCH_FOR[planet]&&WATCH_FOR[planet][ltype])||'')+'</div></div></div>';
   document.getElementById('readingCard').classList.add('open');
   document.getElementById('readingCard').scrollIntoView({behavior:'smooth',block:'nearest'});
