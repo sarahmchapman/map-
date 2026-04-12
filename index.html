@@ -1177,7 +1177,7 @@ function mapReset(){
   if(activeChart&&activeChart.geo&&activeChart.geo.lat!=null){
     _map.cx=activeChart.geo.lng;_map.cy=activeChart.geo.lat;
   }else{_map.cx=0;_map.cy=20;}
-  _map.zoomF=2.5;_redraw();
+  _map.zoomF=3.0;_redraw();
 }
 
 function drawMap(){
@@ -1197,7 +1197,7 @@ function drawMap(){
     _map.ready=true;
     _map.cx=(activeChart&&activeChart.geo&&activeChart.geo.lat!=null)?activeChart.geo.lng:0;
     _map.cy=(activeChart&&activeChart.geo&&activeChart.geo.lat!=null)?activeChart.geo.lat:20;
-    _map.zoomF=2.5;
+    _map.zoomF=3.0;
     _setupMapEvents();
   }
   _redraw();
