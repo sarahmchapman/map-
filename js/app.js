@@ -813,10 +813,11 @@ function _setupMapEvents(){
 function _handleMapClick(lat,lng){
   if(!acgData||!activeChart)return;
   var PALL=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode','SNode'];
+  var PALL_PZ=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode']; // SNode excluded from power zones
 
   // Find all lines within 3° (power zone threshold)
   var nearby=[];
-  PALL.forEach(function(p){
+  PALL_PZ.forEach(function(p){
     if(!toggleState[p]||!acgData[p])return;
     ['MC','IC','ASC','DSC'].forEach(function(lt){
       if(!ltypeState[lt])return;
