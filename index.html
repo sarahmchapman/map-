@@ -125,7 +125,7 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 .focus-filter-btn.on{background:var(--gold);color:var(--paper);border-color:var(--gold)}
 #mapWrap{position:relative;overflow:hidden;border-top:.5px solid var(--paper-3);border-bottom:.5px solid var(--paper-3)}
 #mapTiles{display:block;width:100%;height:660px;cursor:crosshair;touch-action:none}
-#lineCanvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:all;cursor:crosshair;touch-action:none;z-index:2}
+#lineSvg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:all;cursor:crosshair;touch-action:none;z-index:2}
 .map-zoom-btns{position:absolute;top:.6rem;right:.6rem;display:flex;flex-direction:column;gap:2px;z-index:5}
 .map-zoom-btn{width:28px;height:28px;background:rgba(250,248,244,.92);border:.5px solid var(--paper-3);border-radius:3px;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;color:var(--ink-2);line-height:1;transition:background .15s}
 .map-zoom-btn:hover{background:var(--paper)}
@@ -213,7 +213,7 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     </div>
   </form>
   <div style="text-align:center;padding:1.5rem 0 1rem;border-top:1px solid var(--paper-3);margin-top:1rem">
-    <a href="mailto:elsewhereastro@gmail.com?subject=elsewhere feedback" style="font-family:var(--serif);font-size:.78rem;color:var(--ink-3);text-decoration:none;border-bottom:1px solid var(--paper-3)">share feedback</a>
+    <a href="/cdn-cgi/l/email-protection#06636a7563716e637463677572746946616b676f6a2865696b397573646c6365723b636a7563716e63746326606363626467656d" style="font-family:var(--serif);font-size:.78rem;color:var(--ink-3);text-decoration:none;border-bottom:1px solid var(--paper-3)">share feedback</a>
     <span style="color:var(--paper-3);margin:0 .8rem">·</span>
     <span style="font-family:var(--serif);font-size:.78rem;color:var(--ink-3)">© 2025 elsewhere</span>
   </div>
@@ -251,7 +251,7 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     </div>
     <div id="mapWrap">
       <canvas id="mapTiles"></canvas>
-      <canvas id="lineCanvas"></canvas>
+      <svg id="lineSvg" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible"><defs><clipPath id="mapClip"><rect id="mapClipRect" x="0" y="0" width="800" height="600"/></clipPath></defs></svg>
       <div class="map-zoom-btns">
         <button class="map-zoom-btn" onclick="mapZoom(1)" title="Zoom in">+</button>
         <button class="map-zoom-btn" onclick="mapZoom(-1)" title="Zoom out">−</button>
@@ -277,13 +277,13 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     <div class="aspect-list" id="aspectList"></div>
   </div>
   <div style="text-align:center;padding:1.5rem 0 1rem;border-top:1px solid var(--paper-3);margin-top:1rem">
-    <a href="mailto:elsewhereastro@gmail.com?subject=elsewhere feedback" style="font-family:var(--serif);font-size:.78rem;color:var(--ink-3);text-decoration:none;border-bottom:1px solid var(--paper-3)">share feedback</a>
+    <a href="/cdn-cgi/l/email-protection#f6939a8593819e9384939785828499b6919b979f9ad895999bc98583949c939582cb939a8593819e938493d6909393929497959d" style="font-family:var(--serif);font-size:.78rem;color:var(--ink-3);text-decoration:none;border-bottom:1px solid var(--paper-3)">share feedback</a>
     <span style="color:var(--paper-3);margin:0 .8rem">·</span>
     <span style="font-family:var(--serif);font-size:.78rem;color:var(--ink-3)">© 2025 elsewhere</span>
   </div>
 </div>
 
-<script src="/descriptions.js?v=3"></script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="/descriptions.js?v=3"></script>
 <script>
 // elsewhere — astrocartography
 // Pre-generated reading descriptions
@@ -824,7 +824,7 @@ var ltypeState={MC:true,IC:true,ASC:true,DSC:true};
 var toggleState={};
 
 var _map={
-  canvas:null,overlay:null,ctx:null,octx:null,wrap:null,
+  canvas:null,svg:null,ctx:null,wrap:null,
   W:0,H:0,zoom:2,zoomF:2.0,cx:0,cy:20,
   dragging:false,lastX:0,lastY:0,pinchDist:0,pinchZoom:2,
   tileCache:{},ready:false,hasDragged:false
@@ -900,165 +900,144 @@ function _renderTiles(){
 
 function _renderOverlay(){
   var m=_map;
-  if(!m.octx||!acgData||!activeChart){if(m.octx)m.octx.clearRect(0,0,m.W,m.H);return;}
-  var ctx=m.octx,W=m.W,H=m.H;
-  ctx.clearRect(0,0,W,H);
-  var PALL=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode','SNode'];
-  var lw=Math.max(1.2,Math.min(2.5,m.zoomF*0.45));
-  var fs=Math.round(Math.max(9,Math.min(13,m.zoomF*2.2)));
-  var MARGIN=22; // left/right edge margin for labels
+  var svg=m.svg;
+  if(!svg||!acgData||!activeChart){if(svg)svg.innerHTML='';return;}
+  var W=m.W,H=m.H;
 
-  // Draw a compact label with pill background
-  function drawLabel(text,x,y,col,align){
-    ctx.save();
-    ctx.font='500 '+fs+'px Jost,sans-serif';
-    ctx.textAlign=align||'center';
-    ctx.textBaseline='middle';
-    var tw=ctx.measureText(text).width;
-    var pad=2;
-    var bx=align==='left'?x:align==='right'?x-tw-pad*2:x-tw/2-pad;
-    ctx.fillStyle='rgba(250,248,244,0.9)';
-    ctx.fillRect(bx,y-fs/2-pad,tw+pad*2,fs+pad*2);
-    ctx.fillStyle=col;
-    ctx.fillText(text,align==='left'?x+pad:align==='right'?x-pad:x,y);
-    ctx.restore();
+  // Helper: lat/lng to pixel (same as before)
+  function px(lat,lng){return _ll2px(lat,lng);}
+
+  // Build SVG path string from points, splitting at antimeridian
+  function buildPaths(pts){
+    var paths=[];
+    var seg=[];
+    for(var i=0;i<pts.length;i++){
+      var p=px(pts[i][0],pts[i][1]);
+      if(seg.length>0&&Math.abs(p.x-seg[seg.length-1].x)>W*0.45){
+        if(seg.length>1)paths.push(seg);
+        seg=[];
+      }
+      seg.push(p);
+    }
+    if(seg.length>1)paths.push(seg);
+    return paths;
   }
 
-  // Collect all top/bottom/edge labels, deduplicate by x position
-  var topLabels=[], botLabels=[], leftLabels=[], rightLabels=[];
-  var TOP_BAND=fs*3; // only label if line enters/exits within top band
+  function segToD(seg){
+    var d='M'+seg[0].x.toFixed(1)+','+seg[0].y.toFixed(1);
+    for(var i=1;i<seg.length;i++) d+=' L'+seg[i].x.toFixed(1)+','+seg[i].y.toFixed(1);
+    return d;
+  }
+
+  var lw=Math.max(1.2,Math.min(2.5,m.zoomF*0.45));
+  var fs=Math.round(Math.max(9,Math.min(13,m.zoomF*2.2)));
+  var PALL=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode','SNode'];
+
+  var html='';
+  var topLabels=[],botLabels=[],leftLabels=[],rightLabels=[];
 
   PALL.forEach(function(p){
     if(!toggleState[p]||!acgData[p])return;
     var col=PCOL[p];
-    var label=PSYM[p]+' ';
-
     ['MC','IC','ASC','DSC'].forEach(function(lt){
       if(!ltypeState[lt])return;
       var pts=acgData[p][lt];if(!pts||pts.length<2)return;
       var isDash=(lt==='IC'||lt==='DSC');
       var ltype=lt==='ASC'?'AC':lt==='DSC'?'DC':lt;
       var fullLabel=PSYM[p]+' '+ltype;
+      var opacity=isDash?0.55:0.92;
+      var strokeW=lw*(isDash?0.75:1);
+      var dash=isDash?'stroke-dasharray="6,4"':'';
 
-      ctx.strokeStyle=col;
-      ctx.globalAlpha=isDash?0.55:0.92;
-      ctx.lineWidth=lw*(isDash?0.75:1);
-      ctx.setLineDash(isDash?[6,4]:[]);
-      ctx.lineJoin='round';
-      ctx.lineCap='round';
-
-      // Split into segments at antimeridian
-      // Sort points by latitude so lines draw south-to-north smoothly
-      var sortedPts = pts.slice().sort(function(a,b){return a[0]-b[0];});
-      var segments=[[]];
-      for(var i=0;i<sortedPts.length;i++){
-        var pp=_ll2px(sortedPts[i][0],sortedPts[i][1]);
-        var seg=segments[segments.length-1];
-        if(seg.length>0&&Math.abs(pp.x-seg[seg.length-1].x)>W*0.45){
-          segments.push([]);seg=segments[segments.length-1];
-        }
-        seg.push(pp);
-      }
-
-
-      segments.forEach(function(seg){
+      var paths=buildPaths(pts);
+      paths.forEach(function(seg){
         if(seg.length<2)return;
-        ctx.beginPath();
-        ctx.moveTo(seg[0].x,seg[0].y);
-        for(var i=1;i<seg.length;i++) ctx.lineTo(seg[i].x,seg[i].y);
-        ctx.stroke();
+        var d=segToD(seg);
+        html+='<path d="'+d+'" stroke="'+col+'" stroke-width="'+strokeW+'" fill="none" opacity="'+opacity+'" '+dash+' stroke-linecap="round" stroke-linejoin="round"/>';
 
-        var first=seg[0], last=seg[seg.length-1];
+        // Label positions — find top and bottom points of this segment
+        var topPt=null,botPt=null;
+        seg.forEach(function(p){
+          if(!topPt||p.y<topPt.y)topPt=p;
+          if(!botPt||p.y>botPt.y)botPt=p;
+        });
 
-        // Find topmost and bottommost points (include slightly off-canvas)
-        var topPt=null, botPt=null;
-        for(var i=0;i<seg.length;i++){
-          if(seg[i].x<-20||seg[i].x>W+20)continue;
-          if(!topPt||seg[i].y<topPt.y)topPt=seg[i];
-          if(!botPt||seg[i].y>botPt.y)botPt=seg[i];
-        }
+        if(topPt) topLabels.push({x:topPt.x,y:topPt.y,text:fullLabel,col:col});
+        if(botPt) botLabels.push({x:botPt.x,y:botPt.y,text:fullLabel,col:col});
 
-        // Top label — always at top edge for lines that exit top
-        if(topPt){
-          var topY=topPt.y<=2?fs+6:Math.min(topPt.y,fs+6);
-          topLabels.push({x:topPt.x,y:topY,text:fullLabel,col:col});
-        }
-        // Bottom label — always at bottom edge for lines that exit bottom
-        if(botPt){
-          var botY=botPt.y>=H-2?H-fs-6:Math.max(botPt.y,H-fs-6);
-          botLabels.push({x:botPt.x,y:botY,text:fullLabel,col:col});
-        }
-
-        // Left edge label
-        if(first.x<=2||last.x<=2){
-          var ept=first.x<=2?first:last;
-          if(ept.y>=0&&ept.y<=H) leftLabels.push({y:ept.y,text:fullLabel,col:col});
-        }
-        // Right edge label
-        if(first.x>=W-2||last.x>=W-2){
-          var ept2=first.x>=W-2?first:last;
-          if(ept2.y>=0&&ept2.y<=H) rightLabels.push({y:ept2.y,text:fullLabel,col:col});
-        }
+        var first=seg[0],last=seg[seg.length-1];
+        if(first.x<5) leftLabels.push({y:first.y,text:fullLabel,col:col});
+        else if(last.x<5) leftLabels.push({y:last.y,text:fullLabel,col:col});
+        if(first.x>W-5) rightLabels.push({y:first.y,text:fullLabel,col:col});
+        else if(last.x>W-5) rightLabels.push({y:last.y,text:fullLabel,col:col});
       });
-
-      ctx.setLineDash([]);
-      ctx.globalAlpha=1;
     });
   });
 
-  // Draw top labels (deduplicate by proximity)
+  // Draw labels as SVG text with background rect
+  function svgLabel(text,x,y,col,anchor){
+    var cw=text.length*fs*0.55;
+    var bx=anchor==='start'?x:anchor==='end'?x-cw-4:x-cw/2-2;
+    var tx=anchor==='start'?x+2:anchor==='end'?x-2:x;
+    return '<rect x="'+bx+'" y="'+(y-fs/2-2)+'" width="'+(cw+4)+'" height="'+(fs+4)+'" fill="rgba(250,248,244,0.9)" rx="2"/>'+
+           '<text x="'+tx+'" y="'+y+'" fill="'+col+'" font-size="'+fs+'" font-family="Jost,sans-serif" font-weight="500" dominant-baseline="middle" text-anchor="'+(anchor||'middle')+'">'+text+'</text>';
+  }
+
+  // Top labels
   topLabels.sort(function(a,b){return a.x-b.x;});
-  var lastTopX=-999;
+  var lastTX=-999;
   topLabels.forEach(function(lb){
     if(lb.x<0||lb.x>W)return;
-    if(Math.abs(lb.x-lastTopX)<fs*3)return; // skip if too close to previous
-    drawLabel(lb.text,lb.x,lb.y,lb.col,'center');
-    lastTopX=lb.x;
+    var ty=Math.max(fs+4, Math.min(lb.y, fs+4));
+    if(Math.abs(lb.x-lastTX)<fs*3)return;
+    html+=svgLabel(lb.text,lb.x,ty,lb.col,'center');
+    lastTX=lb.x;
   });
 
-  // Draw bottom labels
+  // Bottom labels
   botLabels.sort(function(a,b){return a.x-b.x;});
-  var lastBotX=-999;
+  var lastBX=-999;
   botLabels.forEach(function(lb){
     if(lb.x<0||lb.x>W)return;
-    if(Math.abs(lb.x-lastBotX)<fs*3)return;
-    drawLabel(lb.text,lb.x,lb.y,lb.col,'center');
-    lastBotX=lb.x;
+    var by=Math.min(H-fs-4, Math.max(lb.y, H-fs-4));
+    if(Math.abs(lb.x-lastBX)<fs*3)return;
+    html+=svgLabel(lb.text,lb.x,by,lb.col,'center');
+    lastBX=lb.x;
   });
 
-  // Draw left edge labels
+  // Left labels
   leftLabels.sort(function(a,b){return a.y-b.y;});
-  var lastLeftY=-999;
+  var lastLY=-999;
   leftLabels.forEach(function(lb){
-    if(Math.abs(lb.y-lastLeftY)<fs*2)return;
-    drawLabel(lb.text,2,lb.y,lb.col,'left');
-    lastLeftY=lb.y;
+    if(lb.y<0||lb.y>H)return;
+    if(Math.abs(lb.y-lastLY)<fs*2)return;
+    html+=svgLabel(lb.text,4,lb.y,lb.col,'start');
+    lastLY=lb.y;
   });
 
-  // Draw right edge labels
+  // Right labels
   rightLabels.sort(function(a,b){return a.y-b.y;});
-  var lastRightY=-999;
+  var lastRY=-999;
   rightLabels.forEach(function(lb){
-    if(Math.abs(lb.y-lastRightY)<fs*2)return;
-    drawLabel(lb.text,W-2,lb.y,lb.col,'right');
-    lastRightY=lb.y;
+    if(lb.y<0||lb.y>H)return;
+    if(Math.abs(lb.y-lastRY)<fs*2)return;
+    html+=svgLabel(lb.text,W-4,lb.y,lb.col,'end');
+    lastRY=lb.y;
   });
 
-  ctx.globalAlpha=1;
-
-  // Birth marker — circle style like reference
+  // Birth marker
   if(activeChart.geo&&activeChart.geo.lat!=null){
     var bp=_ll2px(activeChart.geo.lat,activeChart.geo.lng);
     if(bp.x>0&&bp.x<W&&bp.y>0&&bp.y<H){
-      ctx.beginPath();ctx.arc(bp.x,bp.y,8,0,Math.PI*2);
-      ctx.strokeStyle='#b8955a';ctx.lineWidth=2.5;ctx.stroke();
-      ctx.beginPath();ctx.arc(bp.x,bp.y,2,0,Math.PI*2);
-      ctx.fillStyle='#b8955a';ctx.fill();
-      ctx.font='500 10px Jost,sans-serif';
-      ctx.fillStyle='#1a1714';ctx.textAlign='center';ctx.textBaseline='bottom';
-      ctx.fillText('Birth',bp.x,bp.y-11);
+      html+='<circle cx="'+bp.x+'" cy="'+bp.y+'" r="8" fill="none" stroke="#b8955a" stroke-width="2.5"/>';
+      html+='<circle cx="'+bp.x+'" cy="'+bp.y+'" r="2" fill="#b8955a"/>';
+      html+='<text x="'+bp.x+'" y="'+(bp.y-13)+'" fill="#1a1714" font-size="10" font-family="Jost,sans-serif" font-weight="500" text-anchor="middle">Birth</text>';
     }
   }
+
+  // Split html into lines and labels for separate clipping
+  svg.querySelector('defs').innerHTML='<clipPath id="mapClip"><rect id="mapClipRect" x="0" y="0" width="'+W+'" height="'+H+'"/></clipPath>';
+  svg.innerHTML=svg.querySelector('defs').outerHTML+'<g id="lineGroup">'+html+'</g>';
 }
 
 var _rafPending=false;
@@ -1230,16 +1209,16 @@ function mapReset(){
 function drawMap(){
   var wrap=document.getElementById('mapWrap');if(!wrap)return;
   var tileCanvas=document.getElementById('mapTiles');
-  var overlayCanvas=document.getElementById('lineCanvas');
-  if(!tileCanvas||!overlayCanvas)return;
+  // SVG overlay - no canvas needed
+  if(!tileCanvas)return;
   var W=wrap.clientWidth||800;
   var H=parseInt(getComputedStyle(tileCanvas).height)||520;
   tileCanvas.width=W;tileCanvas.height=H;
-  overlayCanvas.width=W;overlayCanvas.height=H;
   _map.W=W;_map.H=H;
-  _map.canvas=tileCanvas;_map.overlay=overlayCanvas;
+  _map.canvas=tileCanvas;
   _map.ctx=tileCanvas.getContext('2d');
-  _map.octx=overlayCanvas.getContext('2d');
+  _map.svg=document.getElementById('lineSvg');
+  _map.svg.setAttribute('viewBox','0 0 '+W+' '+H);var cr=document.getElementById('mapClipRect');if(cr){cr.setAttribute('width',W);cr.setAttribute('height',H);}
   if(!_map.ready){
     _map.ready=true;
     _map.cx=(activeChart&&activeChart.geo&&activeChart.geo.lat!=null)?activeChart.geo.lng:0;
@@ -1250,7 +1229,7 @@ function drawMap(){
   _redraw();
   window.addEventListener('resize',function(){
     var nW=wrap.clientWidth||800;
-    tileCanvas.width=nW;overlayCanvas.width=nW;_map.W=nW;_redraw();
+    tileCanvas.width=nW;_map.W=nW;if(_map.svg)_map.svg.setAttribute('viewBox','0 0 '+nW+' '+_map.H);_redraw();
   });
 }
 function drawLines(){_renderOverlay();}
@@ -1510,16 +1489,9 @@ function resetToForm(){
   document.getElementById('formScreen').style.display='flex';
   selectedGeo=null;acgData=null;activeChart=null;
   toggleState={};ltypeState={MC:true,IC:true,ASC:true,DSC:true};
-  _map.ready=false;_map.tileCache={};_map.ctx=null;_map.octx=null;
+  _map.ready=false;_map.tileCache={};_map.ctx=null;_map.svg=null;
   document.getElementById('cityInput').value='';
   document.getElementById('citySuggestions').innerHTML='';
   document.getElementById('chartGrid').innerHTML='';
   document.getElementById('anglesGrid').innerHTML='';
-  document.getElementById('aspectList').innerHTML='';
-  document.getElementById('readingCard').classList.remove('open');
-  document.getElementById('mapLegend').innerHTML='';
-}
-window.addEventListener('resize',function(){if(activeChart)drawMap();});
-</script>
-</body>
-</html>
+  document.getEleme
