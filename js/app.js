@@ -1371,11 +1371,22 @@ function openCard(cityName,planet,ltype,_lat,_lng,powerZone){
 
   var pzData=powerZone&&powerZone.length>=2?_buildPowerZoneHTML(powerZone):null;
   document.getElementById('rcAccent').style.background=col;
-  document.getElementById('rcCity').innerHTML=(cityName||'This location')+'<br><em>'+(pzData?'power zone':quality)+'</em>';
+  document.getElementById('rcCity').innerHTML=(cityName||'This location')+'<br><em>'+(pzData?'POWER ZONE':quality)+'</em>';
 
   if(pzData){
     document.getElementById('rcBody').innerHTML=
-      '<div style="margin:.5rem 0 .8rem"><div class="rc-pname" style="color:var(--gold);font-size:.75rem">'+pzData.header+'</div></div>'
+      '<div class="rc-slbl">Lines active here</div>'
+      +'<div style="display:flex;flex-direction:column;gap:.3rem;margin-bottom:.75rem">'
+      +powerZone.slice(0,3).map(function(x){
+        var s=x.lt==='ASC'?'AC':x.lt==='DSC'?'DC':x.lt;
+        var xpd=chart.planets[x.p];
+        var xcol=PCOL[x.p];
+        return '<div style="display:flex;align-items:center;gap:.5rem;padding:.3rem 0;border-bottom:.5px solid var(--paper-3)">'
+          +'<span style="color:'+xcol+';font-family:var(--serif);font-size:1.2rem">'+PSYM[x.p]+'</span>'
+          +'<span style="font-size:.65rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:'+xcol+'">'+(PNAMES[x.p]||x.p)+(xpd?' in '+xpd.sign:'')+' · '+s+'</span>'
+          +'</div>';
+      }).join('')
+      +'</div>'
       +(distNote?'<div class="rc-rule"></div><div class="rc-prose" style="font-size:.82rem">'+distNote+'</div>':'')
       +'<div class="rc-rule"></div>'
       +'<div class="rc-slbl">What each line brings</div>'
@@ -1395,19 +1406,7 @@ function openCard(cityName,planet,ltype,_lat,_lng,powerZone){
       +'<div class="rc-rule"></div>'
       +'<div class="rc-slbl">The energies together</div>'
       +'<div class="rc-prose">'+pzData.body+'</div>'
-      +'<div class="rc-rule"></div>'
-      +'<div class="rc-slbl">Lines active here</div>'
-      +'<div style="display:flex;flex-direction:column;gap:.3rem;margin-bottom:.75rem">'
-      +powerZone.slice(0,3).map(function(x){
-        var s=x.lt==='ASC'?'AC':x.lt==='DSC'?'DC':x.lt;
-        var xpd=chart.planets[x.p];
-        var xcol=PCOL[x.p];
-        return '<div style="display:flex;align-items:center;gap:.5rem;padding:.3rem 0;border-bottom:.5px solid var(--paper-3)">'
-          +'<span style="color:'+xcol+';font-family:var(--serif);font-size:1.2rem">'+PSYM[x.p]+'</span>'
-          +'<span style="font-size:.65rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:'+xcol+'">'+(PNAMES[x.p]||x.p)+(xpd?' in '+xpd.sign:'')+' · '+s+'</span>'
-          +'</div>';
-      }).join('')
-      +'</div>';
+      +'<div class="rc-rule"></div>';
   } else {
     document.getElementById('rcBody').innerHTML=
       '<div class="rc-planet-row"><span class="rc-glyph" style="color:'+col+'">'+PSYM[planet]+'</span><div><div class="rc-pname" style="color:'+col+'">'+displayName+' in '+pd.sign+' '+pd.deg+'°'+pad(pd.min)+"'"+'</div><div class="rc-ltype">'+{MC:'MC — Midheaven',IC:'IC — Imum Coeli',ASC:'AC — Ascendant',DSC:'DC — Descendant'}[ltype]+' line</div></div></div>'
