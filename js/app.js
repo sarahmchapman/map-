@@ -815,7 +815,25 @@ function _handleMapClick(lat,lng){
   var PALL=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode','SNode'];
   var PALL_PZ=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode']; // SNode excluded from power zones
 
-  // Find all lines within 3° (power zone threshold)
+  // For each line, find its longitude at the CLICKED latitude
+  // This is the only reliable way to know if lines genuinely cross near the click
+  function _lngAtLat(pts, targetLat){
+    if(!pts||pts.length<2)return null;
+    // Find two bracketing points around targetLat
+    var sorted=pts.slice().sort(function(a,b){return a[0]-b[0];});
+    for(var i=0;i<sorted.length-1;i++){
+      var a=sorted[i], b=sorted[i+1];
+      if(a[0]<=targetLat&&b[0]>=targetLat){
+        var t=(targetLat-a[0])/(b[0]-a[0]);
+        var dlng=b[1]-a[1];
+        if(dlng>180)dlng-=360;if(dlng<-180)dlng+=360;
+        return a[1]+t*dlng;
+      }
+    }
+    return null;
+  }
+
+  // Find nearest line to the click for normal card
   var nearby=[];
   PALL_PZ.forEach(function(p){
     if(!toggleState[p]||!acgData[p])return;
@@ -829,13 +847,29 @@ function _handleMapClick(lat,lng){
         var d=Math.sqrt(dlat*dlat+dlng*dlng);
         if(d<best)best=d;
       }
-      if(best<Infinity)nearby.push({p:p,lt:lt,d:best});
+      // Get the line's longitude at the exact clicked latitude
+      var lngHere=_lngAtLat(pts,lat);
+      if(best<Infinity)nearby.push({p:p,lt:lt,d:best,lngHere:lngHere});
     });
   });
   nearby.sort(function(a,b){return a.d-b.d;});
 
-  // Power zone: 2+ lines within 3 degrees
-  var inZone=nearby.filter(function(x){return x.d<3;});
+  // Power zone detection:
+  // 1. Click must be within 1.5° of at least one line
+  // 2. 2+ lines must have their longitude at the clicked latitude within 1.5° of each other
+  // This means they genuinely cross near this point
+  var inZone=[];
+  var clickedLines=nearby.filter(function(x){return x.d<1.5&&x.lngHere!=null;});
+  if(clickedLines.length>=2){
+    // Group lines that are close to each other at this latitude
+    var refLng=clickedLines[0].lngHere;
+    inZone=clickedLines.filter(function(x){
+      var dlng=Math.abs(x.lngHere-refLng);
+      if(dlng>180)dlng=360-dlng;
+      return dlng<1.5;
+    });
+    if(inZone.length<2)inZone=[];
+  }
   var bestP=nearby.length?nearby[0].p:'Sun';
   var bestLT=nearby.length?nearby[0].lt:'MC';
   // Always find nearest city from local DB — no distance limit
@@ -952,7 +986,7 @@ function _buildChart(day,month,year,hour,min,name,tz){
     .then(function(r){return r.json();})
     .then(function(data){
       acgData=data.lines;
-      // Build Chiron lines client-side since API can't compute them
+      // Build Chiron lines client-side since API can\'t compute them
       if(activeChart&&activeChart.planets._chironRA!=null){
         var cRA=activeChart.planets._chironRA;
         var cDec=activeChart.planets._chironDec;
@@ -1126,39 +1160,39 @@ function openCard(cityName,planet,ltype,_lat,_lng,powerZone){
   }
   var relA=chart.aspects.filter(function(a){return a.p1===planet||a.p2===planet;});
   var _aspG={
-    'Sun-Moon-conjunction':"Your public face and your emotional self are unusually close — you don't have to perform much or hide how you really feel.",
+    'Sun-Moon-conjunction':"Your public face and your emotional self are unusually close — you don\'t have to perform much or hide how you really feel.",
     'Sun-Mercury-conjunction':"How you think and how you come across are essentially the same thing — your mind is very much on the surface.",
     'Sun-Venus-conjunction':"Warmth and confidence arrive together in you — you tend to be someone people genuinely want to be around.",
     'Sun-Mars-conjunction':"Drive and identity are fused in you — when you want something, you go after it without much internal debate.",
     'Sun-Jupiter-conjunction':"There's a natural optimism and confidence in you that tends to make things expand — doors open more easily than they do for most.",
     'Sun-Saturn-conjunction':"You take yourself seriously, sometimes more than others realise — ambition and discipline are baked into how you operate.",
-    'Sun-Uranus-conjunction':"You don't quite fit the expected mould, and you've probably stopped trying — originality is just how you're built.",
+    'Sun-Uranus-conjunction':"You don't quite fit the expected mould, and you've probably stopped trying — originality is just how you\'re built.",
     'Sun-Neptune-conjunction':"There's an idealistic, dreamy quality to how you move through the world — you see possibility where others see limits.",
-    'Sun-Pluto-conjunction':"You have an intensity that people sense before you speak — transformation isn't something that happens to you, it's something you do.",
+    'Sun-Pluto-conjunction':"You have an intensity that people sense before you speak — transformation isn't something that happens to you, it\'s something you do.",
     'Moon-Mercury-conjunction':"Your feelings and your thoughts are hard to separate — you process emotion by talking or writing about it.",
     'Moon-Venus-conjunction':"Warmth and emotional depth arrive together in you — people feel genuinely cared for in your presence.",
-    'Moon-Mars-conjunction':"You feel things with your whole body — emotion and action are fused, which means you move fast but sometimes react before you're ready.",
+    'Moon-Mars-conjunction':"You feel things with your whole body — emotion and action are fused, which means you move fast but sometimes react before you\'re ready.",
     'Moon-Jupiter-conjunction':"There's a generosity to your emotional life — you tend to make people feel held and hopeful at the same time.",
-    'Moon-Saturn-conjunction':"You learned early that safety comes from self-sufficiency — there's an emotional self-containment that can look like strength or distance depending on the day.",
+    'Moon-Saturn-conjunction':"You learned early that safety comes from self-sufficiency — there\'s an emotional self-containment that can look like strength or distance depending on the day.",
     'Moon-Uranus-conjunction':"Your emotional responses are unpredictable even to you — you need freedom and change in your inner life as much as your outer one.",
     'Moon-Neptune-conjunction':"You're highly sensitive to atmosphere — you absorb the mood of a place and the feelings of the people around you.",
-    'Moon-Pluto-conjunction':"Your emotional life runs deep and intense — you don't do surface-level feeling, and you can sense what others are hiding.",
-    'Venus-Mars-conjunction':"Passion and affection are fused in you — love tends to arrive with heat, and you don't separate desire from genuine care easily.",
+    'Moon-Pluto-conjunction':"Your emotional life runs deep and intense — you don\'t do surface-level feeling, and you can sense what others are hiding.",
+    'Venus-Mars-conjunction':"Passion and affection are fused in you — love tends to arrive with heat, and you don\'t separate desire from genuine care easily.",
     'Venus-Jupiter-conjunction':"There's a natural abundance to how you love and connect — generosity and warmth are just how you show up.",
     'Venus-Saturn-conjunction':"You're selective and serious about who you let in — love for you is something built, not just felt.",
     'Venus-Neptune-conjunction':"You're a romantic in the deepest sense — you see beauty and potential in people, sometimes more than they see in themselves.",
-    'Venus-Pluto-conjunction':"Love for you tends to be all-or-nothing — you're drawn to depth and intensity, and surface-level connection leaves you cold.",
+    'Venus-Pluto-conjunction':"Love for you tends to be all-or-nothing — you\'re drawn to depth and intensity, and surface-level connection leaves you cold.",
     'Mars-Jupiter-conjunction':"Your ambition has an optimistic quality — you act big and tend to believe things will work out, which often makes them do exactly that.",
-    'Mars-Saturn-conjunction':"You have a slow-burning, relentless kind of drive — you don't give up easily and you're capable of real endurance.",
-    'Mars-Pluto-conjunction':"Your drive runs very deep — when you want something, there's a quiet ferocity to how you pursue it.",
+    'Mars-Saturn-conjunction':"You have a slow-burning, relentless kind of drive — you don\'t give up easily and you\'re capable of real endurance.",
+    'Mars-Pluto-conjunction':"Your drive runs very deep — when you want something, there\'s a quiet ferocity to how you pursue it.",
     'Jupiter-Saturn-conjunction':"You balance expansion and caution better than most — you know when to take a risk and when to hold back.",
-    'Sun-Moon-trine':"Your public face and your private self are unusually close — you don't have to perform much.",
-    'Sun-Venus-trine':"Warmth and confidence come naturally together in you — you're easy to like and you tend to know it.",
+    'Sun-Moon-trine':"Your public face and your private self are unusually close — you don\'t have to perform much.",
+    'Sun-Venus-trine':"Warmth and confidence come naturally together in you — you\'re easy to like and you tend to know it.",
     'Sun-Mars-trine':"Drive and identity are well-matched — you act decisively without a lot of internal second-guessing.",
     'Sun-Jupiter-trine':"There's a natural confidence about you — things tend to work out, and you half-expect them to.",
     'Sun-Saturn-trine':"You have discipline and ambition without being rigid — you know how to work hard and still enjoy the results.",
     'Sun-Uranus-trine':"You're original and unconventional but not abrasively so — your difference is an asset you've learned to work with.",
-    'Sun-Neptune-trine':"You have a creative, idealistic quality that sits easily in you — imagination isn't a burden, it's just how you see.",
+    'Sun-Neptune-trine':"You have a creative, idealistic quality that sits easily in you — imagination isn't a burden, it\'s just how you see.",
     'Sun-Pluto-trine':"You have real psychological depth and the resilience that comes with it — you've been through things and it shows as strength.",
     'Moon-Venus-trine':"Emotional warmth and genuine care come naturally — people feel held in your presence without you having to try.",
     'Moon-Jupiter-trine':"There's a generosity and emotional expansiveness in you — you tend to make people feel more hopeful just by being around.",
@@ -1168,40 +1202,40 @@ function openCard(cityName,planet,ltype,_lat,_lng,powerZone){
     'Venus-Saturn-trine':"You build love slowly and take it seriously — what lasts matters more to you than what dazzles.",
     'Venus-Jupiter-trine':"There's a natural warmth and good fortune in how you connect — people tend to feel lucky around you.",
     'Venus-Mars-trine':"Passion and affection are well-matched in you — you know what you want and you go after it with genuine warmth.",
-    'Venus-Neptune-trine':"You have a genuine romantic idealism that doesn't tip into delusion — you see beauty in people and you're usually right.",
-    'Venus-Pluto-trine':"Love for you has real depth — you're drawn to transformation in relationships and you tend to bring it out in others.",
+    'Venus-Neptune-trine':"You have a genuine romantic idealism that doesn't tip into delusion — you see beauty in people and you\'re usually right.",
+    'Venus-Pluto-trine':"Love for you has real depth — you\'re drawn to transformation in relationships and you tend to bring it out in others.",
     'Mars-Jupiter-trine':"Your drive has an optimistic quality — you tend to back yourself and things tend to go your way.",
     'Mars-Saturn-trine':"You have discipline and drive in equal measure — the ability to work hard over a long time without burning out.",
     'Mars-Pluto-trine':"You have a focused, quiet intensity — when you commit to something you see it through completely.",
     'Mercury-Jupiter-trine':"Your thinking runs big — you see patterns and possibilities that others miss, and you can communicate them clearly.",
     'Mercury-Saturn-trine':"You think carefully before you speak — your words tend to be precise and people trust what you say.",
     'Sun-Moon-square':"There's a tension between who you feel yourself to be and what you need emotionally — you push yourself hard sometimes.",
-    'Sun-Mars-square':"Drive and identity are in friction — you're ambitious but sometimes at war with yourself about it.",
+    'Sun-Mars-square':"Drive and identity are in friction — you\'re ambitious but sometimes at war with yourself about it.",
     'Sun-Saturn-square':"There's a demanding inner critic in you — you hold yourself to very high standards and sometimes struggle to feel like enough.",
-    'Sun-Uranus-square':"You resist conformity in ways that can make life harder than it needs to be — but it's also what makes you genuinely interesting.",
+    'Sun-Uranus-square':"You resist conformity in ways that can make life harder than it needs to be — but it\'s also what makes you genuinely interesting.",
     'Sun-Pluto-square':"There's an intensity and need for control in you that can serve you well or get in your way depending on how conscious you are of it.",
     'Moon-Mars-square':"There's a tension between what you feel and what you do about it — you act on emotion, sometimes before you've fully processed it.",
     'Moon-Saturn-square':"Emotional safety doesn't come easily — you've learned to be self-sufficient but sometimes at the cost of real vulnerability.",
     'Moon-Uranus-square':"Your emotional needs and your need for freedom are in constant negotiation — closeness and space are both necessary and hard to balance.",
     'Moon-Pluto-square':"Your emotional life is intense and sometimes overwhelming — you feel things at a depth that most people don't.",
-    'Venus-Saturn-square':"Love doesn't come easily or lightly for you — there's a fear of rejection underneath, and you test people before you trust them.",
+    'Venus-Saturn-square':"Love doesn't come easily or lightly for you — there\'s a fear of rejection underneath, and you test people before you trust them.",
     'Venus-Mars-square':"Desire and affection are in friction — relationships tend to be passionate but not always easy.",
-    'Venus-Pluto-square':"Love is rarely simple for you — there's an all-or-nothing quality to how you connect that can be consuming.",
-    'Mars-Saturn-square':"Drive and caution are in friction — you have real ambition but something holds back right when you're about to move.",
+    'Venus-Pluto-square':"Love is rarely simple for you — there\'s an all-or-nothing quality to how you connect that can be consuming.",
+    'Mars-Saturn-square':"Drive and caution are in friction — you have real ambition but something holds back right when you\'re about to move.",
     'Mars-Pluto-square':"There's a power struggle in you between assertion and control — the intensity can be hard to manage when you want something.",
     'Mercury-Saturn-square':"Your mind is exacting and sometimes harsh on yourself — you overthink and can be harder on your own ideas than they deserve.",
     'Sun-Moon-opposition':"What looks successful from the outside doesn't always feel right inside — your need for recognition and your emotional needs pull in different directions.",
-    'Sun-Saturn-opposition':"Ambition and limitation are in dialogue in you — you're driven but regularly confronted with where you're not yet enough.",
+    'Sun-Saturn-opposition':"Ambition and limitation are in dialogue in you — you\'re driven but regularly confronted with where you\'re not yet enough.",
     'Sun-Jupiter-opposition':"Confidence and overreach are your poles — you can go very big, and sometimes too big.",
     'Moon-Saturn-opposition':"The need for warmth and the fear of vulnerability are in tension — you want closeness but keep a certain distance.",
     'Venus-Mars-opposition':"What you want and what you love are sometimes in opposition — desire and affection don't always point in the same direction.",
     'Venus-Jupiter-opposition':"You can idealise love and people to a degree that sets you up for disappointment — the reality rarely matches the vision.",
     'Mars-Jupiter-opposition':"Your drive and your optimism can tip into overconfidence — you sometimes take on more than you can deliver.",
-    'Sun-Moon-sextile':"Your sense of self and your emotional life support each other quietly — you're more integrated than you probably give yourself credit for.",
-    'Sun-Venus-sextile':"Warmth and confidence work together in you — you're likable without having to try too hard.",
+    'Sun-Moon-sextile':"Your sense of self and your emotional life support each other quietly — you\'re more integrated than you probably give yourself credit for.",
+    'Sun-Venus-sextile':"Warmth and confidence work together in you — you\'re likable without having to try too hard.",
     'Sun-Jupiter-sextile':"There's a quiet confidence about you — things tend to open up when you engage with them.",
     'Moon-Venus-sextile':"Emotional warmth comes naturally — people feel genuinely cared for without you having to perform it.",
-    'Venus-Saturn-sextile':"You approach love thoughtfully and with care — you're not reckless with people's hearts, including your own.",
+    'Venus-Saturn-sextile':"You approach love thoughtfully and with care — you\'re not reckless with people's hearts, including your own.",
     'Mercury-Venus-sextile':"You communicate with warmth — people feel heard when they talk to you.",
     'Mars-Venus-sextile':"Passion and affection sit comfortably together — you love with genuine heat and genuine care.",
     'Jupiter-Saturn-sextile':"You have a good instinct for when to expand and when to hold back — a balance most people spend their whole lives trying to find."
@@ -1260,20 +1294,79 @@ function openCard(cityName,planet,ltype,_lat,_lng,powerZone){
   };
 
   function _buildPowerZoneHTML(pz){
-    var lines=pz.slice(0,3); // max 3 lines in zone
+    var lines=pz.slice(0,5);
     var labels=lines.map(function(x){
       var s=x.lt==='ASC'?'AC':x.lt==='DSC'?'DC':x.lt;
       return (PNAMES[x.p]||x.p)+' '+s;
     });
     var header='⊕ '+labels.join(' · ')+' — Power Zone';
-    var descriptions=lines.map(function(x){
-      var ltName={MC:'Midheaven',IC:'home and roots',ASC:'Ascendant',DSC:'Descendant'}[x.lt];
-      var role=(_pzRoles[x.p]||{})[x.lt]||'';
-      return 'On your <strong>'+ltName+'</strong> line, '+role+'.';
-    }).join(' ');
+
+    // Build meaning from planet+angle combinations
+    // Key: what does this COMBINATION mean, not what each line does alone
+    var _pzCombos={
+      // Love/relationship crossings
+      'Venus-Moon':'Love and emotional depth arrive together here — you can be both magnetic and genuinely open at the same time. Connection here tends to feel real.',
+      'Venus-Jupiter':'This is one of the most celebrated combinations — beauty, warmth, and genuine good fortune converge. Love and abundance tend to arrive together in this place.',
+      'Venus-Neptune':'Romance and spirituality blur into each other here. Connections made in this place tend to feel transcendent — though be careful what you idealise.',
+      'Venus-Pluto':'Love here is rarely surface-level — intense, transformative, all-or-nothing. This place draws deep connections that change you.',
+      'Venus-Mars':'Passion and affection meet here without friction — desire and genuine care point in the same direction.',
+      'Moon-Jupiter':'Emotional generosity and abundance overlap here — you can feel both nourished and expansive at the same time.',
+      'Moon-Neptune':'Feeling and dreaming blur here. This place is deeply intuitive and emotionally porous — beautiful and requiring some grounding.',
+      'Moon-Pluto':'Emotional intensity runs deep here — transformation through feeling, connections that reach into what you usually keep hidden.',
+      'Moon-Venus':'Warmth and belonging arrive together — this place can feel both beautiful and like home at the same time.',
+      // Career/ambition crossings
+      'Sun-Jupiter':'Confidence and opportunity align here — one of the strongest combinations for visibility, recognition, and professional growth.',
+      'Sun-Mars':'Drive and identity are both on the surface here — you act boldly and people notice. A powerful place for ambition.',
+      'Sun-Saturn':'Discipline and purpose converge here — recognition comes slowly but what you build in this place tends to last.',
+      'Mars-Jupiter':'Ambition and optimism fuel each other here — you act big and tend to back yourself, which often makes things happen.',
+      'Mars-Saturn':'Drive meets discipline here — relentless, focused, capable of building something genuinely enduring.',
+      'Mercury-Jupiter':'Vision and communication combine here — your ideas run big and people want to hear them.',
+      'Mercury-Sun':'Mind and identity are aligned here — how you think and how you show up are the same thing, making this a powerful place to be heard.',
+      // Healing/transformation crossings
+      'Chiron-Neptune':'Healing and spiritual depth meet here — a place for genuine restoration, especially from wounds that feel hard to name.',
+      'Chiron-Pluto':'Deep transformation is available here — not comfortable, but the kind of change that actually sticks.',
+      'Chiron-Moon':'Emotional healing and a sense of belonging arrive together — this place can hold both your tenderness and your wholeness.',
+      'Pluto-Saturn':'Power and discipline intersect here — this place asks something real of you, and what you build here carries real weight.',
+      'Pluto-Neptune':'Transformation and spiritual depth meet here — this place can dissolve old structures and reveal something more essential underneath.',
+      // Node crossings
+      'NNode-Venus':'Your soul\'s direction and your capacity for love and beauty converge here — a place where growth feels genuinely pleasurable.',
+      'NNode-Jupiter':'Destiny and abundance align — this place supports stepping into who you are becoming with real optimism and opportunity.',
+      'NNode-Sun':'Your karmic path and your core identity point in the same direction here — a place where being yourself is exactly what is needed.',
+      'NNode-Moon':'Soul direction and emotional belonging arrive together — this place can feel both destined and like home.',
+      'SNode-Saturn':'Natural gifts meet discipline here — what you have mastered over lifetimes finds real-world structure and authority.',
+      'SNode-Sun':'Your natural gifts and your core identity align — you arrive in this place as someone who already knows how to be here.',
+    };
+
+    // Find best combo description
+    var comboText='';
+    if(lines.length>=2){
+      var p1=lines[0].p, p2=lines[1].p;
+      var key1=p1+'-'+p2, key2=p2+'-'+p1;
+      comboText=_pzCombos[key1]||_pzCombos[key2]||'';
+      // If no specific combo, try other pairs
+      if(!comboText&&lines.length>=3){
+        for(var pi=0;pi<lines.length&&!comboText;pi++){
+          for(var pj=pi+1;pj<lines.length&&!comboText;pj++){
+            var k1=lines[pi].p+'-'+lines[pj].p, k2=lines[pj].p+'-'+lines[pi].p;
+            comboText=_pzCombos[k1]||_pzCombos[k2]||'';
+          }
+        }
+      }
+    }
+
+    // Angle context
     var closingKey=lines[0].lt+'-'+lines[1].lt;
-    var closing=_pzClosings[closingKey]||'Multiple lines converge here — this place carries more than one kind of influence.';
-    return {header:header,body:descriptions+' '+closing};
+    var angleCtx=_pzClosings[closingKey]||'';
+
+    var body=comboText
+      ?(comboText+(angleCtx?' '+angleCtx:''))
+      :(angleCtx||'Multiple planetary lines converge near here — this location carries concentrated influence.');
+
+    if(lines.length>2){
+      body+=' With '+lines.length+' lines active here, this is one of the more significant locations on your map.';
+    }
+
+    return {header:header,body:body};
   }
 
   var pzData=powerZone&&powerZone.length>=2?_buildPowerZoneHTML(powerZone):null;
