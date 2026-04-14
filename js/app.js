@@ -1378,7 +1378,22 @@ function openCard(cityName,planet,ltype,_lat,_lng,powerZone){
       '<div style="margin:.5rem 0 .8rem"><div class="rc-pname" style="color:var(--gold);font-size:.75rem">'+pzData.header+'</div></div>'
       +(distNote?'<div class="rc-rule"></div><div class="rc-prose" style="font-size:.82rem">'+distNote+'</div>':'')
       +'<div class="rc-rule"></div>'
-      +'<div class="rc-slbl">What this place holds</div>'
+      +'<div class="rc-slbl">What each line brings</div>'
+      +powerZone.slice(0,3).map(function(x){
+        var s=x.lt==='ASC'?'AC':x.lt==='DSC'?'DC':x.lt;
+        var xpd=chart.planets[x.p];
+        var xcol=PCOL[x.p];
+        var lineDesc=(LINE_ACTIVATED[x.p]&&LINE_ACTIVATED[x.p][x.lt])||'';
+        return '<div style="margin-bottom:1rem">'
+          +'<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem">'
+          +'<span style="color:'+xcol+';font-family:var(--serif);font-size:1.2rem">'+PSYM[x.p]+'</span>'
+          +'<span style="font-size:.65rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:'+xcol+'">'+(PNAMES[x.p]||x.p)+(xpd?' in '+xpd.sign:'')+' · '+s+'</span>'
+          +'</div>'
+          +(lineDesc?'<div class="rc-prose" style="margin:0">'+lineDesc+'</div>':'')
+          +'</div>';
+      }).join('')
+      +'<div class="rc-rule"></div>'
+      +'<div class="rc-slbl">The energies together</div>'
       +'<div class="rc-prose">'+pzData.body+'</div>'
       +'<div class="rc-rule"></div>'
       +'<div class="rc-slbl">Lines active here</div>'
