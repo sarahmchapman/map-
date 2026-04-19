@@ -47,7 +47,7 @@ html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margi
 .chart-panel-label{font-size:8px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:.6rem;text-align:center}
 .chart-panel-city{font-family:var(--serif);font-size:1rem;font-weight:300;color:var(--ink);margin-bottom:1rem;text-align:center}
 .chart-panel-city em{font-style:italic;color:var(--gold)}
-canvas.chart-wheel{display:block;width:100%;max-width:280px;height:auto}
+canvas.chart-wheel{display:block;width:100%;max-width:280px;aspect-ratio:1/1;height:auto}
 
 /* Mobile: carousel */
 @media(max-width:600px){
@@ -218,116 +218,230 @@ function showPanel(idx) {
 })();
 
 // ─── Chart wheel drawing ──────────────────────────────────────
-var PSYM_R = {Sun:'☉',Moon:'☽',Mercury:'☿',Venus:'♀',Mars:'♂',Jupiter:'♃',Saturn:'♄',Uranus:'♅',Neptune:'♆',Pluto:'♇',Chiron:'⚷',NNode:'☊',SNode:'☋'};
-var PCOL_R = {Sun:'#c9933a',Moon:'#7a9ab5',Mercury:'#7a8fa0',Venus:'#b07a9a',Mars:'#b05a4a',Jupiter:'#7a6aaa',Saturn:'#8a8a6a',Uranus:'#5a9a8a',Neptune:'#6a7aaa',Pluto:'#8a5a7a',Chiron:'#9a7a5a',NNode:'#7a9a7a',SNode:'#9a7a7a'};
-var SIGNS_R = ['Ari','Tau','Gem','Can','Leo','Vir','Lib','Sco','Sag','Cap','Aqu','Pis'];
-var SIGN_SYMS = ['♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓'];
+// Colors match app.js PCOL exactly
+var PCOL_R = {Sun:'#c9973f',Moon:'#5a7aa8',Mercury:'#4a8a6a',Venus:'#c0607a',Mars:'#9b3535',Jupiter:'#7a5a30',Saturn:'#6a6055',Uranus:'#3a7a7a',Neptune:'#4a4a9a',Pluto:'#7a4a6a',Chiron:'#2a2a2a',NNode:'#2c6e49',SNode:'#5a9e7a'};
+// Planet glyphs — plain Unicode, no emoji variation selectors
+var PSYM_R = {Sun:'\u2609',Moon:'\u263D',Mercury:'\u263F',Venus:'\u2640',Mars:'\u2642',Jupiter:'\u2643',Saturn:'\u2644',Uranus:'\u2645',Neptune:'\u2646',Pluto:'\u2647',Chiron:'\u26B7',NNode:'\u260A',SNode:'\u260B'};
+// Zodiac sign abbreviations (plain text, no emoji)
+var SIGN_ABBR = ['Ar','Ta','Ge','Cn','Le','Vi','Li','Sc','Sg','Cp','Aq','Pi'];
 
-function drawChartWheel(canvasId, planets, label) {
+function drawChartWheel(canvasId, planets) {
   var canvas = document.getElementById(canvasId);
   if (!canvas) return;
-  var size = canvas.width;
-  var ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, size, size);
-  var cx = size / 2, cy = size / 2;
-  var rOuter = size * 0.46;
-  var rSign = size * 0.38;
-  var rInner = size * 0.30;
-  var rPlanet = size * 0.20;
 
-  // Background
-  ctx.fillStyle = 'var(--paper)';
+  // Use device pixel ratio for sharp rendering
+  var dpr = window.devicePixelRatio || 1;
+  var displaySize = canvas.offsetWidth || 280;
+  canvas.width = displaySize * dpr;
+  canvas.height = displaySize * dpr;
+  canvas.style.width = displaySize + 'px';
+  canvas.style.height = displaySize + 'px';
+
+  var ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  var size = displaySize;
+
+  var cx = size / 2, cy = size / 2;
+
+  // Radii
+  var rOuter  = size * 0.445;  // zodiac outer edge
+  var rZodiac = size * 0.365;  // zodiac inner edge / house outer edge
+  var rHouse  = size * 0.26;   // house inner edge / planet zone outer
+  var rPlanet = size * 0.185;  // planet ring radius
+  var rCenter = size * 0.06;   // center dot
+
+  // ── Background ──────────────────────────────────────────────
+  ctx.fillStyle = '#faf8f4';
+  ctx.fillRect(0, 0, size, size);
+
+  // ── Clip everything to circle ────────────────────────────────
+  ctx.save();
   ctx.beginPath();
-  ctx.arc(cx, cy, rOuter + 4, 0, Math.PI * 2);
+  ctx.arc(cx, cy, rOuter, 0, Math.PI * 2);
+  ctx.clip();
+
+  // Fill background inside wheel
+  ctx.fillStyle = '#faf8f4';
   ctx.fill();
 
-  // Outer ring (zodiac)
-  ctx.strokeStyle = '#e8e0d2';
-  ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.arc(cx, cy, rOuter, 0, Math.PI * 2); ctx.stroke();
-  ctx.beginPath(); ctx.arc(cx, cy, rSign, 0, Math.PI * 2); ctx.stroke();
-  ctx.beginPath(); ctx.arc(cx, cy, rInner, 0, Math.PI * 2); ctx.stroke();
+  // ── Zodiac band ──────────────────────────────────────────────
+  // Subtle tint for zodiac ring
+  ctx.fillStyle = '#f2ede5';
+  ctx.beginPath();
+  ctx.arc(cx, cy, rOuter, 0, Math.PI * 2);
+  ctx.arc(cx, cy, rZodiac, 0, Math.PI * 2, true);
+  ctx.fill();
 
-  // Zodiac sign dividers and symbols
+  // ── ASC longitude — sets chart orientation ───────────────────
+  var ascLon = (planets.Ascendant && planets.Ascendant.totalDeg != null)
+    ? planets.Ascendant.totalDeg : 0;
+
+  // Helper: convert ecliptic longitude to canvas angle
+  // ASC goes to the LEFT (180deg in standard chart = west)
+  function lonToAngle(lon) {
+    // Relative to ASC, ASC placed at 180° (left)
+    var rel = ((lon - ascLon + 360) % 360);
+    // In western chart: 0=ASC(left), going counter-clockwise
+    // Canvas: 0=right, clockwise. So: angle = 180 - rel (in degrees), converted
+    return (180 - rel) * Math.PI / 180;
+  }
+
+  // ── Zodiac sign divisions ────────────────────────────────────
   for (var s = 0; s < 12; s++) {
-    var angle = (s * 30 - 90) * Math.PI / 180; // 0° Aries at top
-    ctx.strokeStyle = '#e8e0d2';
+    var signStartLon = s * 30;
+    var divAngle = lonToAngle(signStartLon);
+
+    // Division line
+    ctx.strokeStyle = '#c8bfb0';
     ctx.lineWidth = 0.5;
     ctx.beginPath();
-    ctx.moveTo(cx + rSign * Math.cos(angle), cy + rSign * Math.sin(angle));
-    ctx.lineTo(cx + rOuter * Math.cos(angle), cy + rOuter * Math.sin(angle));
+    ctx.moveTo(cx + rZodiac * Math.cos(divAngle), cy + rZodiac * Math.sin(divAngle));
+    ctx.lineTo(cx + rOuter  * Math.cos(divAngle), cy + rOuter  * Math.sin(divAngle));
     ctx.stroke();
 
-    // Sign symbol
-    var midAngle = ((s * 30 + 15) - 90) * Math.PI / 180;
-    var tx = cx + (rSign + (rOuter - rSign) / 2) * Math.cos(midAngle);
-    var ty = cy + (rSign + (rOuter - rSign) / 2) * Math.sin(midAngle);
-    ctx.font = Math.round(size * 0.045) + 'px serif';
+    // Sign label — midpoint of sign
+    var midLon = s * 30 + 15;
+    var midAngle = lonToAngle(midLon);
+    var labelR = (rZodiac + rOuter) / 2;
+    var tx = cx + labelR * Math.cos(midAngle);
+    var ty = cy + labelR * Math.sin(midAngle);
+
+    ctx.save();
+    ctx.translate(tx, ty);
+    // Rotate label to read outward
+    ctx.rotate(midAngle + Math.PI / 2);
+    ctx.font = '500 ' + Math.round(size * 0.038) + 'px Jost, sans-serif';
     ctx.fillStyle = '#b8955a';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(SIGN_SYMS[s], tx, ty);
+    ctx.fillText(SIGN_ABBR[s], 0, 0);
+    ctx.restore();
   }
 
-  // House dividers (equal houses from ASC)
-  var ascLon = (planets.Ascendant && planets.Ascendant.totalDeg) ? planets.Ascendant.totalDeg : 0;
+  // ── House divisions (equal houses) ───────────────────────────
   for (var h = 0; h < 12; h++) {
-    var houseLon = (ascLon + h * 30) % 360;
-    var hAngle = (houseLon - ascLon - 90) * Math.PI / 180;
-    var actualAngle = (houseLon - 90) * Math.PI / 180;
-    // Draw from center to inner ring for house lines
-    var lineAngle = ((houseLon - ascLon) - 90) * Math.PI / 180;
-    var plotAngle = (houseLon - ascLon - 90) * Math.PI / 180;
+    var hLon = ascLon + h * 30;
+    var hAngle = lonToAngle(hLon);
+    var isAngle = (h % 3 === 0);
 
-    ctx.strokeStyle = (h === 0 || h === 3 || h === 6 || h === 9) ? '#b8955a' : '#e8e0d2';
-    ctx.lineWidth = (h === 0 || h === 3 || h === 6 || h === 9) ? 1 : 0.5;
-    var pa = (houseLon - 90) * Math.PI / 180;
-    // Rotate so ASC is on left (standard western chart)
-    var drawAngle = ((houseLon - ascLon) - 90) * Math.PI / 180;
+    ctx.strokeStyle = isAngle ? '#b8955a' : '#d4c9b8';
+    ctx.lineWidth   = isAngle ? 1 : 0.5;
+    ctx.beginPath();
+    ctx.moveTo(cx + rCenter  * Math.cos(hAngle), cy + rCenter  * Math.sin(hAngle));
+    ctx.lineTo(cx + rZodiac  * Math.cos(hAngle), cy + rZodiac  * Math.sin(hAngle));
+    ctx.stroke();
+
+    // House numbers in the house band
+    var numLon = ascLon + h * 30 + 15;
+    var numAngle = lonToAngle(numLon);
+    var numR = (rHouse + rZodiac) / 2;
+    ctx.font = Math.round(size * 0.028) + 'px Jost, sans-serif';
+    ctx.fillStyle = '#9a9080';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(h + 1), cx + numR * Math.cos(numAngle), cy + numR * Math.sin(numAngle));
+  }
+
+  // ── Rings ────────────────────────────────────────────────────
+  ctx.strokeStyle = '#c8bfb0';
+  ctx.lineWidth = 1;
+  [rOuter, rZodiac, rHouse].forEach(function(r) {
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+  });
+
+  // ── Angle axis lines (ASC-DSC, MC-IC) ───────────────────────
+  var mcLon = planets.Midheaven ? planets.Midheaven.totalDeg : ascLon + 90;
+  var angles = [
+    { lon: ascLon,       label: 'AC' },
+    { lon: ascLon + 180, label: 'DC' },
+    { lon: mcLon,        label: 'MC' },
+    { lon: mcLon + 180,  label: 'IC' }
+  ];
+  angles.forEach(function(a) {
+    var ang = lonToAngle(a.lon);
+    ctx.strokeStyle = '#b8955a';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
     ctx.beginPath();
     ctx.moveTo(cx, cy);
-    ctx.lineTo(cx + rInner * Math.cos(drawAngle), cy + rInner * Math.sin(drawAngle));
+    ctx.lineTo(cx + rHouse * Math.cos(ang), cy + rHouse * Math.sin(ang));
     ctx.stroke();
-  }
+    ctx.setLineDash([]);
 
-  // ASC/MC labels
-  ctx.font = 'bold ' + Math.round(size * 0.038) + 'px Jost, sans-serif';
-  ctx.fillStyle = '#b8955a';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  // ASC is on the left
-  ctx.fillText('AC', cx - rInner - 8, cy);
-  // DSC on right
-  ctx.fillText('DC', cx + rInner + 8, cy);
-  // MC at top
-  ctx.fillText('MC', cx, cy - rInner - 8);
-  // IC at bottom
-  ctx.fillText('IC', cx, cy + rInner + 10);
+    // Labels just outside the house ring
+    var lblR = rHouse + size * 0.025;
+    ctx.font = '500 ' + Math.round(size * 0.032) + 'px Jost, sans-serif';
+    ctx.fillStyle = '#b8955a';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(a.label, cx + lblR * Math.cos(ang), cy + lblR * Math.sin(ang));
+  });
 
-  // Plot planets
-  var PLANET_ORDER = ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode','SNode'];
-  PLANET_ORDER.forEach(function(p) {
+  // ── Planets ──────────────────────────────────────────────────
+  var PORDER = ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode','SNode'];
+
+  // Collect planet positions and spread overlapping ones
+  var plotted = [];
+  PORDER.forEach(function(p) {
     var pd = planets[p];
     if (!pd || pd.totalDeg == null) return;
     var lon = pd.totalDeg;
-    // Rotate so ASC is at left (180° position in canvas = left)
-    var relAngle = ((lon - ascLon) - 180) * Math.PI / 180;
-    var px2 = cx + rPlanet * Math.cos(relAngle);
-    var py2 = cy + rPlanet * Math.sin(relAngle);
+    var angle = lonToAngle(lon);
 
-    // Dot
-    ctx.beginPath();
-    ctx.arc(px2, py2, size * 0.018, 0, Math.PI * 2);
-    ctx.fillStyle = PCOL_R[p] || '#888';
-    ctx.fill();
+    // Nudge if too close to existing planet
+    var finalAngle = angle;
+    var minSep = 0.18; // radians (~10 degrees)
+    for (var attempt = 0; attempt < 8; attempt++) {
+      var tooClose = plotted.some(function(pl) {
+        var diff = Math.abs(finalAngle - pl.angle);
+        if (diff > Math.PI) diff = 2 * Math.PI - diff;
+        return diff < minSep;
+      });
+      if (!tooClose) break;
+      finalAngle += minSep;
+    }
+    plotted.push({ p: p, angle: finalAngle, origAngle: angle });
+  });
 
-    // Glyph
-    ctx.font = Math.round(size * 0.055) + 'px serif';
-    ctx.fillStyle = PCOL_R[p] || '#888';
+  plotted.forEach(function(item) {
+    var p = item.p;
+    var col = PCOL_R[p] || '#888';
+    var sym = PSYM_R[p];
+    var px2 = cx + rPlanet * Math.cos(item.angle);
+    var py2 = cy + rPlanet * Math.sin(item.angle);
+
+    // Line from planet position to zodiac ring if nudged
+    if (Math.abs(item.angle - item.origAngle) > 0.01) {
+      var origX = cx + (rHouse + 4) * Math.cos(item.origAngle);
+      var origY = cy + (rHouse + 4) * Math.sin(item.origAngle);
+      ctx.strokeStyle = col;
+      ctx.globalAlpha = 0.3;
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(origX, origY);
+      ctx.lineTo(px2, py2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    // Planet glyph
+    ctx.font = Math.round(size * 0.062) + 'px Cormorant Garamond, serif';
+    ctx.fillStyle = col;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(PSYM_R[p] || p[0], px2, py2 - size * 0.038);
+    ctx.fillText(sym, px2, py2);
   });
+
+  ctx.restore(); // end clip
+
+  // ── Center dot ───────────────────────────────────────────────
+  ctx.beginPath();
+  ctx.arc(cx, cy, rCenter, 0, Math.PI * 2);
+  ctx.fillStyle = '#f2ede5';
+  ctx.strokeStyle = '#c8bfb0';
+  ctx.lineWidth = 0.5;
+  ctx.fill();
+  ctx.stroke();
 }
 
 // ─── House number helper ──────────────────────────────────────
@@ -370,6 +484,8 @@ function initPage() {
   // Compute both charts
   var natalPlanets = computePlanets(jd, birthLat, birthLng);
   var relocPlanets = computePlanets(jd, cityLat, cityLng);
+  window._natalPlanets = natalPlanets;
+  window._relocPlanets = relocPlanets;
 
   // Update headings
   document.getElementById('headingCity').textContent = cityName;
@@ -378,14 +494,12 @@ function initPage() {
   document.getElementById('labelNatal').textContent = 'Born in ' + birthPlace;
   document.getElementById('gateCityName').textContent = cityName;
 
-  // Draw wheels
-  var wheelSize = Math.min(document.getElementById('wheelRelocated').parentElement.clientWidth - 40, 280);
-  document.getElementById('wheelRelocated').width = wheelSize;
-  document.getElementById('wheelRelocated').height = wheelSize;
-  document.getElementById('wheelNatal').width = wheelSize;
-  document.getElementById('wheelNatal').height = wheelSize;
-  drawChartWheel('wheelRelocated', relocPlanets, cityName);
-  drawChartWheel('wheelNatal', natalPlanets, birthPlace);
+  // Draw wheels — sizing handled inside drawChartWheel via offsetWidth
+  // Small delay to ensure panels are visible and have layout
+  setTimeout(function() {
+    drawChartWheel('wheelRelocated', relocPlanets);
+    drawChartWheel('wheelNatal', natalPlanets);
+  }, 50);
 
   // Find planet house shifts
   var PLANET_ORDER = ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto'];
@@ -579,6 +693,14 @@ function getChangeText(planet, natalHouse, relocHouse) {
 
 // ─── Boot ────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', initPage);
+
+// Redraw wheels on resize
+window.addEventListener('resize', function() {
+  if (window._natalPlanets && window._relocPlanets) {
+    drawChartWheel('wheelRelocated', window._relocPlanets);
+    drawChartWheel('wheelNatal', window._natalPlanets);
+  }
+});
 </script>
 </body>
 </html>
