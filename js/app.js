@@ -1142,6 +1142,38 @@ function _lineDistance(lat,lng,pts){
   return best;
 }
 
+function _diveDeeperBtn(cityName,lat,lng){
+  if(!activeChart||lat==null||lng==null)return'';
+  var safeName=(cityName||'').replace(/'/g,"\\'");
+  return '<div style="margin-top:1rem;padding-top:.75rem;border-top:.5px solid var(--paper-3);text-align:center">'
+    +'<button onclick="_openReading(\''+safeName+'\','+lat+','+lng+')" '
+    +'style="font-size:9px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;'
+    +'color:var(--paper);background:var(--ink);border:none;padding:.65rem 1.8rem;cursor:pointer;'
+    +'transition:background .2s;width:100%;max-width:260px"'
+    +' onmouseover="this.style.background=\'var(--gold)\'" onmouseout="this.style.background=\'var(--ink)\'">'
+    +'Dive Deeper ✦'
+    +'</button>'
+    +'<p style="font-family:var(--serif);font-style:italic;font-size:.72rem;color:var(--ink-3);margin-top:.5rem">'
+    +'See your full chart in '+(cityName||'this place')+'</p>'
+    +'</div>';
+}
+
+function _openReading(cityName,lat,lng){
+  if(!activeChart)return;
+  localStorage.setItem('elsewhere_reading',JSON.stringify({
+    jd:activeChart._jd,
+    birthLat:activeChart.geo.lat,
+    birthLng:activeChart.geo.lng,
+    birthPlace:activeChart.birthPlace||activeChart.geo.display,
+    birthDate:activeChart.birthDate,
+    name:activeChart.name,
+    cityName:cityName,
+    cityLat:lat,
+    cityLng:lng
+  }));
+  window.open('/reading.html','_blank');
+}
+
 function openCard(cityName,planet,ltype,_lat,_lng,powerZone){
   if(!planet||!ltype||!activeChart)return;
   var chart=activeChart,pd=chart.planets[planet],col=PCOL[planet];
@@ -1415,7 +1447,8 @@ function openCard(cityName,planet,ltype,_lat,_lng,powerZone){
       +'<div class="rc-slbl">In this place you feel</div><div class="rc-feeling">'+((FEELING[planet]||{})[focus]||'powerfully present')+'.</div>'
       +'<div class="rc-slbl">What\'s activated</div><div class="rc-prose" id="rcActivated">'+((LINE_ACTIVATED[planet]&&LINE_ACTIVATED[planet][ltype])||LINE_DESC[ltype]||'')+' '+((SIGN_MODIFIERS[planet]&&SIGN_MODIFIERS[planet][pd.sign])||'')+'</div>'
       +'<div class="rc-slbl">Your chart here</div><div class="rc-prose">'+personText+'</div>'
-      +'<div class="rc-irow"><div class="rc-ibox"><div class="rc-ilbl">Best for</div><div class="rc-itext">'+((BEST_FOR[planet]&&BEST_FOR[planet][ltype])||'')+'</div></div><div class="rc-ibox"><div class="rc-ilbl">Watch for</div><div class="rc-itext">'+((WATCH_FOR[planet]&&WATCH_FOR[planet][ltype])||'')+'</div></div></div>';
+      +'<div class="rc-irow"><div class="rc-ibox"><div class="rc-ilbl">Best for</div><div class="rc-itext">'+((BEST_FOR[planet]&&BEST_FOR[planet][ltype])||'')+'</div></div><div class="rc-ibox"><div class="rc-ilbl">Watch for</div><div class="rc-itext">'+((WATCH_FOR[planet]&&WATCH_FOR[planet][ltype])||'')+'</div></div></div>'
+      +_diveDeeperBtn(cityName,_lat,_lng);
   }
   document.getElementById('readingCard').classList.add('open');
   document.getElementById('readingCard').scrollIntoView({behavior:'smooth',block:'nearest'});
