@@ -6,7 +6,7 @@
 <title>elsewhere — your chart in this place</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
-<!-- Astrological font loaded dynamically in JS -->
+
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -106,7 +106,7 @@ canvas.chart-wheel{display:block;width:100%;max-width:340px;aspect-ratio:1/1;hei
 
 <header class="site-header">
   <span class="site-wordmark">elsewhere</span>
-  <a href="/" class="back-btn">← Back to map</a>
+  <a href="#" class="back-btn" onclick="history.back();return false;">← Back to map</a>
 </header>
 
 <div class="page">
@@ -207,23 +207,158 @@ function showPanel(idx) {
 // Colors match app.js PCOL exactly
 var PCOL_R = {Sun:'#c9973f',Moon:'#5a7aa8',Mercury:'#4a8a6a',Venus:'#c0607a',Mars:'#9b3535',Jupiter:'#7a5a30',Saturn:'#6a6055',Uranus:'#3a7a7a',Neptune:'#4a4a9a',Pluto:'#7a4a6a',Chiron:'#2a2a2a',NNode:'#2c6e49',SNode:'#5a9e7a'};
 // Planet glyphs — plain Unicode, no emoji variation selectors
-// Load astrology font from cdnfonts — renders as clean glyphs
-var _astroFontLoaded = false;
-var _astroFont = new FontFace('Astro', "url('https://fonts.cdnfonts.com/s/7079/Astro.woff') format('woff')");
-_astroFont.load().then(function(f){ document.fonts.add(f); _astroFontLoaded = true;
-  // Redraw wheels once font is loaded
-  if(window._natalPlanets && window._relocPlanets){
-    drawChartWheel('wheelRelocated', window._relocPlanets);
-    drawChartWheel('wheelNatal', window._natalPlanets);
-  }
-}).catch(function(){ _astroFontLoaded = false; });
+// Draw planet symbol on canvas at (x,y) with given size and color
+// All symbols drawn as canvas paths — no font dependency
+function drawPlanetSymbol(ctx, planet, x, y, size, color) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = size * 0.08;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  var r = size * 0.38;
+  ctx.translate(x, y);
 
-// Astro font character mappings (standard astrological font encoding)
-var PSYM_R = {Sun:'Q',Moon:'R',Mercury:'S',Venus:'T',Mars:'U',Jupiter:'V',Saturn:'W',Uranus:'X',Neptune:'Y',Pluto:'Z',Chiron:'[',NNode:'`',SNode:'a'};
-// Zodiac in Astro font
-var SIGN_ASTRO = ['b','c','d','e','f','g','h','i','j','k','l','m'];
+  switch(planet) {
+    case 'Sun':
+      // Circle with dot
+      ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0, 0, r*0.18, 0, Math.PI*2); ctx.fill();
+      break;
+    case 'Moon':
+      // Crescent
+      ctx.beginPath();
+      ctx.arc(0, 0, r, Math.PI*0.25, Math.PI*1.75); ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(r*0.3, 0, r*0.85, Math.PI*0.32, Math.PI*1.68, true); ctx.stroke();
+      break;
+    case 'Mercury':
+      // Circle + cross + horns
+      var mr = r*0.55;
+      ctx.beginPath(); ctx.arc(0, mr*0.1, mr, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, mr*0.1+mr); ctx.lineTo(0, r*1.1); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-r*0.45, r*0.75); ctx.lineTo(r*0.45, r*0.75); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0, -mr*0.5, mr*0.6, Math.PI, 0); ctx.stroke();
+      break;
+    case 'Venus':
+      // Circle + cross below
+      var vr = r*0.6;
+      ctx.beginPath(); ctx.arc(0, -vr*0.4, vr, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, -vr*0.4+vr); ctx.lineTo(0, r*1.0); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-r*0.45, r*0.55); ctx.lineTo(r*0.45, r*0.55); ctx.stroke();
+      break;
+    case 'Mars':
+      // Circle + arrow
+      var ar = r*0.6;
+      ctx.beginPath(); ctx.arc(-ar*0.2, ar*0.2, ar, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-ar*0.2+ar*0.7, ar*0.2-ar*0.7);
+      ctx.lineTo(r*0.9, -r*0.9); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(r*0.9, -r*0.9);
+      ctx.lineTo(r*0.9, -r*0.45); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(r*0.9, -r*0.9);
+      ctx.lineTo(r*0.45, -r*0.9); ctx.stroke();
+      break;
+    case 'Jupiter':
+      // 4-like shape
+      ctx.beginPath();
+      ctx.moveTo(-r*0.1, -r); ctx.lineTo(-r*0.1, r);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-r*0.75, r*0.05); ctx.lineTo(r*0.55, r*0.05);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-r*0.75, r*0.05);
+      ctx.quadraticCurveTo(-r*0.75, -r*0.9, -r*0.05, -r*0.9);
+      ctx.stroke();
+      break;
+    case 'Saturn':
+      // h-shape with cross
+      ctx.beginPath();
+      ctx.moveTo(r*0.1, -r); ctx.lineTo(r*0.1, r*0.5);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-r*0.35, -r*0.55); ctx.lineTo(r*0.55, -r*0.55);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(r*0.1, r*0.5);
+      ctx.quadraticCurveTo(r*0.1, r*1.0, -r*0.4, r*1.0);
+      ctx.stroke();
+      break;
+    case 'Uranus':
+      // Circle with cross and dot
+      var ur = r*0.45;
+      ctx.beginPath(); ctx.arc(0, r*0.15, ur, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, r*0.15+ur); ctx.lineTo(0, r); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-r*0.5, r*0.15); ctx.lineTo(-r, r*0.15); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(r*0.5, r*0.15); ctx.lineTo(r, r*0.15); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, r*0.15-ur); ctx.lineTo(0, -r*0.8); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0, -r*0.9, r*0.12, 0, Math.PI*2); ctx.fill();
+      break;
+    case 'Neptune':
+      // Trident
+      ctx.beginPath(); ctx.moveTo(0, -r); ctx.lineTo(0, r); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-r*0.6, r*0.1); ctx.lineTo(r*0.6, r*0.1); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-r*0.6, r*0.1); ctx.lineTo(-r*0.6, -r*0.5);
+      ctx.moveTo(r*0.6, r*0.1); ctx.lineTo(r*0.6, -r*0.5);
+      ctx.stroke();
+      ctx.beginPath(); ctx.arc(0, -r*0.2, r*0.65, Math.PI*1.1, Math.PI*1.9, true); ctx.stroke();
+      break;
+    case 'Pluto':
+      // Circle over cross with crescent
+      var pr = r*0.35;
+      ctx.beginPath(); ctx.arc(0, -r*0.35, pr, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, -r*0.35+pr); ctx.lineTo(0, r); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-r*0.45, r*0.3); ctx.lineTo(r*0.45, r*0.3); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0, -r*0.8, r*0.42, Math.PI, 0); ctx.stroke();
+      break;
+    case 'Chiron':
+      // Key symbol — circle + cross
+      var cr = r*0.4;
+      ctx.beginPath(); ctx.arc(0, r*0.4, cr, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, r*0.4-cr); ctx.lineTo(0, -r); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-r*0.4, -r*0.3); ctx.lineTo(r*0.4, -r*0.3); ctx.stroke();
+      break;
+    case 'NNode':
+      // Horseshoe up
+      ctx.beginPath();
+      ctx.arc(0, r*0.1, r*0.7, Math.PI, 0);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-r*0.7, r*0.1); ctx.lineTo(-r*0.7, r);
+      ctx.moveTo(r*0.7, r*0.1); ctx.lineTo(r*0.7, r);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-r*1.0, r); ctx.lineTo(-r*0.4, r);
+      ctx.moveTo(r*1.0, r); ctx.lineTo(r*0.4, r);
+      ctx.stroke();
+      break;
+    case 'SNode':
+      // Horseshoe down
+      ctx.beginPath();
+      ctx.arc(0, -r*0.1, r*0.7, 0, Math.PI);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-r*0.7, -r*0.1); ctx.lineTo(-r*0.7, -r);
+      ctx.moveTo(r*0.7, -r*0.1); ctx.lineTo(r*0.7, -r);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-r*1.0, -r); ctx.lineTo(-r*0.4, -r);
+      ctx.moveTo(r*1.0, -r); ctx.lineTo(r*0.4, -r);
+      ctx.stroke();
+      break;
+  }
+  ctx.restore();
+}
+
+// Zodiac sign abbreviations in Cormorant italic — clean and elegant
+var PSYM_R = {}; // not used directly — symbols drawn via drawPlanetSymbol
+var SIGN_ASTRO = ['Ari','Tau','Gem','Can','Leo','Vir','Lib','Sco','Sag','Cap','Aqu','Pis'];
 // Zodiac sign abbreviations (plain text, no emoji)
-var SIGN_ABBR = SIGN_ASTRO; // use Astro font zodiac mappings
+var SIGN_ABBR = SIGN_ASTRO;
 
 function drawChartWheel(canvasId, planets) {
   var canvas = document.getElementById(canvasId);
@@ -306,7 +441,7 @@ function drawChartWheel(canvasId, planets) {
     var tx = cx + labelR * Math.cos(midAngle);
     var ty = cy + labelR * Math.sin(midAngle);
 
-    ctx.font = Math.round(size * 0.055) + 'px Astro, serif';
+    ctx.font = 'italic 300 ' + Math.round(size * 0.046) + 'px Cormorant Garamond, Georgia, serif';
     ctx.fillStyle = '#b8955a';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -419,12 +554,9 @@ function drawChartWheel(canvasId, planets) {
       ctx.globalAlpha = 1;
     }
 
-    // Planet glyph
-    ctx.font = Math.round(size * 0.06) + 'px Astro, serif';
-    ctx.fillStyle = col;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(sym, px2, py2);
+    // Planet symbol drawn as canvas paths
+    var symSize = size * 0.055;
+    drawPlanetSymbol(ctx, p, px2, py2, symSize, col);
   });
 
   ctx.restore(); // end clip
