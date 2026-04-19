@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>elsewhere — your chart in this place</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&family=Noto+Sans+Symbols+2&display=swap" rel="stylesheet">
 
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -402,7 +402,12 @@ function drawPlanetSymbol(ctx, planet, x, y, size, color) {
 }
 
 // Zodiac sign abbreviations in Cormorant italic — clean and elegant
-var PSYM_R = {}; // not used directly — symbols drawn via drawPlanetSymbol
+// Astrological Unicode symbols — rendered via Noto Sans Symbols 2 (no emoji)
+var PSYM_R = {
+  Sun:'☉',Moon:'☽',Mercury:'☿',Venus:'♀',Mars:'♂',
+  Jupiter:'♃',Saturn:'♄',Uranus:'♅',Neptune:'♆',Pluto:'♇',
+  Chiron:'⚷',NNode:'☊',SNode:'☋'
+};
 var SIGN_ASTRO = ['Ari','Tau','Gem','Can','Leo','Vir','Lib','Sco','Sag','Cap','Aqu','Pis'];
 // Zodiac sign abbreviations (plain text, no emoji)
 var SIGN_ABBR = SIGN_ASTRO;
@@ -600,17 +605,14 @@ function drawChartWheel(canvasId, planets) {
     var tx = cx + labelR * Math.cos(midAngle);
     var ty = cy + labelR * Math.sin(midAngle);
 
-    // Draw zodiac symbol
-    ctx.save();
-    ctx.strokeStyle = '#b8955a';
+    // Zodiac glyph via Noto Sans Symbols 2
+    var zsyms = ['♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓'];
+    var zSize = Math.round(size * 0.065);
+    ctx.font = zSize + 'px \'Noto Sans Symbols 2\', serif';
     ctx.fillStyle = '#b8955a';
-    ctx.lineWidth = Math.max(0.8, size * 0.008);
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.translate(tx, ty);
-    var zr = size * 0.028;
-    drawZodiacSymbol(ctx, s, zr);
-    ctx.restore();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(zsyms[s], tx, ty);
   }
 
   // ── House divisions (equal houses) ───────────────────────────
@@ -719,9 +721,13 @@ function drawChartWheel(canvasId, planets) {
       ctx.globalAlpha = 1;
     }
 
-    // Planet symbol drawn as canvas paths
-    var symSize = size * 0.055;
-    drawPlanetSymbol(ctx, p, px2, py2, symSize, col);
+    // Planet glyph via Noto Sans Symbols 2
+    var symSize = Math.round(size * 0.072);
+    ctx.font = symSize + 'px \'Noto Sans Symbols 2\', serif';
+    ctx.fillStyle = col;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(PSYM_R[p] || p[0], px2, py2);
   });
 
   ctx.restore(); // end clip
@@ -786,12 +792,16 @@ function initPage() {
   document.getElementById('labelNatal').textContent = 'Born in ' + birthPlace;
 
 
-  // Draw wheels — sizing handled inside drawChartWheel via offsetWidth
-  // Small delay to ensure panels are visible and have layout
-  setTimeout(function() {
-    drawChartWheel('wheelRelocated', relocPlanets);
-    drawChartWheel('wheelNatal', natalPlanets);
-  }, 50);
+  // Draw wheels — wait for Noto Sans Symbols 2 to load for crisp glyphs
+  function drawBoth() {
+    drawChartWheel('wheelRelocated', window._relocPlanets);
+    drawChartWheel('wheelNatal', window._natalPlanets);
+  }
+  document.fonts.load("40px 'Noto Sans Symbols 2'", '\u2609\u263D\u2648').then(function() {
+    setTimeout(drawBoth, 30);
+  }).catch(function() {
+    setTimeout(drawBoth, 80);
+  });
 
   // Find planet house shifts
   var PLANET_ORDER = ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto'];
