@@ -213,142 +213,189 @@ function drawPlanetSymbol(ctx, planet, x, y, size, color) {
   ctx.save();
   ctx.strokeStyle = color;
   ctx.fillStyle = color;
-  ctx.lineWidth = size * 0.08;
+  ctx.lineWidth = Math.max(1, size * 0.1);
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
-  var r = size * 0.38;
+  var r = size * 0.42;
   ctx.translate(x, y);
 
   switch(planet) {
+
     case 'Sun':
-      // Circle with dot
+      // Circle with center dot
       ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.stroke();
-      ctx.beginPath(); ctx.arc(0, 0, r*0.18, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(0, 0, r*0.2, 0, Math.PI*2); ctx.fill();
       break;
+
     case 'Moon':
-      // Crescent
+      // Clean crescent — two offset arcs
       ctx.beginPath();
-      ctx.arc(0, 0, r, Math.PI*0.25, Math.PI*1.75); ctx.stroke();
+      ctx.arc(0, 0, r, Math.PI*0.5, Math.PI*1.5, false);
+      ctx.stroke();
       ctx.beginPath();
-      ctx.arc(r*0.3, 0, r*0.85, Math.PI*0.32, Math.PI*1.68, true); ctx.stroke();
+      ctx.arc(r*0.45, 0, r*0.88, Math.PI*0.58, Math.PI*1.42, true);
+      ctx.stroke();
       break;
+
     case 'Mercury':
-      // Circle + cross + horns
-      var mr = r*0.55;
-      ctx.beginPath(); ctx.arc(0, mr*0.1, mr, 0, Math.PI*2); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, mr*0.1+mr); ctx.lineTo(0, r*1.1); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(-r*0.45, r*0.75); ctx.lineTo(r*0.45, r*0.75); ctx.stroke();
-      ctx.beginPath(); ctx.arc(0, -mr*0.5, mr*0.6, Math.PI, 0); ctx.stroke();
+      // Circle, vertical stem, horizontal bar, top horns
+      var mr = r * 0.52;
+      ctx.beginPath(); ctx.arc(0, 0, mr, 0, Math.PI*2); ctx.stroke();
+      // Stem down
+      ctx.beginPath(); ctx.moveTo(0, mr); ctx.lineTo(0, r*1.1); ctx.stroke();
+      // Cross bar
+      ctx.beginPath(); ctx.moveTo(-r*0.5, r*0.65); ctx.lineTo(r*0.5, r*0.65); ctx.stroke();
+      // Horns on top
+      ctx.beginPath(); ctx.arc(0, -mr, r*0.55, Math.PI*1.15, Math.PI*1.85, false); ctx.stroke();
       break;
+
     case 'Venus':
-      // Circle + cross below
-      var vr = r*0.6;
-      ctx.beginPath(); ctx.arc(0, -vr*0.4, vr, 0, Math.PI*2); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, -vr*0.4+vr); ctx.lineTo(0, r*1.0); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(-r*0.45, r*0.55); ctx.lineTo(r*0.45, r*0.55); ctx.stroke();
+      // Circle on top, cross below
+      var vr = r * 0.58;
+      ctx.beginPath(); ctx.arc(0, -r*0.28, vr, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, -r*0.28+vr); ctx.lineTo(0, r*1.0); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-r*0.5, r*0.45); ctx.lineTo(r*0.5, r*0.45); ctx.stroke();
       break;
+
     case 'Mars':
-      // Circle + arrow
-      var ar = r*0.6;
-      ctx.beginPath(); ctx.arc(-ar*0.2, ar*0.2, ar, 0, Math.PI*2); ctx.stroke();
+      // Circle, arrow top-right
+      var ar = r * 0.58;
+      ctx.beginPath(); ctx.arc(-r*0.18, r*0.18, ar, 0, Math.PI*2); ctx.stroke();
+      // Arrow shaft
       ctx.beginPath();
-      ctx.moveTo(-ar*0.2+ar*0.7, ar*0.2-ar*0.7);
-      ctx.lineTo(r*0.9, -r*0.9); ctx.stroke();
+      ctx.moveTo(-r*0.18 + ar*0.72, r*0.18 - ar*0.72);
+      ctx.lineTo(r*0.95, -r*0.95);
+      ctx.stroke();
+      // Arrowhead
       ctx.beginPath();
-      ctx.moveTo(r*0.9, -r*0.9);
-      ctx.lineTo(r*0.9, -r*0.45); ctx.stroke();
+      ctx.moveTo(r*0.95, -r*0.95);
+      ctx.lineTo(r*0.95, -r*0.48);
+      ctx.stroke();
       ctx.beginPath();
-      ctx.moveTo(r*0.9, -r*0.9);
-      ctx.lineTo(r*0.45, -r*0.9); ctx.stroke();
+      ctx.moveTo(r*0.95, -r*0.95);
+      ctx.lineTo(r*0.48, -r*0.95);
+      ctx.stroke();
       break;
+
     case 'Jupiter':
-      // 4-like shape
+      // Reversed 4 shape
       ctx.beginPath();
-      ctx.moveTo(-r*0.1, -r); ctx.lineTo(-r*0.1, r);
+      ctx.moveTo(r*0.15, -r);
+      ctx.lineTo(r*0.15, r*0.9);
       ctx.stroke();
       ctx.beginPath();
-      ctx.moveTo(-r*0.75, r*0.05); ctx.lineTo(r*0.55, r*0.05);
+      ctx.moveTo(-r*0.7, r*0.1); ctx.lineTo(r*0.6, r*0.1);
       ctx.stroke();
       ctx.beginPath();
-      ctx.moveTo(-r*0.75, r*0.05);
-      ctx.quadraticCurveTo(-r*0.75, -r*0.9, -r*0.05, -r*0.9);
+      ctx.moveTo(-r*0.7, r*0.1);
+      ctx.bezierCurveTo(-r*0.7, -r*0.85, r*0.15, -r*0.85, r*0.15, -r*0.35);
       ctx.stroke();
       break;
+
     case 'Saturn':
-      // h-shape with cross
+      // h with bottom curl — NOT a cross
+      // Vertical staff left
       ctx.beginPath();
-      ctx.moveTo(r*0.1, -r); ctx.lineTo(r*0.1, r*0.5);
+      ctx.moveTo(-r*0.2, -r*0.9);
+      ctx.lineTo(-r*0.2, r*1.0);
       ctx.stroke();
+      // Cross bar
       ctx.beginPath();
-      ctx.moveTo(-r*0.35, -r*0.55); ctx.lineTo(r*0.55, -r*0.55);
+      ctx.moveTo(-r*0.65, -r*0.15);
+      ctx.lineTo(r*0.5, -r*0.15);
       ctx.stroke();
+      // Right arm curving down to a foot
       ctx.beginPath();
-      ctx.moveTo(r*0.1, r*0.5);
-      ctx.quadraticCurveTo(r*0.1, r*1.0, -r*0.4, r*1.0);
+      ctx.moveTo(r*0.5, -r*0.15);
+      ctx.lineTo(r*0.5, r*0.45);
+      ctx.bezierCurveTo(r*0.5, r*0.95, -r*0.25, r*0.95, -r*0.25, r*0.6);
       ctx.stroke();
       break;
+
     case 'Uranus':
-      // Circle with cross and dot
-      var ur = r*0.45;
-      ctx.beginPath(); ctx.arc(0, r*0.15, ur, 0, Math.PI*2); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, r*0.15+ur); ctx.lineTo(0, r); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(-r*0.5, r*0.15); ctx.lineTo(-r, r*0.15); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(r*0.5, r*0.15); ctx.lineTo(r, r*0.15); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, r*0.15-ur); ctx.lineTo(0, -r*0.8); ctx.stroke();
-      ctx.beginPath(); ctx.arc(0, -r*0.9, r*0.12, 0, Math.PI*2); ctx.fill();
+      // H shape with circle on top
+      var ur = r * 0.32;
+      // Left vertical
+      ctx.beginPath(); ctx.moveTo(-r*0.55, -r*0.3); ctx.lineTo(-r*0.55, r); ctx.stroke();
+      // Right vertical
+      ctx.beginPath(); ctx.moveTo(r*0.55, -r*0.3); ctx.lineTo(r*0.55, r); ctx.stroke();
+      // Cross bar
+      ctx.beginPath(); ctx.moveTo(-r*0.55, r*0.2); ctx.lineTo(r*0.55, r*0.2); ctx.stroke();
+      // Circle on top center
+      ctx.beginPath(); ctx.arc(0, -r*0.62, ur, 0, Math.PI*2); ctx.stroke();
+      // Center dot
+      ctx.beginPath(); ctx.arc(0, -r*0.62, ur*0.22, 0, Math.PI*2); ctx.fill();
       break;
+
     case 'Neptune':
-      // Trident
-      ctx.beginPath(); ctx.moveTo(0, -r); ctx.lineTo(0, r); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(-r*0.6, r*0.1); ctx.lineTo(r*0.6, r*0.1); ctx.stroke();
+      // Trident — three prongs, horizontal bar, vertical stem
+      ctx.beginPath(); ctx.moveTo(0, r*0.2); ctx.lineTo(0, r); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-r*0.65, r*0.2); ctx.lineTo(r*0.65, r*0.2); ctx.stroke();
+      // Center prong
+      ctx.beginPath(); ctx.moveTo(0, r*0.2); ctx.lineTo(0, -r); ctx.stroke();
+      // Left prong
+      ctx.beginPath(); ctx.moveTo(-r*0.65, r*0.2); ctx.lineTo(-r*0.65, -r*0.45); ctx.stroke();
+      // Right prong
+      ctx.beginPath(); ctx.moveTo(r*0.65, r*0.2); ctx.lineTo(r*0.65, -r*0.45); ctx.stroke();
+      // Arc connecting tops of prongs
       ctx.beginPath();
-      ctx.moveTo(-r*0.6, r*0.1); ctx.lineTo(-r*0.6, -r*0.5);
-      ctx.moveTo(r*0.6, r*0.1); ctx.lineTo(r*0.6, -r*0.5);
+      ctx.arc(0, -r*0.05, r*0.68, Math.PI*1.12, Math.PI*1.88, false);
       ctx.stroke();
-      ctx.beginPath(); ctx.arc(0, -r*0.2, r*0.65, Math.PI*1.1, Math.PI*1.9, true); ctx.stroke();
       break;
+
     case 'Pluto':
-      // Circle over cross with crescent
-      var pr = r*0.35;
-      ctx.beginPath(); ctx.arc(0, -r*0.35, pr, 0, Math.PI*2); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, -r*0.35+pr); ctx.lineTo(0, r); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(-r*0.45, r*0.3); ctx.lineTo(r*0.45, r*0.3); ctx.stroke();
-      ctx.beginPath(); ctx.arc(0, -r*0.8, r*0.42, Math.PI, 0); ctx.stroke();
+      // Crescent on top of circle on top of cross
+      var pr = r * 0.32;
+      // Cross below
+      ctx.beginPath(); ctx.moveTo(0, pr*0.8+pr); ctx.lineTo(0, r); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-r*0.45, r*0.55); ctx.lineTo(r*0.45, r*0.55); ctx.stroke();
+      // Circle
+      ctx.beginPath(); ctx.arc(0, pr*0.4, pr, 0, Math.PI*2); ctx.stroke();
+      // Crescent on top
+      ctx.beginPath();
+      ctx.arc(0, -r*0.42, r*0.42, Math.PI*1.05, Math.PI*1.95, false);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(r*0.18, -r*0.42, r*0.28, Math.PI*1.1, Math.PI*1.9, true);
+      ctx.stroke();
       break;
+
     case 'Chiron':
-      // Key symbol — circle + cross
-      var cr = r*0.4;
-      ctx.beginPath(); ctx.arc(0, r*0.4, cr, 0, Math.PI*2); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, r*0.4-cr); ctx.lineTo(0, -r); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(-r*0.4, -r*0.3); ctx.lineTo(r*0.4, -r*0.3); ctx.stroke();
+      // K symbol — circle bottom, key upward
+      var chr = r * 0.38;
+      ctx.beginPath(); ctx.arc(0, r*0.52, chr, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, r*0.52-chr); ctx.lineTo(0, -r*0.5); ctx.stroke();
+      // K arms
+      ctx.beginPath(); ctx.moveTo(0, -r*0.1); ctx.lineTo(r*0.55, -r*0.8); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, -r*0.1); ctx.lineTo(r*0.55, r*0.3); ctx.stroke();
       break;
+
     case 'NNode':
-      // Horseshoe up
+      // Horseshoe opening upward with small circles at base
       ctx.beginPath();
-      ctx.arc(0, r*0.1, r*0.7, Math.PI, 0);
+      ctx.arc(0, r*0.05, r*0.65, Math.PI, 0, false);
       ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(-r*0.7, r*0.1); ctx.lineTo(-r*0.7, r);
-      ctx.moveTo(r*0.7, r*0.1); ctx.lineTo(r*0.7, r);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(-r*1.0, r); ctx.lineTo(-r*0.4, r);
-      ctx.moveTo(r*1.0, r); ctx.lineTo(r*0.4, r);
-      ctx.stroke();
+      // Left leg
+      ctx.beginPath(); ctx.moveTo(-r*0.65, r*0.05); ctx.lineTo(-r*0.65, r*0.75); ctx.stroke();
+      // Right leg
+      ctx.beginPath(); ctx.moveTo(r*0.65, r*0.05); ctx.lineTo(r*0.65, r*0.75); ctx.stroke();
+      // Small circles at feet
+      ctx.beginPath(); ctx.arc(-r*0.65, r*0.88, r*0.14, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(r*0.65, r*0.88, r*0.14, 0, Math.PI*2); ctx.stroke();
       break;
+
     case 'SNode':
-      // Horseshoe down
+      // Horseshoe opening downward with small circles at top
       ctx.beginPath();
-      ctx.arc(0, -r*0.1, r*0.7, 0, Math.PI);
+      ctx.arc(0, -r*0.05, r*0.65, 0, Math.PI, false);
       ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(-r*0.7, -r*0.1); ctx.lineTo(-r*0.7, -r);
-      ctx.moveTo(r*0.7, -r*0.1); ctx.lineTo(r*0.7, -r);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(-r*1.0, -r); ctx.lineTo(-r*0.4, -r);
-      ctx.moveTo(r*1.0, -r); ctx.lineTo(r*0.4, -r);
-      ctx.stroke();
+      // Left leg
+      ctx.beginPath(); ctx.moveTo(-r*0.65, -r*0.05); ctx.lineTo(-r*0.65, -r*0.75); ctx.stroke();
+      // Right leg
+      ctx.beginPath(); ctx.moveTo(r*0.65, -r*0.05); ctx.lineTo(r*0.65, -r*0.75); ctx.stroke();
+      // Small circles at top
+      ctx.beginPath(); ctx.arc(-r*0.65, -r*0.88, r*0.14, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(r*0.65, -r*0.88, r*0.14, 0, Math.PI*2); ctx.stroke();
       break;
   }
   ctx.restore();
@@ -359,6 +406,118 @@ var PSYM_R = {}; // not used directly — symbols drawn via drawPlanetSymbol
 var SIGN_ASTRO = ['Ari','Tau','Gem','Can','Leo','Vir','Lib','Sco','Sag','Cap','Aqu','Pis'];
 // Zodiac sign abbreviations (plain text, no emoji)
 var SIGN_ABBR = SIGN_ASTRO;
+
+function drawZodiacSymbol(ctx, idx, r) {
+  // ctx already translated to center, strokeStyle/fillStyle set
+  switch(idx) {
+    case 0: // Aries — two bumps pointing up
+      ctx.beginPath();
+      ctx.moveTo(0, r*0.3);
+      ctx.arc(-r*0.55, -r*0.1, r*0.65, Math.PI*0.1, Math.PI*0.95, false);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, r*0.3);
+      ctx.arc(r*0.55, -r*0.1, r*0.65, Math.PI*0.05, Math.PI*0.9, true);
+      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, r*0.3); ctx.lineTo(0, r); ctx.stroke();
+      break;
+    case 1: // Taurus — circle with horns
+      ctx.beginPath(); ctx.arc(0, r*0.35, r*0.65, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0, -r*0.52, r*0.88, Math.PI*0.1, Math.PI*0.9, false); ctx.stroke();
+      break;
+    case 2: // Gemini — two vertical lines with top/bottom bars
+      ctx.beginPath(); ctx.moveTo(-r*0.5, -r); ctx.lineTo(r*0.5, -r); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-r*0.5, r); ctx.lineTo(r*0.5, r); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-r*0.38, -r); ctx.lineTo(-r*0.38, r); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(r*0.38, -r); ctx.lineTo(r*0.38, r); ctx.stroke();
+      break;
+    case 3: // Cancer — 69 sideways
+      ctx.beginPath(); ctx.arc(-r*0.28, 0, r*0.5, Math.PI*0.05, Math.PI*1.85, false); ctx.stroke();
+      ctx.beginPath(); ctx.arc(r*0.28, 0, r*0.5, Math.PI*1.05, Math.PI*0.85, false); ctx.stroke();
+      break;
+    case 4: // Leo — circle with tail curl
+      ctx.beginPath(); ctx.arc(-r*0.2, -r*0.15, r*0.6, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-r*0.2+r*0.6, -r*0.15);
+      ctx.bezierCurveTo(r*0.9, r*0.4, r*0.9, r*1.1, r*0.2, r*1.1);
+      ctx.bezierCurveTo(-r*0.3, r*1.1, -r*0.3, r*0.7, 0, r*0.7);
+      ctx.stroke();
+      break;
+    case 5: // Virgo — m with curl
+      ctx.beginPath();
+      ctx.moveTo(-r*0.8, -r*0.3);
+      ctx.lineTo(-r*0.8, r*0.8);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-r*0.8, -r*0.3);
+      ctx.bezierCurveTo(-r*0.8, -r*1.1, r*0.0, -r*1.1, r*0.0, -r*0.3);
+      ctx.lineTo(r*0.0, r*0.8);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(r*0.0, -r*0.3);
+      ctx.bezierCurveTo(r*0.0, -r*1.1, r*0.8, -r*1.1, r*0.8, -r*0.3);
+      ctx.lineTo(r*0.8, r*0.5);
+      ctx.bezierCurveTo(r*0.8, r*1.1, r*0.2, r*1.1, r*0.2, r*0.7);
+      ctx.stroke();
+      break;
+    case 6: // Libra — horizon line with bump
+      ctx.beginPath(); ctx.moveTo(-r, r*0.3); ctx.lineTo(r, r*0.3); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-r, r*0.85); ctx.lineTo(r, r*0.85); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0, r*0.3, r*0.6, Math.PI, 0, true); ctx.stroke();
+      break;
+    case 7: // Scorpio — m with arrow tail
+      ctx.beginPath();
+      ctx.moveTo(-r*0.8, -r*0.3);
+      ctx.lineTo(-r*0.8, r*0.6);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-r*0.8, -r*0.3);
+      ctx.bezierCurveTo(-r*0.8, -r*1.1, r*0.0, -r*1.1, r*0.0, -r*0.3);
+      ctx.lineTo(r*0.0, r*0.6);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(r*0.0, -r*0.3);
+      ctx.bezierCurveTo(r*0.0, -r*1.1, r*0.8, -r*1.1, r*0.8, -r*0.3);
+      ctx.lineTo(r*0.8, r*0.3);
+      // Arrow
+      ctx.moveTo(r*0.8, r*0.3); ctx.lineTo(r*1.1, r*0.8);
+      ctx.moveTo(r*1.1, r*0.8); ctx.lineTo(r*0.7, r*0.75);
+      ctx.moveTo(r*1.1, r*0.8); ctx.lineTo(r*1.05, r*0.38);
+      ctx.stroke();
+      break;
+    case 8: // Sagittarius — arrow pointing up-right
+      ctx.beginPath();
+      ctx.moveTo(-r*0.8, r*0.8); ctx.lineTo(r*0.8, -r*0.8);
+      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(r*0.8, -r*0.8); ctx.lineTo(r*0.8, -r*0.2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(r*0.8, -r*0.8); ctx.lineTo(r*0.2, -r*0.8); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-r*0.55, r*0.15); ctx.lineTo(r*0.15, r*0.15); ctx.stroke();
+      break;
+    case 9: // Capricorn — v with loop
+      ctx.beginPath();
+      ctx.moveTo(-r*0.85, -r*0.6);
+      ctx.lineTo(-r*0.2, r*0.7);
+      ctx.bezierCurveTo(r*0.3, r*1.2, r*0.9, r*0.8, r*0.85, r*0.15);
+      ctx.bezierCurveTo(r*0.8, -r*0.5, r*0.1, -r*0.5, r*0.2, r*0.2);
+      ctx.stroke();
+      break;
+    case 10: // Aquarius — two wavy lines
+      ctx.beginPath();
+      ctx.moveTo(-r, -r*0.25);
+      ctx.bezierCurveTo(-r*0.5, -r*0.7, r*0.5, r*0.2, r, -r*0.25);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-r, r*0.45);
+      ctx.bezierCurveTo(-r*0.5, 0, r*0.5, r*0.9, r, r*0.45);
+      ctx.stroke();
+      break;
+    case 11: // Pisces — two arcs facing opposite with bar
+      ctx.beginPath(); ctx.arc(-r*0.45, 0, r*0.7, Math.PI*0.25, Math.PI*1.75, true); ctx.stroke();
+      ctx.beginPath(); ctx.arc(r*0.45, 0, r*0.7, Math.PI*1.25, Math.PI*0.75, true); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-r, 0); ctx.lineTo(r, 0); ctx.stroke();
+      break;
+  }
+}
 
 function drawChartWheel(canvasId, planets) {
   var canvas = document.getElementById(canvasId);
@@ -441,11 +600,17 @@ function drawChartWheel(canvasId, planets) {
     var tx = cx + labelR * Math.cos(midAngle);
     var ty = cy + labelR * Math.sin(midAngle);
 
-    ctx.font = 'italic 300 ' + Math.round(size * 0.046) + 'px Cormorant Garamond, Georgia, serif';
+    // Draw zodiac symbol
+    ctx.save();
+    ctx.strokeStyle = '#b8955a';
     ctx.fillStyle = '#b8955a';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(SIGN_ABBR[s], tx, ty);
+    ctx.lineWidth = Math.max(0.8, size * 0.008);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.translate(tx, ty);
+    var zr = size * 0.028;
+    drawZodiacSymbol(ctx, s, zr);
+    ctx.restore();
   }
 
   // ── House divisions (equal houses) ───────────────────────────
