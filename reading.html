@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>elsewhere — your chart in this place</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#1a1714;--ink-2:#2e2b28;--ink-3:#4a4540;
+  --paper:#faf8f4;--paper-2:#f2ede5;--paper-3:#e8e0d2;
+  --gold:#b8955a;--gold-light:#d4b07a;--gold-faint:rgba(184,149,90,.13);
+  --serif:'Cormorant Garamond',Georgia,serif;--sans:'Jost',sans-serif;
+  --green:#3d7a52;--red-d:#8b3a3a;
+}
+html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margin:0;font-size:16px}
+
+/* ── Header ── */
+.site-header{width:100%;padding:.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;border-bottom:.5px solid var(--paper-3);background:var(--paper);position:sticky;top:0;z-index:20}
+.site-wordmark{font-family:var(--serif);font-size:1.05rem;font-weight:300;letter-spacing:.35em;text-transform:lowercase;color:var(--ink);text-decoration:none}
+.back-btn{font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);padding:.3rem .8rem;cursor:pointer;border-radius:20px;text-decoration:none;transition:all .2s}
+.back-btn:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ── Page wrapper ── */
+.page{max-width:760px;margin:0 auto;padding:2.5rem 1.5rem 5rem}
+
+/* ── Did you know card ── */
+.dyk-card{background:var(--gold-faint);border:.5px solid var(--paper-3);border-radius:6px;padding:1.1rem 1.3rem;margin-bottom:2.5rem;display:flex;gap:.9rem;align-items:flex-start}
+.dyk-star{color:var(--gold);font-size:1.1rem;flex-shrink:0;margin-top:.1rem}
+.dyk-text{font-family:var(--serif);font-size:.9rem;color:var(--ink-2);line-height:1.7;font-style:italic}
+
+/* ── City heading ── */
+.city-heading{text-align:center;margin-bottom:2rem}
+.city-eyebrow{font-size:9px;font-weight:500;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:.6rem}
+.city-title{font-family:var(--serif);font-size:clamp(1.8rem,5vw,2.6rem);font-weight:300;line-height:1.1;color:var(--ink)}
+.city-title em{font-style:italic;color:var(--gold)}
+.city-subtitle{font-family:var(--serif);font-size:.88rem;font-style:italic;color:var(--ink-3);margin-top:.5rem;line-height:1.6}
+
+/* ── Chart carousel / side by side ── */
+.charts-container{position:relative;margin-bottom:2rem}
+
+/* Desktop: side by side */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+.chart-panel{background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:8px;padding:1.2rem;display:flex;flex-direction:column;align-items:center}
+.chart-panel-label{font-size:8px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:.6rem;text-align:center}
+.chart-panel-city{font-family:var(--serif);font-size:1rem;font-weight:300;color:var(--ink);margin-bottom:1rem;text-align:center}
+.chart-panel-city em{font-style:italic;color:var(--gold)}
+canvas.chart-wheel{display:block;width:100%;max-width:280px;height:auto}
+
+/* Mobile: carousel */
+@media(max-width:600px){
+  .charts-grid{display:block;position:relative;overflow:hidden}
+  .chart-panel{display:none;padding:1rem}
+  .chart-panel.active{display:flex}
+  .carousel-nav{display:flex;justify-content:center;align-items:center;gap:1rem;margin-top:.8rem}
+  .carousel-dot{width:7px;height:7px;border-radius:50%;background:var(--paper-3);cursor:pointer;transition:background .2s;border:none;padding:0}
+  .carousel-dot.active{background:var(--gold)}
+  .carousel-hint{font-size:8px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);text-align:center;margin-bottom:.6rem}
+}
+@media(min-width:601px){
+  .carousel-nav{display:none}
+  .carousel-hint{display:none}
+  .chart-panel{display:flex!important}
+}
+
+/* ── Summary line ── */
+.summary-section{text-align:center;margin:2rem 0 2.5rem;padding:1.2rem;border-top:.5px solid var(--paper-3);border-bottom:.5px solid var(--paper-3)}
+.summary-text{font-family:var(--serif);font-size:1.05rem;font-style:italic;color:var(--ink-2);line-height:1.6}
+.summary-count{color:var(--gold)}
+
+/* ── Section heading ── */
+.section-heading{font-size:10px;font-weight:500;letter-spacing:.25em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem;display:flex;align-items:center;gap:.6rem}
+.section-heading::after{content:'';flex:1;height:.5px;background:var(--paper-3)}
+
+/* ── Planet shift cards ── */
+.shifts-list{display:flex;flex-direction:column;gap:1.2rem;margin-bottom:2rem}
+.shift-card{border:.5px solid var(--paper-3);border-radius:6px;overflow:hidden}
+.shift-card-header{display:flex;align-items:center;gap:.7rem;padding:.7rem 1rem;background:var(--paper-2);border-bottom:.5px solid var(--paper-3)}
+.shift-glyph{font-family:var(--serif);font-size:1.4rem;line-height:1}
+.shift-planet-name{font-size:.65rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase}
+.shift-arrow{font-size:.75rem;color:var(--ink-3);margin:0 .2rem}
+.shift-houses{font-size:.65rem;color:var(--ink-3);letter-spacing:.08em}
+.shift-body{padding:1rem}
+.shift-label{font-size:7px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.25rem}
+.shift-prose{font-family:var(--serif);font-size:.88rem;color:var(--ink-2);line-height:1.7;margin-bottom:.85rem}
+.shift-prose:last-child{margin-bottom:0}
+.shift-rule{height:.5px;background:var(--paper-3);margin:.75rem 0}
+
+/* ── Gate / account prompt ── */
+.gate{background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:8px;padding:2rem 1.5rem;text-align:center;margin:2rem 0}
+.gate-star{font-size:1.5rem;margin-bottom:.8rem;color:var(--gold)}
+.gate-title{font-family:var(--serif);font-size:1.4rem;font-weight:300;line-height:1.2;margin-bottom:.6rem}
+.gate-title em{font-style:italic;color:var(--gold)}
+.gate-body{font-family:var(--serif);font-size:.88rem;font-style:italic;color:var(--ink-3);line-height:1.7;margin-bottom:1.4rem;max-width:380px;margin-left:auto;margin-right:auto}
+.gate-btn{font-size:10px;font-weight:500;letter-spacing:.25em;text-transform:uppercase;color:var(--paper);background:var(--ink);border:none;padding:.9rem 2.5rem;cursor:pointer;border-radius:0;transition:background .2s;display:inline-block;text-decoration:none}
+.gate-btn:hover{background:var(--gold)}
+.gate-note{font-size:.72rem;color:var(--ink-3);font-family:var(--serif);font-style:italic;margin-top:.8rem}
+
+/* ── Footer ── */
+.page-footer{text-align:center;padding:1.5rem 0 1rem;border-top:1px solid var(--paper-3);margin-top:2rem}
+
+/* ── Loading state ── */
+#loadingState{text-align:center;padding:4rem 1.5rem;font-family:var(--serif);font-style:italic;color:var(--ink-3)}
+#mainContent{display:none}
+
+/* ── No-data state ── */
+#noDataState{display:none;text-align:center;padding:4rem 1.5rem}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <span class="site-wordmark">elsewhere</span>
+  <a href="/" class="back-btn">← Back to map</a>
+</header>
+
+<div class="page">
+
+  <div id="loadingState">
+    <p>Reading your chart…</p>
+  </div>
+
+  <div id="noDataState">
+    <p style="font-family:var(--serif);font-style:italic;color:var(--ink-3);margin-bottom:1rem">No chart data found.</p>
+    <a href="/" class="gate-btn">Cast your chart</a>
+  </div>
+
+  <div id="mainContent">
+
+    <!-- Did you know -->
+    <div class="dyk-card">
+      <span class="dyk-star">✦</span>
+      <p class="dyk-text">Did you know? When you leave your birthplace, your astrological chart shifts. The planets stay the same — but the houses they occupy change based on where you are in the world. This means the themes that dominate your life — career, relationships, creativity, home — can feel completely different depending on where you live.</p>
+    </div>
+
+    <!-- City heading -->
+    <div class="city-heading">
+      <p class="city-eyebrow">Your chart elsewhere</p>
+      <h1 class="city-title">You in <em id="headingCity">—</em></h1>
+      <p class="city-subtitle" id="headingSubtitle">—</p>
+    </div>
+
+    <!-- Chart wheels -->
+    <div class="charts-container">
+      <p class="carousel-hint" id="carouselHint">Swipe to compare</p>
+      <div class="charts-grid" id="chartsGrid">
+        <!-- Relocated chart (first) -->
+        <div class="chart-panel active" id="panel-relocated">
+          <p class="chart-panel-label">Relocated chart</p>
+          <p class="chart-panel-city" id="labelRelocated">—</p>
+          <canvas class="chart-wheel" id="wheelRelocated" width="280" height="280"></canvas>
+        </div>
+        <!-- Natal chart (second) -->
+        <div class="chart-panel" id="panel-natal">
+          <p class="chart-panel-label">Natal chart</p>
+          <p class="chart-panel-city" id="labelNatal">—</p>
+          <canvas class="chart-wheel" id="wheelNatal" width="280" height="280"></canvas>
+        </div>
+      </div>
+      <!-- Carousel dots (mobile only) -->
+      <div class="carousel-nav">
+        <button class="carousel-dot active" id="dot0" onclick="showPanel(0)"></button>
+        <button class="carousel-dot" id="dot1" onclick="showPanel(1)"></button>
+      </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="summary-section">
+      <p class="summary-text" id="summaryText">—</p>
+    </div>
+
+    <!-- Planet shifts -->
+    <div class="section-heading">What changes</div>
+    <div class="shifts-list" id="shiftsList"></div>
+
+    <!-- Account gate -->
+    <div class="gate" id="gateSection" style="display:none">
+      <div class="gate-star">✦</div>
+      <h2 class="gate-title">See the full picture<br>in <em id="gateCityName">—</em></h2>
+      <p class="gate-body">Create a free account to unlock your complete relocated chart reading — every planet, every shift, and what it all means for you here.</p>
+      <a href="#" class="gate-btn">Create free account</a>
+      <p class="gate-note">3 full readings included. No credit card required.</p>
+    </div>
+
+    <div class="page-footer">
+      <a href="mailto:elsewhereastro@gmail.com" style="font-family:var(--serif);font-size:.78rem;color:var(--ink-3);text-decoration:none;border-bottom:1px solid var(--paper-3)">share feedback</a>
+      <span style="color:var(--paper-3);margin:0 .8rem">·</span>
+      <span style="font-family:var(--serif);font-size:.78rem;color:var(--ink-3)">© 2025 elsewhere</span>
+    </div>
+
+  </div><!-- /mainContent -->
+</div><!-- /page -->
+
+<script src="/descriptions.js?v=5"></script>
+<script src="/js/app.js?v=1"></script>
+<script>
+// ─── Carousel (mobile) ───────────────────────────────────────
+var _currentPanel = 0;
+function showPanel(idx) {
+  _currentPanel = idx;
+  document.getElementById('panel-relocated').classList.toggle('active', idx === 0);
+  document.getElementById('panel-natal').classList.toggle('active', idx === 1);
+  document.getElementById('dot0').classList.toggle('active', idx === 0);
+  document.getElementById('dot1').classList.toggle('active', idx === 1);
+}
+
+// Touch swipe support for carousel
+(function(){
+  var grid = document.getElementById('chartsGrid');
+  var startX = 0;
+  grid.addEventListener('touchstart', function(e){ startX = e.touches[0].clientX; }, {passive:true});
+  grid.addEventListener('touchend', function(e){
+    var dx = e.changedTouches[0].clientX - startX;
+    if (Math.abs(dx) > 40) showPanel(dx < 0 ? 1 : 0);
+  }, {passive:true});
+})();
+
+// ─── Chart wheel drawing ──────────────────────────────────────
+var PSYM_R = {Sun:'☉',Moon:'☽',Mercury:'☿',Venus:'♀',Mars:'♂',Jupiter:'♃',Saturn:'♄',Uranus:'♅',Neptune:'♆',Pluto:'♇',Chiron:'⚷',NNode:'☊',SNode:'☋'};
+var PCOL_R = {Sun:'#c9933a',Moon:'#7a9ab5',Mercury:'#7a8fa0',Venus:'#b07a9a',Mars:'#b05a4a',Jupiter:'#7a6aaa',Saturn:'#8a8a6a',Uranus:'#5a9a8a',Neptune:'#6a7aaa',Pluto:'#8a5a7a',Chiron:'#9a7a5a',NNode:'#7a9a7a',SNode:'#9a7a7a'};
+var SIGNS_R = ['Ari','Tau','Gem','Can','Leo','Vir','Lib','Sco','Sag','Cap','Aqu','Pis'];
+var SIGN_SYMS = ['♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓'];
+
+function drawChartWheel(canvasId, planets, label) {
+  var canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  var size = canvas.width;
+  var ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, size, size);
+  var cx = size / 2, cy = size / 2;
+  var rOuter = size * 0.46;
+  var rSign = size * 0.38;
+  var rInner = size * 0.30;
+  var rPlanet = size * 0.20;
+
+  // Background
+  ctx.fillStyle = 'var(--paper)';
+  ctx.beginPath();
+  ctx.arc(cx, cy, rOuter + 4, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Outer ring (zodiac)
+  ctx.strokeStyle = '#e8e0d2';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(cx, cy, rOuter, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx, cy, rSign, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx, cy, rInner, 0, Math.PI * 2); ctx.stroke();
+
+  // Zodiac sign dividers and symbols
+  for (var s = 0; s < 12; s++) {
+    var angle = (s * 30 - 90) * Math.PI / 180; // 0° Aries at top
+    ctx.strokeStyle = '#e8e0d2';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(cx + rSign * Math.cos(angle), cy + rSign * Math.sin(angle));
+    ctx.lineTo(cx + rOuter * Math.cos(angle), cy + rOuter * Math.sin(angle));
+    ctx.stroke();
+
+    // Sign symbol
+    var midAngle = ((s * 30 + 15) - 90) * Math.PI / 180;
+    var tx = cx + (rSign + (rOuter - rSign) / 2) * Math.cos(midAngle);
+    var ty = cy + (rSign + (rOuter - rSign) / 2) * Math.sin(midAngle);
+    ctx.font = Math.round(size * 0.045) + 'px serif';
+    ctx.fillStyle = '#b8955a';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(SIGN_SYMS[s], tx, ty);
+  }
+
+  // House dividers (equal houses from ASC)
+  var ascLon = (planets.Ascendant && planets.Ascendant.totalDeg) ? planets.Ascendant.totalDeg : 0;
+  for (var h = 0; h < 12; h++) {
+    var houseLon = (ascLon + h * 30) % 360;
+    var hAngle = (houseLon - ascLon - 90) * Math.PI / 180;
+    var actualAngle = (houseLon - 90) * Math.PI / 180;
+    // Draw from center to inner ring for house lines
+    var lineAngle = ((houseLon - ascLon) - 90) * Math.PI / 180;
+    var plotAngle = (houseLon - ascLon - 90) * Math.PI / 180;
+
+    ctx.strokeStyle = (h === 0 || h === 3 || h === 6 || h === 9) ? '#b8955a' : '#e8e0d2';
+    ctx.lineWidth = (h === 0 || h === 3 || h === 6 || h === 9) ? 1 : 0.5;
+    var pa = (houseLon - 90) * Math.PI / 180;
+    // Rotate so ASC is on left (standard western chart)
+    var drawAngle = ((houseLon - ascLon) - 90) * Math.PI / 180;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + rInner * Math.cos(drawAngle), cy + rInner * Math.sin(drawAngle));
+    ctx.stroke();
+  }
+
+  // ASC/MC labels
+  ctx.font = 'bold ' + Math.round(size * 0.038) + 'px Jost, sans-serif';
+  ctx.fillStyle = '#b8955a';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  // ASC is on the left
+  ctx.fillText('AC', cx - rInner - 8, cy);
+  // DSC on right
+  ctx.fillText('DC', cx + rInner + 8, cy);
+  // MC at top
+  ctx.fillText('MC', cx, cy - rInner - 8);
+  // IC at bottom
+  ctx.fillText('IC', cx, cy + rInner + 10);
+
+  // Plot planets
+  var PLANET_ORDER = ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode','SNode'];
+  PLANET_ORDER.forEach(function(p) {
+    var pd = planets[p];
+    if (!pd || pd.totalDeg == null) return;
+    var lon = pd.totalDeg;
+    // Rotate so ASC is at left (180° position in canvas = left)
+    var relAngle = ((lon - ascLon) - 180) * Math.PI / 180;
+    var px2 = cx + rPlanet * Math.cos(relAngle);
+    var py2 = cy + rPlanet * Math.sin(relAngle);
+
+    // Dot
+    ctx.beginPath();
+    ctx.arc(px2, py2, size * 0.018, 0, Math.PI * 2);
+    ctx.fillStyle = PCOL_R[p] || '#888';
+    ctx.fill();
+
+    // Glyph
+    ctx.font = Math.round(size * 0.055) + 'px serif';
+    ctx.fillStyle = PCOL_R[p] || '#888';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(PSYM_R[p] || p[0], px2, py2 - size * 0.038);
+  });
+}
+
+// ─── House number helper ──────────────────────────────────────
+function getHouseNumber(planetLon, ascLon) {
+  var rel = ((planetLon - ascLon) % 360 + 360) % 360;
+  return Math.floor(rel / 30) + 1;
+}
+
+function ordinal(n) {
+  var s = ['th','st','nd','rd'];
+  var v = n % 100;
+  return n + (s[(v-20)%10]||s[v]||s[0]);
+}
+
+// ─── Main init ────────────────────────────────────────────────
+function initPage() {
+  var raw = localStorage.getItem('elsewhere_reading');
+  if (!raw) {
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('noDataState').style.display = 'block';
+    return;
+  }
+
+  var data;
+  try { data = JSON.parse(raw); } catch(e) {
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('noDataState').style.display = 'block';
+    return;
+  }
+
+  var jd = data.jd;
+  var birthLat = data.birthLat;
+  var birthLng = data.birthLng;
+  var birthPlace = data.birthPlace || 'Your birthplace';
+  var cityName = data.cityName || 'This location';
+  var cityLat = data.cityLat;
+  var cityLng = data.cityLng;
+  var userName = data.name || 'You';
+
+  // Compute both charts
+  var natalPlanets = computePlanets(jd, birthLat, birthLng);
+  var relocPlanets = computePlanets(jd, cityLat, cityLng);
+
+  // Update headings
+  document.getElementById('headingCity').textContent = cityName;
+  document.getElementById('headingSubtitle').textContent = userName + ' · ' + (data.birthDate || '') + ' · Born in ' + birthPlace;
+  document.getElementById('labelRelocated').innerHTML = 'In <em style="font-style:italic;color:var(--gold)">' + cityName + '</em>';
+  document.getElementById('labelNatal').textContent = 'Born in ' + birthPlace;
+  document.getElementById('gateCityName').textContent = cityName;
+
+  // Draw wheels
+  var wheelSize = Math.min(document.getElementById('wheelRelocated').parentElement.clientWidth - 40, 280);
+  document.getElementById('wheelRelocated').width = wheelSize;
+  document.getElementById('wheelRelocated').height = wheelSize;
+  document.getElementById('wheelNatal').width = wheelSize;
+  document.getElementById('wheelNatal').height = wheelSize;
+  drawChartWheel('wheelRelocated', relocPlanets, cityName);
+  drawChartWheel('wheelNatal', natalPlanets, birthPlace);
+
+  // Find planet house shifts
+  var PLANET_ORDER = ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto'];
+  var shifts = [];
+  PLANET_ORDER.forEach(function(p) {
+    var np = natalPlanets[p];
+    var rp = relocPlanets[p];
+    if (!np || !rp) return;
+    var natalHouse = getHouseNumber(np.totalDeg, natalPlanets.Ascendant.totalDeg);
+    var relocHouse = getHouseNumber(rp.totalDeg, relocPlanets.Ascendant.totalDeg);
+    if (natalHouse !== relocHouse) {
+      shifts.push({ planet: p, natalHouse: natalHouse, relocHouse: relocHouse, sign: rp.sign });
+    }
+  });
+
+  // Summary line
+  var summaryEl = document.getElementById('summaryText');
+  if (shifts.length === 0) {
+    summaryEl.innerHTML = 'Your chart is remarkably stable in <span class="summary-count">' + cityName + '</span> — the planets hold their positions. The energy here is familiar.';
+  } else {
+    summaryEl.innerHTML = '<span class="summary-count">' + shifts.length + ' planet' + (shifts.length > 1 ? 's' : '') + '</span> shift ' + (shifts.length > 1 ? 'houses' : 'house') + ' in ' + cityName + '. Here\'s what that means for you.';
+  }
+
+  // Build shift cards
+  var list = document.getElementById('shiftsList');
+  var FREE_LIMIT = 2; // show 2 free, gate the rest
+  shifts.forEach(function(sh, i) {
+    if (i >= FREE_LIMIT) return; // gated planets not shown yet
+
+    var col = PCOL_R[sh.planet] || '#888';
+    var sym = PSYM_R[sh.planet] || sh.planet;
+
+    // Get descriptions
+    var natalHouseDesc = getHouseDesc(sh.natalHouse);
+    var relocHouseDesc = getHouseDesc(sh.relocHouse);
+    var natalText = getNatalText(sh.planet, sh.natalHouse, birthPlace);
+    var relocText = getRelocText(sh.planet, sh.relocHouse, cityName);
+    var changeText = getChangeText(sh.planet, sh.natalHouse, sh.relocHouse);
+
+    var card = document.createElement('div');
+    card.className = 'shift-card';
+    card.innerHTML =
+      '<div class="shift-card-header">'
+        + '<span class="shift-glyph" style="color:' + col + '">' + sym + '</span>'
+        + '<span class="shift-planet-name" style="color:' + col + '">' + sh.planet + '</span>'
+        + '<span class="shift-arrow">·</span>'
+        + '<span class="shift-houses">' + ordinal(sh.natalHouse) + ' house → ' + ordinal(sh.relocHouse) + ' house</span>'
+      + '</div>'
+      + '<div class="shift-body">'
+        + '<div class="shift-label">At your birthplace</div>'
+        + '<div class="shift-prose">' + natalText + '</div>'
+        + '<div class="shift-rule"></div>'
+        + '<div class="shift-label">In ' + cityName + '</div>'
+        + '<div class="shift-prose">' + relocText + '</div>'
+        + (changeText
+          ? '<div class="shift-rule"></div>'
+            + '<div class="shift-label">What changes</div>'
+            + '<div class="shift-prose">' + changeText + '</div>'
+          : '')
+      + '</div>';
+    list.appendChild(card);
+  });
+
+  // Show gate if there are more shifts
+  if (shifts.length > FREE_LIMIT) {
+    document.getElementById('gateSection').style.display = 'block';
+  }
+
+  // Show content
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('mainContent').style.display = 'block';
+}
+
+// ─── Description helpers ──────────────────────────────────────
+var HOUSE_ANCHORS = {
+  1: 'the house of self, identity, and how you show up in the world',
+  2: 'the house of personal resources, money, and what you value',
+  3: 'the house of communication, local community, and everyday life',
+  4: 'the foundation of your chart, home, family, and private life',
+  5: 'the house of creativity, pleasure, and self-expression',
+  6: 'the house of daily routine, health, and how you work',
+  7: 'the house of relationships, partnership, and how you connect with others',
+  8: 'the house of transformation, shared resources, and what lies beneath the surface',
+  9: 'the house of expansion, travel, philosophy, and belief',
+  10: 'the house of career, reputation, and how the world sees you',
+  11: 'the house of community, friendships, and long term vision',
+  12: 'the house of solitude, the unconscious, and what is hidden'
+};
+function getHouseDesc(h) { return HOUSE_ANCHORS[h] || 'your chart'; }
+
+// Sun natal descriptions by house
+var SUN_NATAL = {
+  1: 'Your energy goes inward, toward home, family, and private life. You are most yourself behind closed doors, and the foundation you build for yourself matters deeply.',
+  2: 'Security matters to you deeply. You shine when you\'re building something stable — financially, materially, in terms of your own self-worth. Your sense of self is tied to what you create and what you own.',
+  3: 'You come alive through communication, ideas, and your immediate world. Talking, writing, connecting locally — this is where your energy naturally flows. Curiosity has always driven you.',
+  4: 'Your energy goes inward, toward home, family, and private life. You are most yourself behind closed doors, and the foundation you build for yourself matters deeply.',
+  5: 'You were made to create, play, and express. Joy is not frivolous for you — it\'s essential. You shine brightest when you\'re making something, performing, or fully in the moment.',
+  6: 'You find meaning in the everyday — in work, in routine, in being useful. You shine through dedication and craft, and you take health and daily life seriously.',
+  7: 'You come into yourself through other people. Relationships are not just important to you — they\'re where you find your reflection. Partnership has always been central to who you are.',
+  8: 'You\'ve never been interested in the surface of things. You shine in depth, in transformation, in understanding what others avoid. Intensity is comfortable for you.',
+  9: 'You were born reaching for something bigger — a different culture, a different belief system, a broader understanding of the world. You shine when you\'re expanding.',
+  10: 'You were born with a sense of purpose that wants to be public. Career, legacy, and reputation matter to you — not out of vanity, but because you genuinely want to build something that lasts.',
+  11: 'You shine in community. Your energy is collective by nature — you think in terms of groups, movements, and the future. Friends and like-minded people are your lifeblood.',
+  12: 'Your light is quieter, more inward. You shine in solitude, in creative or spiritual work, in spaces away from the noise. You may have spent much of your life feeling slightly apart from the world — that\'s not a flaw, it\'s just where your depth lives.'
+};
+
+// Sun relocated descriptions by house
+var SUN_RELOC = {
+  1: 'Here you step forward. This place puts you front and center in a way you may not be used to. Expect to feel more visible, more energized, more like yourself in public.',
+  2: 'This location activates your relationship with money, resources, and self worth. You may find it easier to build financial stability here, or feel a stronger sense of what you truly value.',
+  3: 'Your energy goes into your immediate world — conversations, ideas, local connections. This is a place where you think clearly, communicate well, and feel plugged into your surroundings.',
+  4: 'This place calls you inward. Rather than pushing you toward ambition or visibility, it asks you to slow down, put down roots, and build something that feels like home.',
+  5: 'This location unlocks your creative and playful side. You may find yourself more expressive here, more willing to take risks, more open to joy. Life can feel lighter here.',
+  6: 'Here your energy goes into the work itself — the craft, the routine, the day to day. This can be a deeply productive place for you, where focus comes naturally and good habits stick.',
+  7: 'This place activates your relationship energy. You may find yourself more open to partnership here, attracting significant people, or seeing your existing relationships in a new light.',
+  8: 'This is not a place for small talk or surface living — it\'s a place of transformation, intensity, and getting to the truth of things. Powerful, but not always comfortable.',
+  9: 'This location expands you. Whether through the culture, the people, or simply the perspective shift of being somewhere new, this place pushes your thinking and broadens your world.',
+  10: 'This is a career city for you. Your ambition activates here, your reputation can grow, and the world is more likely to take notice of what you\'re building.',
+  11: 'In this city you find your people. Community, friendship, and collective energy are heightened here. This is a place where you can plug into something bigger than yourself.',
+  12: 'This location turns your energy inward and quiets the noise. It can be a deeply restorative place — good for creative or spiritual work — but it\'s not a place where ambition thrives easily.'
+};
+
+// Moon natal
+var MOON_NATAL = {
+  1:'Your emotional world is right on the surface — you feel things visibly, and people sense your inner life immediately. You\'ve always been someone others can read.',
+  2:'Your emotional security is tied to material comfort. Feeling financially stable, having beautiful things around you — these matter more than you sometimes admit.',
+  3:'Your emotions move through conversation and connection. You process by talking, writing, or simply being around people who stimulate your mind.',
+  4:'The home is your emotional centre. More than most, you need a private sanctuary to return to — somewhere that feels genuinely like yours.',
+  5:'Your emotional world is playful and expressive. You feel most like yourself when you\'re creating, entertaining, or deeply absorbed in something joyful.',
+  6:'You feel best when you\'re useful and organised. Emotional security comes through routine, purpose, and taking care of the small things that hold daily life together.',
+  7:'Your emotional wellbeing is deeply tied to your closest relationships. You feel most yourself when you\'re genuinely partnered — in love, friendship, or collaboration.',
+  8:'You feel things at a depth most people never reach. Emotional intensity is normal for you, and you need relationships that can hold that without flinching.',
+  9:'Your emotional world craves expansion and meaning. You feel most alive when you\'re learning, travelling, or engaged with ideas that stretch your understanding.',
+  10:'You have a public emotional presence — people sense your inner life, even in professional contexts. Your emotions are part of your authority.',
+  11:'Your emotional nourishment comes from community. You need to feel part of something larger — a group, a movement, a circle of genuine like-minds.',
+  12:'Your emotional world is largely invisible — rich and deep, but kept private. You may process feelings slowly and in solitude, which is a real strength.'
+};
+
+var MOON_RELOC = {
+  1:'Your emotional world becomes more visible here. People sense your inner life immediately in this place, which can feel exposing — or beautifully freeing.',
+  2:'This place grounds your emotional world in the physical. Comfort, beauty, and a sense of material security can arrive more easily here.',
+  3:'Your emotions flow more easily into words here. Conversations feel nourishing, and you may find yourself processing your inner world more openly.',
+  4:'Few places feel as homelike as this. Your emotional roots find something to hold onto here — this is a city for belonging.',
+  5:'Your emotional world opens into creativity and joy here. You may find yourself lighter, more playful, more willing to follow what genuinely excites you.',
+  6:'Emotional wellbeing here is tied to routine and usefulness. Good habits, purposeful work, and daily structure can all make this place feel genuinely right.',
+  7:'Relationships deepen here. You may find yourself more emotionally open to partners and close friends, or draw people who meet you with real care.',
+  8:'This place stirs something deep. Emotional intensity, transformation, and the kind of honesty that changes things — all of this is closer to the surface here.',
+  9:'Your emotional world expands here. The culture, the openness, the sense of possibility — this city can feel like an adventure for the soul.',
+  10:'Your emotional depth becomes part of your public presence here. People sense your inner life, which can become one of your greatest professional assets.',
+  11:'In this city, community nourishes you. You find your people here — those who share your values and make belonging feel genuinely possible.',
+  12:'This city quiets everything down. Your emotional world turns inward here — good for healing, solitude, and the kind of deep rest that public life doesn\'t allow.'
+};
+
+function getNatalText(planet, house, birthPlace) {
+  var desc = '';
+  if (planet === 'Sun') desc = SUN_NATAL[house];
+  else if (planet === 'Moon') desc = MOON_NATAL[house];
+  // Additional planets will be added here
+  if (!desc) desc = 'Your ' + planet + ' sits in ' + getHouseDesc(house) + ' at your birthplace — shaping this area of life in a deep, foundational way.';
+  return 'At your birthplace, your ' + planet + ' sits in ' + ordinal(house) + ' house — ' + HOUSE_ANCHORS[house] + '. ' + desc;
+}
+
+function getRelocText(planet, house, cityName) {
+  var desc = '';
+  if (planet === 'Sun') desc = SUN_RELOC[house];
+  else if (planet === 'Moon') desc = MOON_RELOC[house];
+  if (!desc) desc = 'In ' + cityName + ', your ' + planet + ' activates ' + getHouseDesc(house) + ' — bringing a new quality of energy to this part of your life.';
+  return 'In ' + cityName + ', your ' + planet + ' moves into ' + ordinal(house) + ' house — ' + HOUSE_ANCHORS[house] + '. ' + desc;
+}
+
+// Opposite house pairs for "what changes"
+var OPPOSITE_PAIRS = {
+  '1-7':'This is a shift from self to other. At your birthplace your energy naturally goes toward defining who you are — here that energy moves toward partnership and connection. You may find yourself more relationship focused, more aware of how you show up for others. The challenge is not losing yourself in the process.',
+  '7-1':'In this city you come back to yourself. Where relationships have always been central to your identity at home, this place puts you front and center. Expect to feel more independent here, more self directed, more aware of what you want outside of what others need from you.',
+  '2-8':'At home you build your own security — here that energy moves into shared territory. Money, intimacy, and power dynamics with others become more prominent. This can be deeply transformative, but it asks you to trust and to let go of full control.',
+  '8-2':'This shift moves you from depth to stability. The intensity and transformation that characterise your birthplace energy settles into something more grounded here. Building financial security, understanding your own values, and finding comfort in the material world become more natural.',
+  '3-9':'Your world gets bigger here. Where your birthplace kept your energy local and immediate, this city pushes you toward broader thinking, philosophy, and expansion. Ideas that felt small at home can take on real meaning here.',
+  '9-3':'Your world gets more local here. The expansive, philosophical energy of your birthplace narrows into something more immediate — your neighbourhood, your daily conversations, your close community. That\'s not a limitation, it\'s a different kind of richness.',
+  '4-10':'This is a significant shift. If home has always felt like where you belong, this place asks something different of you — to be seen, to lead, to build something public. That can feel exciting or exposing depending on where you are in life.',
+  '10-4':'This is a shift toward private life. The ambition and public energy of your birthplace softens here into something more domestic and inward. This place may not be where your career thrives, but it could be where you finally feel at home.',
+  '5-11':'Your creative energy becomes collective here. Where at home you shine through personal expression, this city turns that energy toward something larger — a community, a movement, a shared vision.',
+  '11-5':'Your collective energy becomes personal here. Where at home you shine in groups and community, this city turns that energy toward individual expression, creativity, and joy.',
+  '6-12':'This is a quieting shift. The structured, productive energy of your birthplace softens into something more inward and less defined here. This can feel disorienting if you\'re used to routine, but it can also be deeply restorative.',
+  '12-1':'This is one of the most activating shifts possible. The quiet, inward energy of your birthplace steps fully into the light here. You become more visible, more present, more yourself in public. For people with a 12th house placement natally this can feel like finally arriving.'
+};
+
+function getChangeText(planet, natalHouse, relocHouse) {
+  var key = natalHouse + '-' + relocHouse;
+  return OPPOSITE_PAIRS[key] || '';
+}
+
+// ─── Boot ────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', initPage);
+</script>
+</body>
+</html>
