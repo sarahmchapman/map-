@@ -6,6 +6,7 @@
 <title>elsewhere — your chart in this place</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<!-- Astrological font loaded dynamically in JS -->
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -47,7 +48,7 @@ html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margi
 .chart-panel-label{font-size:8px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:.6rem;text-align:center}
 .chart-panel-city{font-family:var(--serif);font-size:1rem;font-weight:300;color:var(--ink);margin-bottom:1rem;text-align:center}
 .chart-panel-city em{font-style:italic;color:var(--gold)}
-canvas.chart-wheel{display:block;width:100%;max-width:280px;aspect-ratio:1/1;height:auto}
+canvas.chart-wheel{display:block;width:100%;max-width:340px;aspect-ratio:1/1;height:auto}
 
 /* Mobile: carousel */
 @media(max-width:600px){
@@ -206,9 +207,23 @@ function showPanel(idx) {
 // Colors match app.js PCOL exactly
 var PCOL_R = {Sun:'#c9973f',Moon:'#5a7aa8',Mercury:'#4a8a6a',Venus:'#c0607a',Mars:'#9b3535',Jupiter:'#7a5a30',Saturn:'#6a6055',Uranus:'#3a7a7a',Neptune:'#4a4a9a',Pluto:'#7a4a6a',Chiron:'#2a2a2a',NNode:'#2c6e49',SNode:'#5a9e7a'};
 // Planet glyphs — plain Unicode, no emoji variation selectors
-var PSYM_R = {Sun:'\u2609',Moon:'\u263D',Mercury:'\u263F',Venus:'\u2640',Mars:'\u2642',Jupiter:'\u2643',Saturn:'\u2644',Uranus:'\u2645',Neptune:'\u2646',Pluto:'\u2647',Chiron:'\u26B7',NNode:'\u260A',SNode:'\u260B'};
+// Load astrology font from cdnfonts — renders as clean glyphs
+var _astroFontLoaded = false;
+var _astroFont = new FontFace('Astro', "url('https://fonts.cdnfonts.com/s/7079/Astro.woff') format('woff')");
+_astroFont.load().then(function(f){ document.fonts.add(f); _astroFontLoaded = true;
+  // Redraw wheels once font is loaded
+  if(window._natalPlanets && window._relocPlanets){
+    drawChartWheel('wheelRelocated', window._relocPlanets);
+    drawChartWheel('wheelNatal', window._natalPlanets);
+  }
+}).catch(function(){ _astroFontLoaded = false; });
+
+// Astro font character mappings (standard astrological font encoding)
+var PSYM_R = {Sun:'Q',Moon:'R',Mercury:'S',Venus:'T',Mars:'U',Jupiter:'V',Saturn:'W',Uranus:'X',Neptune:'Y',Pluto:'Z',Chiron:'[',NNode:'`',SNode:'a'};
+// Zodiac in Astro font
+var SIGN_ASTRO = ['b','c','d','e','f','g','h','i','j','k','l','m'];
 // Zodiac sign abbreviations (plain text, no emoji)
-var SIGN_ABBR = ['Ar','Ta','Ge','Cn','Le','Vi','Li','Sc','Sg','Cp','Aq','Pi'];
+var SIGN_ABBR = SIGN_ASTRO; // use Astro font zodiac mappings
 
 function drawChartWheel(canvasId, planets) {
   var canvas = document.getElementById(canvasId);
@@ -291,16 +306,11 @@ function drawChartWheel(canvasId, planets) {
     var tx = cx + labelR * Math.cos(midAngle);
     var ty = cy + labelR * Math.sin(midAngle);
 
-    ctx.save();
-    ctx.translate(tx, ty);
-    // Rotate label to read outward
-    ctx.rotate(midAngle + Math.PI / 2);
-    ctx.font = '500 ' + Math.round(size * 0.038) + 'px Jost, sans-serif';
+    ctx.font = Math.round(size * 0.055) + 'px Astro, serif';
     ctx.fillStyle = '#b8955a';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(SIGN_ABBR[s], 0, 0);
-    ctx.restore();
+    ctx.fillText(SIGN_ABBR[s], tx, ty);
   }
 
   // ── House divisions (equal houses) ───────────────────────────
@@ -410,7 +420,7 @@ function drawChartWheel(canvasId, planets) {
     }
 
     // Planet glyph
-    ctx.font = Math.round(size * 0.062) + 'px Cormorant Garamond, serif';
+    ctx.font = Math.round(size * 0.06) + 'px Astro, serif';
     ctx.fillStyle = col;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
