@@ -88,15 +88,7 @@ canvas.chart-wheel{display:block;width:100%;max-width:280px;aspect-ratio:1/1;hei
 .shift-prose:last-child{margin-bottom:0}
 .shift-rule{height:.5px;background:var(--paper-3);margin:.75rem 0}
 
-/* ── Gate / account prompt ── */
-.gate{background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:8px;padding:2rem 1.5rem;text-align:center;margin:2rem 0}
-.gate-star{font-size:1.5rem;margin-bottom:.8rem;color:var(--gold)}
-.gate-title{font-family:var(--serif);font-size:1.4rem;font-weight:300;line-height:1.2;margin-bottom:.6rem}
-.gate-title em{font-style:italic;color:var(--gold)}
-.gate-body{font-family:var(--serif);font-size:.88rem;font-style:italic;color:var(--ink-3);line-height:1.7;margin-bottom:1.4rem;max-width:380px;margin-left:auto;margin-right:auto}
-.gate-btn{font-size:10px;font-weight:500;letter-spacing:.25em;text-transform:uppercase;color:var(--paper);background:var(--ink);border:none;padding:.9rem 2.5rem;cursor:pointer;border-radius:0;transition:background .2s;display:inline-block;text-decoration:none}
-.gate-btn:hover{background:var(--gold)}
-.gate-note{font-size:.72rem;color:var(--ink-3);font-family:var(--serif);font-style:italic;margin-top:.8rem}
+
 
 /* ── Footer ── */
 .page-footer{text-align:center;padding:1.5rem 0 1rem;border-top:1px solid var(--paper-3);margin-top:2rem}
@@ -175,14 +167,7 @@ canvas.chart-wheel{display:block;width:100%;max-width:280px;aspect-ratio:1/1;hei
     <div class="section-heading">What changes</div>
     <div class="shifts-list" id="shiftsList"></div>
 
-    <!-- Account gate -->
-    <div class="gate" id="gateSection" style="display:none">
-      <div class="gate-star">✦</div>
-      <h2 class="gate-title">See the full picture<br>in <em id="gateCityName">—</em></h2>
-      <p class="gate-body">Create a free account to unlock your complete relocated chart reading — every planet, every shift, and what it all means for you here.</p>
-      <a href="#" class="gate-btn">Create free account</a>
-      <p class="gate-note">3 full readings included. No credit card required.</p>
-    </div>
+
 
     <div class="page-footer">
       <a href="mailto:elsewhereastro@gmail.com" style="font-family:var(--serif);font-size:.78rem;color:var(--ink-3);text-decoration:none;border-bottom:1px solid var(--paper-3)">share feedback</a>
@@ -492,7 +477,7 @@ function initPage() {
   document.getElementById('headingSubtitle').textContent = userName + ' · ' + (data.birthDate || '') + ' · Born in ' + birthPlace;
   document.getElementById('labelRelocated').innerHTML = 'In <em style="font-style:italic;color:var(--gold)">' + cityName + '</em>';
   document.getElementById('labelNatal').textContent = 'Born in ' + birthPlace;
-  document.getElementById('gateCityName').textContent = cityName;
+
 
   // Draw wheels — sizing handled inside drawChartWheel via offsetWidth
   // Small delay to ensure panels are visible and have layout
@@ -525,7 +510,7 @@ function initPage() {
 
   // Build shift cards
   var list = document.getElementById('shiftsList');
-  var FREE_LIMIT = 2; // show 2 free, gate the rest
+  var FREE_LIMIT = 100; // show all shifts for now
   shifts.forEach(function(sh, i) {
     if (i >= FREE_LIMIT) return; // gated planets not shown yet
 
@@ -563,10 +548,7 @@ function initPage() {
     list.appendChild(card);
   });
 
-  // Show gate if there are more shifts
-  if (shifts.length > FREE_LIMIT) {
-    document.getElementById('gateSection').style.display = 'block';
-  }
+
 
   // Show content
   document.getElementById('loadingState').style.display = 'none';
