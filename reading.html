@@ -537,8 +537,8 @@ function drawChartWheel(canvasId, planets) {
   var cx = size / 2, cy = size / 2;
 
   // Radii
-  var rOuter  = size * 0.445;  // zodiac outer edge
-  var rZodiac = size * 0.365;  // zodiac inner edge / house outer edge
+  var rOuter  = size * 0.455;  // zodiac outer edge
+  var rZodiac = size * 0.355;  // zodiac inner edge / house outer edge — wider band for full names
   var rHouse  = size * 0.26;   // house inner edge / planet zone outer
   var rPlanet = size * 0.185;  // planet ring radius
   var rCenter = size * 0.06;   // center dot
@@ -599,10 +599,10 @@ function drawChartWheel(canvasId, planets) {
     var tx = cx + labelR * Math.cos(midAngle);
     var ty = cy + labelR * Math.sin(midAngle);
 
-    // Zodiac symbol — system sans-serif renders Unicode zodiac points correctly
-    var zsyms = ['♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓'];
-    var zSize = Math.round(size * 0.068);
-    ctx.font = '400 ' + zSize + 'px sans-serif';
+    // Zodiac sign names — Cormorant italic, gold
+    var zsyms = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
+    var zSize = Math.round(size * 0.042);
+    ctx.font = 'italic 300 ' + zSize + 'px \'Cormorant Garamond\', Georgia, serif';
     ctx.fillStyle = '#b8955a';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -715,10 +715,10 @@ function drawChartWheel(canvasId, planets) {
       ctx.globalAlpha = 1;
     }
 
-    // Planet symbol — system sans-serif renders Unicode astro points correctly
+    // Planet symbol — colored to match description cards
     var symSize = Math.round(size * 0.075);
     ctx.font = '400 ' + symSize + 'px sans-serif';
-    ctx.fillStyle = '#b8955a';
+    ctx.fillStyle = col;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(PSYM_R[p] || p[0], px2, py2);
