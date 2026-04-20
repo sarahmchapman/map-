@@ -106,7 +106,7 @@ canvas.chart-wheel{display:block;width:100%;max-width:340px;aspect-ratio:1/1;hei
 
 <header class="site-header">
   <span class="site-wordmark">elsewhere</span>
-  <a href="#" class="back-btn" onclick="history.back();return false;">← Back to map</a>
+  <a href="#" class="back-btn" onclick="if(window.opener){window.close();}else{window.location.href='/';}return false;">← Back to map</a>
 </header>
 
 <div class="page">
@@ -401,13 +401,7 @@ function drawPlanetSymbol(ctx, planet, x, y, size, color) {
   ctx.restore();
 }
 
-// Zodiac sign abbreviations in Cormorant italic — clean and elegant
-// Astrological Unicode symbols — rendered via Noto Sans Symbols 2 (no emoji)
-var PSYM_R = {
-  Sun:'☉',Moon:'☽',Mercury:'☿',Venus:'♀',Mars:'♂',
-  Jupiter:'♃',Saturn:'♄',Uranus:'♅',Neptune:'♆',Pluto:'♇',
-  Chiron:'⚷',NNode:'☊',SNode:'☋'
-};
+var PSYM_R = {Sun:'Sun',Moon:'Mon',Mercury:'Mer',Venus:'Ven',Mars:'Mar',Jupiter:'Jup',Saturn:'Sat',Uranus:'Ura',Neptune:'Nep',Pluto:'Plu',Chiron:'Chi',NNode:'NN',SNode:'SN'};
 var SIGN_ASTRO = ['Ari','Tau','Gem','Can','Leo','Vir','Lib','Sco','Sag','Cap','Aqu','Pis'];
 // Zodiac sign abbreviations (plain text, no emoji)
 var SIGN_ABBR = SIGN_ASTRO;
@@ -605,10 +599,10 @@ function drawChartWheel(canvasId, planets) {
     var tx = cx + labelR * Math.cos(midAngle);
     var ty = cy + labelR * Math.sin(midAngle);
 
-    // Zodiac glyph via Noto Sans Symbols 2
-    var zsyms = ['♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓'];
-    var zSize = Math.round(size * 0.065);
-    ctx.font = zSize + 'px \'Noto Sans Symbols 2\', serif';
+    // Zodiac abbreviation — Cormorant italic, matches planet style
+    var zsyms = ['Ari','Tau','Gem','Can','Leo','Vir','Lib','Sco','Sag','Cap','Aqu','Pis'];
+    var zSize = Math.round(size * 0.058);
+    ctx.font = 'italic 300 ' + zSize + 'px \'Cormorant Garamond\', Georgia, serif';
     ctx.fillStyle = '#b8955a';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -721,10 +715,10 @@ function drawChartWheel(canvasId, planets) {
       ctx.globalAlpha = 1;
     }
 
-    // Planet glyph via Noto Sans Symbols 2
-    var symSize = Math.round(size * 0.072);
-    ctx.font = symSize + 'px \'Noto Sans Symbols 2\', serif';
-    ctx.fillStyle = col;
+    // Planet abbreviation — Cormorant italic, gold
+    var symSize = Math.round(size * 0.062);
+    ctx.font = 'italic 300 ' + symSize + 'px \'Cormorant Garamond\', Georgia, serif';
+    ctx.fillStyle = '#b8955a';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(PSYM_R[p] || p[0], px2, py2);
