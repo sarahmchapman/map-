@@ -401,7 +401,7 @@ function drawPlanetSymbol(ctx, planet, x, y, size, color) {
   ctx.restore();
 }
 
-var PSYM_R = {Sun:'Sun',Moon:'Mon',Mercury:'Mer',Venus:'Ven',Mars:'Mar',Jupiter:'Jup',Saturn:'Sat',Uranus:'Ura',Neptune:'Nep',Pluto:'Plu',Chiron:'Chi',NNode:'NN',SNode:'SN'};
+var PSYM_R = {Sun:'☉',Moon:'☽',Mercury:'☿',Venus:'♀',Mars:'♂',Jupiter:'♃',Saturn:'♄',Uranus:'♅',Neptune:'♆',Pluto:'♇',Chiron:'⚷',NNode:'☊',SNode:'☋'};
 var SIGN_ASTRO = ['Ari','Tau','Gem','Can','Leo','Vir','Lib','Sco','Sag','Cap','Aqu','Pis'];
 // Zodiac sign abbreviations (plain text, no emoji)
 var SIGN_ABBR = SIGN_ASTRO;
@@ -599,10 +599,10 @@ function drawChartWheel(canvasId, planets) {
     var tx = cx + labelR * Math.cos(midAngle);
     var ty = cy + labelR * Math.sin(midAngle);
 
-    // Zodiac abbreviation — Cormorant italic, matches planet style
-    var zsyms = ['Ari','Tau','Gem','Can','Leo','Vir','Lib','Sco','Sag','Cap','Aqu','Pis'];
-    var zSize = Math.round(size * 0.058);
-    ctx.font = 'italic 300 ' + zSize + 'px \'Cormorant Garamond\', Georgia, serif';
+    // Zodiac symbol — Jost sans-serif, gold
+    var zsyms = ['♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓'];
+    var zSize = Math.round(size * 0.068);
+    ctx.font = '400 ' + zSize + 'px Jost, sans-serif';
     ctx.fillStyle = '#b8955a';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -715,9 +715,9 @@ function drawChartWheel(canvasId, planets) {
       ctx.globalAlpha = 1;
     }
 
-    // Planet abbreviation — Cormorant italic, gold
-    var symSize = Math.round(size * 0.062);
-    ctx.font = 'italic 300 ' + symSize + 'px \'Cormorant Garamond\', Georgia, serif';
+    // Planet symbol — Jost sans-serif (same as main map), gold
+    var symSize = Math.round(size * 0.075);
+    ctx.font = '400 ' + symSize + 'px Jost, sans-serif';
     ctx.fillStyle = '#b8955a';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -780,9 +780,11 @@ function initPage() {
   window._relocPlanets = relocPlanets;
 
   // Update headings
-  document.getElementById('headingCity').textContent = cityName;
+  // Strip any HTML tags from cityName (GeoNames may include markup)
+  var cleanCity = cityName.replace(/<[^>]+>/g,'').trim();
+  document.getElementById('headingCity').textContent = cleanCity;
   document.getElementById('headingSubtitle').textContent = userName + ' · ' + (data.birthDate || '') + ' · Born in ' + birthPlace;
-  document.getElementById('labelRelocated').innerHTML = 'In <em style="font-style:italic;color:var(--gold)">' + cityName + '</em>';
+  document.getElementById('labelRelocated').innerHTML = 'In <em style="font-style:italic;color:var(--gold)">' + cleanCity + '</em>';
   document.getElementById('labelNatal').textContent = 'Born in ' + birthPlace;
 
 
