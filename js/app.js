@@ -1144,22 +1144,24 @@ function _lineDistance(lat,lng,pts){
 
 function _diveDeeperBtn(cityName,lat,lng){
   if(!activeChart||lat==null||lng==null)return'';
-  var safeName=(cityName||'').replace(/'/g,"\\'");
   return '<div style="margin-top:1rem;padding-top:.75rem;border-top:.5px solid var(--paper-3);text-align:center">'
-    +'<button onclick="_openReading(\''+safeName+'\','+lat+','+lng+')" '
+    +'<button onclick="_openReading('+lat+','+lng+')" '
     +'style="font-size:9px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;'
     +'color:var(--paper);background:var(--ink);border:none;padding:.65rem 1.8rem;cursor:pointer;'
     +'transition:background .2s;width:100%;max-width:260px"'
     +' onmouseover="this.style.background=\'var(--gold)\'" onmouseout="this.style.background=\'var(--ink)\'">'
-    +'Dive Deeper ✦'
+    +'Dive Deeper ✶'
     +'</button>'
     +'<p style="font-family:var(--serif);font-style:italic;font-size:.72rem;color:var(--ink-3);margin-top:.5rem">'
-    +'See your full chart in '+(cityName||'this place')+'</p>'
+    +'See your full chart in this place</p>'
     +'</div>';
 }
 
-function _openReading(cityName,lat,lng){
+function _openReading(lat,lng){
   if(!activeChart)return;
+  // Read the actual city name from the card heading (updated by GeoNames)
+  var cityEl=document.getElementById('rcCity');
+  var cityName=cityEl?cityEl.innerHTML.split('<br>')[0].replace(/<[^>]+>/g,'').trim():'This location';
   localStorage.setItem('elsewhere_reading',JSON.stringify({
     jd:activeChart._jd,
     birthLat:activeChart.geo.lat,
