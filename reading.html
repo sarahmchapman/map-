@@ -44,11 +44,11 @@ html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margi
 
 /* Desktop: side by side */
 .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
-.chart-panel{background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:8px;padding:1.2rem;display:flex;flex-direction:column;align-items:center}
+.chart-panel{background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:8px;padding:1rem;display:flex;flex-direction:column;align-items:center;width:100%}
 .chart-panel-label{font-size:8px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:.6rem;text-align:center}
 .chart-panel-city{font-family:var(--serif);font-size:1rem;font-weight:300;color:var(--ink);margin-bottom:1rem;text-align:center}
 .chart-panel-city em{font-style:italic;color:var(--gold)}
-canvas.chart-wheel{display:block;width:100%;max-width:340px;aspect-ratio:1/1;height:auto}
+canvas.chart-wheel{display:block;width:100%;max-width:420px;aspect-ratio:1/1;height:auto}
 
 /* Mobile: carousel */
 @media(max-width:600px){
@@ -537,7 +537,7 @@ function drawChartWheel(canvasId, planets) {
   var cx = size / 2, cy = size / 2;
 
   // Radii
-  var rOuter  = size * 0.455;  // zodiac outer edge
+  var rOuter  = size * 0.470;  // zodiac outer edge
   var rZodiac = size * 0.355;  // zodiac inner edge / house outer edge — wider band for full names
   var rHouse  = size * 0.26;   // house inner edge / planet zone outer
   var rPlanet = size * 0.185;  // planet ring radius
@@ -601,7 +601,7 @@ function drawChartWheel(canvasId, planets) {
 
     // Zodiac sign names — Cormorant italic, gold
     var zsyms = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
-    var zSize = Math.round(size * 0.042);
+    var zSize = Math.round(size * 0.036);
     ctx.font = 'italic 300 ' + zSize + 'px \'Cormorant Garamond\', Georgia, serif';
     ctx.fillStyle = '#b8955a';
     ctx.textAlign = 'center';
