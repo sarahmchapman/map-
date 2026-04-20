@@ -888,6 +888,7 @@ function _handleMapClick(lat,lng){
     .then(function(r){return r.json();})
     .then(function(data){
       if(!data.label)return;
+      window._resolvedCityName=data.label; // store for _openReading
       var el=document.getElementById('rcCity');
       if(el&&document.getElementById('readingCard').classList.contains('open')){
         var parts=el.innerHTML.split('<br>');
@@ -1159,9 +1160,12 @@ function _diveDeeperBtn(cityName,lat,lng){
 
 function _openReading(lat,lng){
   if(!activeChart)return;
-  // Read the actual city name from the card heading (updated by GeoNames)
-  var cityEl=document.getElementById('rcCity');
-  var cityName=cityEl?cityEl.innerHTML.split('<br>')[0].replace(/<[^>]+>/g,'').trim():'This location';
+  // Use GeoNames-resolved name if available, else read from card heading
+  var cityName=window._resolvedCityName||'';
+  if(!cityName){
+    var cityEl=document.getElementById('rcCity');
+    cityName=cityEl?cityEl.innerHTML.split('<br>')[0].replace(/<[^>]+>/g,'').trim():'This location';
+  }
   localStorage.setItem('elsewhere_reading',JSON.stringify({
     jd:activeChart._jd,
     birthLat:activeChart.geo.lat,
@@ -1404,6 +1408,7 @@ function openCard(cityName,planet,ltype,_lat,_lng,powerZone){
   }
 
   var pzData=powerZone&&powerZone.length>=2?_buildPowerZoneHTML(powerZone):null;
+  window._resolvedCityName=null; // reset on new card open
   document.getElementById('rcAccent').style.background=col;
   document.getElementById('rcCity').innerHTML=(cityName||'This location')+'<br><em>'+(pzData?'POWER ZONE':quality)+'</em>';
 
