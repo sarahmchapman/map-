@@ -599,10 +599,10 @@ function drawChartWheel(canvasId, planets) {
     var tx = cx + labelR * Math.cos(midAngle);
     var ty = cy + labelR * Math.sin(midAngle);
 
-    // Zodiac symbol — Jost sans-serif, gold
+    // Zodiac symbol — system sans-serif renders Unicode zodiac points correctly
     var zsyms = ['♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓'];
     var zSize = Math.round(size * 0.068);
-    ctx.font = '400 ' + zSize + 'px Jost, sans-serif';
+    ctx.font = '400 ' + zSize + 'px sans-serif';
     ctx.fillStyle = '#b8955a';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -715,9 +715,9 @@ function drawChartWheel(canvasId, planets) {
       ctx.globalAlpha = 1;
     }
 
-    // Planet symbol — Jost sans-serif (same as main map), gold
+    // Planet symbol — system sans-serif renders Unicode astro points correctly
     var symSize = Math.round(size * 0.075);
-    ctx.font = '400 ' + symSize + 'px Jost, sans-serif';
+    ctx.font = '400 ' + symSize + 'px sans-serif';
     ctx.fillStyle = '#b8955a';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
