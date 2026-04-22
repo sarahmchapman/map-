@@ -1471,9 +1471,6 @@ function resetToForm(){
   _map.ready=false;_map.tileCache={};_map.ctx=null;_map.svg=null;
   document.getElementById('cityInput').value='';
   document.getElementById('citySuggestions').innerHTML='';
-  document.getElementById('chartGrid').innerHTML='';
-  document.getElementById('anglesGrid').innerHTML='';
-  ntById('aspectList').innerHTML='';
   document.getElementById('readingCard').classList.remove('open');
   document.getElementById('mapLegend').innerHTML='';
 }
