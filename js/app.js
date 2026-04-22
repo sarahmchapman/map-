@@ -1173,7 +1173,14 @@ function _openReading(lat,lng){
     cityLat:lat,
     cityLng:lng,
     lineData:lineData,
-    planets:activeChart.planets
+    planets:(function(){
+      var out={};
+      ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode','SNode'].forEach(function(p){
+        var pd=activeChart.planets[p];
+        if(pd)out[p]={sign:pd.sign,deg:pd.deg,min:pd.min,totalDeg:pd.totalDeg};
+      });
+      return out;
+    })()
   }));
   window.open('/reading.html','_blank');
 }
