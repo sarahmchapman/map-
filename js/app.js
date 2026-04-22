@@ -1149,6 +1149,19 @@ function _openReading(lat,lng){
     var cityEl=document.getElementById('rcCity');
     cityName=cityEl?cityEl.innerHTML.split('<br>')[0].replace(/<[^>]+>/g,'').trim():'This location';
   }
+  // Build compact line data — just the MC longitude for each planet
+  // enough to calculate distance from city without storing full point arrays
+  var lineData={};
+  var acg=acgData||{};
+  ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode','SNode'].forEach(function(p){
+    if(acg[p]){
+      lineData[p]={
+        mcLon:acg[p].mcLon!=null?acg[p].mcLon:null,
+        ra:acg[p].ra!=null?acg[p].ra:null,
+        dec:acg[p].dec!=null?acg[p].dec:null
+      };
+    }
+  });
   localStorage.setItem('elsewhere_reading',JSON.stringify({
     jd:activeChart._jd,
     birthLat:activeChart.geo.lat,
@@ -1158,7 +1171,9 @@ function _openReading(lat,lng){
     name:activeChart.name,
     cityName:cityName,
     cityLat:lat,
-    cityLng:lng
+    cityLng:lng,
+    lineData:lineData,
+    planets:activeChart.planets
   }));
   window.open('/reading.html','_blank');
 }
