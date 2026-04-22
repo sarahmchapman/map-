@@ -868,6 +868,237 @@ function initPage() {
   document.getElementById('mainContent').style.display = 'block';
 }
 
+// ─────────────────────────────────────────────────────────────
+// UPDATED HOUSE DESCRIPTIONS — all planets, natal + relocated
+// Balanced: honest about challenges, positive where earned
+// ─────────────────────────────────────────────────────────────
+
+// ── SUN NATAL ────────────────────────────────────────────────
+var SUN_NATAL = {
+  1: 'You were born to be seen. Your energy is upfront, your presence hard to ignore. Identity and self-expression come naturally to you, though you may have had to learn when to step back and make room for others.',
+  2: 'Security matters to you deeply. You shine when you\'re building something stable — financially, materially, in terms of your own self-worth. The risk is tying your identity too closely to what you own or earn.',
+  3: 'You come alive through communication, ideas, and your immediate world. Talking, writing, connecting locally — this is where your energy naturally flows. Restlessness can be the shadow side of that curiosity.',
+  4: 'Your energy goes inward, toward home, family, and private life. You are most yourself behind closed doors, and the foundation you build for yourself matters deeply. The challenge is not using home as a way to avoid the world.',
+  5: 'You were made to create, play, and express. Joy is not frivolous for you — it\'s essential. You shine brightest when you\'re making something or fully in the moment, though drama can follow when that need for attention goes unmet.',
+  6: 'You find meaning in the everyday — in work, in routine, in being useful. You shine through dedication and craft. The shadow here is over-criticism — of yourself and others — when standards become impossible.',
+  7: 'You come into yourself through other people. Relationships are not just important to you — they\'re where you find your reflection. The challenge is developing a strong sense of self that doesn\'t depend on others to feel complete.',
+  8: 'You\'ve never been interested in the surface of things. You shine in depth, transformation, and understanding what others avoid. Intensity is your natural mode — the challenge is knowing when to let go rather than grip tighter.',
+  9: 'You were born reaching for something bigger — a different culture, a different belief system, a broader understanding of the world. The shadow side is restlessness, or using the search for meaning to avoid being present.',
+  10: 'You were born with a sense of purpose that wants to be public. Career, legacy, and reputation matter to you — not out of vanity, but because you genuinely want to build something that lasts. Watch for letting achievement define your worth.',
+  11: 'You shine in community. Your energy is collective by nature — you think in terms of groups, movements, and the future. The challenge is maintaining individual identity within the collective, not losing yourself in the crowd.',
+  12: 'Your light is quieter, more inward. You shine in solitude, in creative or spiritual work, in spaces away from the noise. The challenge is not disappearing entirely — the world needs what you carry, even if sharing it feels hard.'
+};
+
+// ── SUN RELOCATED ────────────────────────────────────────────
+var SUN_RELOC = {
+  1: 'Here you step forward. This place puts you front and center in a way you may not be used to. You\'ll feel more visible and energised — but that exposure can cut both ways if you\'re not ready to be seen.',
+  2: 'This location activates your relationship with money, resources, and self-worth. You may find it easier to build financial stability here — or feel more aware of where your relationship with security needs work.',
+  3: 'Your energy goes into your immediate world — conversations, ideas, local connections. This is a place where you think clearly and communicate well. The restlessness of this placement can make it hard to go deep.',
+  4: 'This place calls you inward. Rather than pushing you toward ambition or visibility, it asks you to slow down and put down roots. Powerful for healing — but it can also make the wider world feel less accessible.',
+  5: 'This location unlocks your creative and playful side. Life can feel lighter here. Just watch for a tendency to seek pleasure or validation at the expense of more sustained effort.',
+  6: 'Here your energy goes into the work itself — the craft, the routine, the day to day. A deeply productive place. The risk is becoming so focused on doing that you forget to simply be.',
+  7: 'This place activates your relationship energy. You may find yourself more open to partnership here, attracting significant people. Be discerning — this line can also draw relationships that mirror your unresolved patterns.',
+  8: 'This is not a place for surface living — it\'s a place of transformation and intensity. Powerful if you\'re ready for depth. If you\'re not, it can feel destabilising.',
+  9: 'This location expands you. Whether through culture, people, or perspective, this place broadens your world. Watch for using that expansion as a way to keep moving rather than committing to anything.',
+  10: 'This is a career city for you. Your ambition activates here and the world takes notice. The pressure to perform and maintain your reputation can be real — make sure you\'re building something you actually want.',
+  11: 'In this city you find your people. Community and collective energy are heightened here. Be mindful of losing your own voice in the group, or chasing belonging at the expense of your individual direction.',
+  12: 'This location turns your energy inward. Good for creative or spiritual work and genuine rest. But it\'s not a place where ambition thrives easily — if you need external momentum, you may struggle here.'
+};
+
+// ── MOON NATAL ───────────────────────────────────────────────
+var MOON_NATAL = {
+  1: 'Your emotional world is right on the surface — you feel things visibly, and people sense your inner life immediately. That openness is a gift, but it can leave you feeling exposed or dependent on others\' reactions to feel okay.',
+  2: 'Your emotional security is tied to material comfort. Feeling financially stable and having beauty around you matter more than you sometimes admit. The challenge is not using comfort as a substitute for emotional honesty.',
+  3: 'Your emotions move through conversation and connection. You process by talking or writing. The shadow side is emotional restlessness — moving from thought to thought without letting yourself fully feel.',
+  4: 'The home is your emotional centre. More than most, you need a private sanctuary to return to. The challenge is not retreating so completely that the outside world starts to feel threatening.',
+  5: 'Your emotional world is playful and expressive. You feel most like yourself when creating or deeply absorbed in something joyful. Drama or emotional extremes can show up when that creative need goes unmet.',
+  6: 'You feel best when you\'re useful and organised. Emotional security comes through routine and purpose. The challenge is using busyness to avoid feeling — and recognising when anxiety is masking as productivity.',
+  7: 'Your emotional wellbeing is deeply tied to your closest relationships. You feel most yourself when genuinely partnered. The shadow is emotional dependency — needing others to feel stable rather than finding that within yourself.',
+  8: 'You feel things at a depth most people never reach. Emotional intensity is normal for you. The challenge is trusting others enough to let them in, and not using emotional complexity as a way to stay in control.',
+  9: 'Your emotional world craves expansion and meaning. You feel most alive when learning or engaged with ideas that stretch you. Restlessness and emotional avoidance can show up when life feels too small or too settled.',
+  10: 'You have a public emotional presence — people sense your inner life even in professional contexts. That emotional visibility can be an asset, but it can also make it hard to separate your private self from your public role.',
+  11: 'Your emotional nourishment comes from community. You need to feel part of something larger. The shadow is emotional detachment — being more comfortable with groups than with the intimacy of one-on-one connection.',
+  12: 'Your emotional world is largely invisible — rich and deep, but kept private. You may process feelings slowly and in solitude. The challenge is not using that privacy to avoid emotions altogether.'
+};
+
+// ── MOON RELOCATED ───────────────────────────────────────────
+var MOON_RELOC = {
+  1: 'Your emotional world becomes more visible here. People sense your inner life immediately, which can feel exposing — or beautifully freeing. Emotional reactions may be stronger than usual in this place.',
+  2: 'This place grounds your emotional world in the physical. Comfort and material security can arrive more easily here. Watch for using that comfort as a way to avoid emotional growth.',
+  3: 'Your emotions flow more easily into words here. Conversations feel nourishing. The shadow is emotional restlessness — lots of feeling but not always the depth to sit with it.',
+  4: 'Few places feel as homelike as this. Your emotional roots find something to hold onto here. It can also make it tempting to withdraw from the world entirely — be careful of over-nesting.',
+  5: 'Your emotional world opens into creativity and joy here. You may feel lighter and more playful. The shadow side is a need for attention or emotional drama when that playful energy isn\'t being fed.',
+  6: 'Emotional wellbeing here is tied to routine and usefulness. Structure can genuinely soothe. Watch for anxiety disguising itself as productivity — this placement can tip into emotional rigidity.',
+  7: 'Relationships deepen here. You may find yourself more emotionally open to partners and close friends. Be mindful — this placement can also surface emotional dependency or attract relationships that mirror your wounds.',
+  8: 'This place stirs something deep. Emotional intensity and the kind of honesty that changes things are closer to the surface here. Powerful for healing, but not a comfortable city if you\'re avoiding depth.',
+  9: 'Your emotional world expands here. The culture and openness of this city can feel like an adventure for the soul. Watch for emotional restlessness — the desire for something more can make it hard to be present.',
+  10: 'Your emotional depth becomes part of your public presence here. That can be a real asset — or feel like you have nowhere to hide. The line between your private and professional self is thinner in this place.',
+  11: 'In this city, community nourishes you. You find your people here. The shadow is preferring the safety of groups over the vulnerability of true one-on-one intimacy.',
+  12: 'This city quiets everything down. Your emotional world turns inward here — good for healing and deep rest. But it can also amplify isolation if you\'re not actively seeking connection.'
+};
+
+// ── MERCURY NATAL ────────────────────────────────────────────
+var MERCURY_NATAL = {
+  1: 'Your mind is right on the surface — you come across as sharp, quick, and articulate. How you think and how you present yourself are essentially the same thing. The challenge is learning to listen as well as you speak.',
+  2: 'Your thinking is methodical and grounded. You process ideas slowly but thoroughly, and tend to trust what you can verify. The shadow side is stubbornness — difficulty changing your mind once it\'s made up.',
+  3: 'Your mind is at home here — curious, quick, constantly making connections. You\'ve always had a gift for communication. Scattered thinking and difficulty finishing what you start can be the downside.',
+  4: 'Your mind turns inward and backward — you think a lot about your roots and history. You process privately and often need solitude to think clearly. Rumination and getting stuck in old stories can be the shadow.',
+  5: 'Your thinking is playful and creative — a natural gift for storytelling and generating ideas. The challenge is always choosing which ideas to pursue rather than scattering your attention across too many.',
+  6: 'Your mind works best with structure and detail. You\'re the person who notices what others miss. The shadow is over-analysis — getting so deep in the details that you lose sight of the bigger picture.',
+  7: 'You think through conversation. Ideas come alive when you\'re talking them through with someone. The shadow is difficulty reaching conclusions alone — you can become too dependent on others to process.',
+  8: 'Your mind goes deep rather than wide. You\'re drawn to what\'s hidden or complex — surface explanations have never satisfied you. The shadow is obsessive thinking or keeping information as a form of control.',
+  9: 'Your mind is philosophical and expansive. You think in big pictures and broad patterns. The challenge is following through on the details — inspiration without execution can be a pattern.',
+  10: 'Your thinking is strategic and public-facing. You have natural authority when you speak or write. The shadow is shaping your communication around what sounds good rather than what\'s true.',
+  11: 'Your mind is collective and future-oriented. You think best in groups and love exchanging ideas. The challenge is developing your own thinking independent of the group consensus.',
+  12: 'Your thinking is intuitive and impressionistic — you often know things before you can explain how. The shadow is confusion, avoidance of hard mental work, or keeping your ideas so private they never reach the world.'
+};
+
+// ── MERCURY RELOCATED ────────────────────────────────────────
+var MERCURY_RELOC = {
+  1: 'In this city, your mind sharpens and your voice carries. You come across as articulate and quick-thinking. The shadow is coming on too strong — speaking before listening, or leading with opinions rather than questions.',
+  2: 'This place slows your thinking down in a good way — more deliberate, focused on what\'s practical and worth building. The shadow is mental stubbornness or resistance to new information that challenges what you\'ve already decided.',
+  3: 'Your mind comes alive here. Conversations flow, ideas multiply, and you feel genuinely plugged in. The shadow is mental restlessness — hard to settle, hard to go deep when there\'s always something new to chase.',
+  4: 'In this city, your mind turns reflective. A good place for deep thinking, journaling, processing old stories. The shadow is rumination — the mind looping on the past rather than moving forward.',
+  5: 'Your thinking becomes more playful and inventive here. Creative ideas flow easily. Watch for scattered attention — too many ideas and not enough follow-through.',
+  6: 'This place sharpens your analytical mind. Focus comes naturally here. The shadow is over-analysis or critical thinking that tips into anxiety rather than useful discernment.',
+  7: 'In this city, your best thinking happens in dialogue. You\'ll be drawn to mentally stimulating people. Be careful of becoming too dependent on others to process — you need to be able to think for yourself too.',
+  8: 'This place deepens your thinking — your mind wants to go underneath things, to find what\'s actually true. The shadow is obsessive thinking or difficulty letting a question rest once it\'s taken hold.',
+  9: 'Your mind expands here. New ideas and perspectives arrive more easily. The shadow is that bigger picture thinking can make it hard to commit — always looking for the next horizon rather than building where you are.',
+  10: 'In this city, your voice carries professionally. Writing, speaking, teaching all gain traction here. The shadow is performing intelligence rather than pursuing truth — saying what will land well rather than what you actually think.',
+  11: 'This place connects your thinking to something larger — you find your intellectual community here. The shadow is groupthink or abandoning your own conclusions to stay aligned with the group.',
+  12: 'In this city, your mind quiets and turns inward. Good for intuitive thinking and deep reflection. The shadow is mental confusion or avoidance — hiding your ideas rather than sharing them.'
+};
+
+// ── VENUS NATAL ──────────────────────────────────────────────
+var VENUS_NATAL = {
+  1: 'You lead with warmth and beauty — people are drawn to you before you\'ve said a word. Grace comes naturally to you. The shadow is people-pleasing or over-investing in how you\'re perceived.',
+  2: 'You find deep pleasure in the material world — beautiful objects, good food, financial security. The shadow is possessiveness, or confusing love with comfort and security.',
+  3: 'You\'re charming in conversation and naturally drawn to ideas. Connection comes easily in everyday settings. The shadow is keeping love light and mental, avoiding the emotional depth that real intimacy requires.',
+  4: 'Home is where your heart lives. You invest deeply in your private world and the people in it. The shadow is emotional clinging or using domestic life as a shield from the wider world.',
+  5: 'You love with joy and full colour. Romance, creativity, and pleasure are deeply important to you. The shadow is drama, idealism, or a need for excitement that makes steady love feel boring.',
+  6: 'You show love through acts of service — the small, consistent gestures that make people feel cared for. The shadow is martyrdom or losing yourself in taking care of others.',
+  7: 'Partnership is your natural habitat. You have a rare gift for creating harmony with others. The shadow is over-compromising, or staying in relationships past their natural end to avoid being alone.',
+  8: 'You love intensely and completely. Surface connection doesn\'t interest you — you want depth and transformation. The shadow is possessiveness, jealousy, or using intimacy as a form of control.',
+  9: 'You\'re attracted to what expands you — different cultures, philosophies, experiences. The shadow is idealising partners or places, falling in love with potential rather than reality.',
+  10: 'Your appeal is public and professional. People are drawn to your poise and taste. The shadow is becoming too focused on image, or using your professional persona as armour against real intimacy.',
+  11: 'You love through friendship and shared ideals. Your deepest connections often start as friendships. The shadow is emotional distance — keeping love conceptual rather than personal.',
+  12: 'Your love is private, deep, and sometimes hidden. You feel things profoundly but don\'t always show it. The shadow is secret relationships, self-sacrifice, or loving people who aren\'t available.'
+};
+
+// ── VENUS RELOCATED ──────────────────────────────────────────
+var VENUS_RELOC = {
+  1: 'In this city, your magnetism is turned up. You arrive warmer, more visible, more at ease. The shadow is becoming too focused on approval — needing to be liked can make it hard to be honest.',
+  2: 'This place deepens your relationship with pleasure and self-worth. You may find it easier to earn here or feel more secure. Watch for materialism or using comfort to avoid emotional work.',
+  3: 'Connection flows easily here. Conversation becomes flirtation, flirtation becomes friendship. The shadow is keeping things light — this placement can make depth feel less necessary than charm.',
+  4: 'In this city, your private world becomes beautiful. Home life is nourished here. The shadow is retreating too completely — beauty and comfort can become a form of avoidance.',
+  5: 'This place unlocks joy. Romance, creativity, and pleasure flow more freely here. The shadow is chasing pleasure at the expense of depth, or mistaking excitement for love.',
+  6: 'In this city, love shows up in the everyday. Small acts of service feel deeply fulfilling. The shadow is losing yourself in caring for others, or expecting love to look like usefulness.',
+  7: 'One of the most celebrated Venus lines. Love and meaningful connection are heightened here. The shadow is idealising partners or staying in relationships that look good but don\'t actually fit.',
+  8: 'Love here runs deep and can be transformative. The shadow is intensity tipping into obsession, or attracting relationships with significant power dynamics.',
+  9: 'In this city, love and adventure arrive together. The shadow is falling for potential — for who someone could be, or what a place represents, rather than what\'s actually there.',
+  10: 'Your charm and aesthetic sense become professional assets here. The shadow is performing grace rather than feeling it, or keeping your public persona at the expense of genuine vulnerability.',
+  11: 'In this city, you find your people. Friendships and community feel genuinely nourishing. The shadow is preferring collective connection over the vulnerability of deeper one-on-one love.',
+  12: 'This place softens everything. Love here has a sacred, romantic quality. The shadow is idealisation — falling for who you imagine someone to be rather than who they actually are.'
+};
+
+// ── MARS NATAL ───────────────────────────────────────────────
+var MARS_NATAL = {
+  1: 'You lead with energy and presence — people feel you when you walk in. Your directness is both your greatest strength and your biggest challenge. Anger and impulsiveness can show up when your will is blocked.',
+  2: 'Your drive is focused on building — financial security, material stability, something you can call yours. You work hard and don\'t give up easily. The shadow is possessiveness or inflexibility when what you\'ve built is threatened.',
+  3: 'Your energy goes into words and ideas. You argue passionately and communicate directly. The shadow is combativeness — using language as a weapon, or picking fights when you\'re actually just restless.',
+  4: 'Your deepest drive is toward home and foundation. There\'s a fierce protectiveness in you for the people you love privately. The shadow is domestic conflict or internalised anger that doesn\'t find a healthy outlet.',
+  5: 'Your energy is creative and passionate — you pursue what excites you with real intensity. The shadow is ego, drama, or burning through relationships and projects when the initial excitement fades.',
+  6: 'You work hard and you work well. Your energy is most satisfied when directed at something concrete. The shadow is overwork, perfectionism, or taking frustration out on your body through neglect or excess.',
+  7: 'Your drive activates in relationship. You\'re most energised when you have someone to push against or toward. The shadow is conflict for its own sake, or attracting partners who mirror your own suppressed anger.',
+  8: 'Your energy runs deep and intense. When you want something you pursue it with total focus. The shadow is obsession, power struggles, or using sex and intensity to avoid vulnerability.',
+  9: 'Your drive is philosophical — you\'re energised by big ideas and the pursuit of meaning. The shadow is self-righteousness or using beliefs as a weapon, fighting for ideals while neglecting the people in front of you.',
+  10: 'Your ambition is real and visible. Competition sharpens you. The shadow is ruthlessness, burning bridges in pursuit of goals, or making your career your entire identity.',
+  11: 'Your energy goes into collective action. You fight for causes. The shadow is aggression within groups, or using righteous anger as cover for personal ambition.',
+  12: 'Your energy is hidden — intense but private. Your drive works best in solitude. The shadow is unexpressed anger turning inward, self-sabotage, or drive that never quite finds its outlet.'
+};
+
+// ── MARS RELOCATED ───────────────────────────────────────────
+var MARS_RELOC = {
+  1: 'In this city, your energy is right on the surface. You feel more driven and direct, and people sense it. The shadow is coming on too strong — aggression or impatience that pushes people away before you\'ve had a chance to connect.',
+  2: 'This place focuses your drive on building. Financial ambition activates here. The shadow is stubbornness or possessiveness — fighting too hard to hold onto what you\'ve built.',
+  3: 'Your energy goes into communication here. You think faster and argue better. The shadow is combativeness — sharpness that wounds rather than clarifies.',
+  4: 'In this city, your drive turns toward home and private foundations. Powerful for building something lasting. The shadow is domestic conflict or restlessness that makes it hard to settle.',
+  5: 'This place ignites your creative and passionate energy. You feel more alive and willing to take risks. The shadow is drama or burning hot and fast without sustaining the effort.',
+  6: 'In this city, your work ethic sharpens. Discipline feels natural here. The shadow is overwork or frustration when results don\'t match effort — Mars in the 6th can grind rather than flow.',
+  7: 'Relationships carry more charge here. Passion and real chemistry are heightened. The shadow is conflict — this placement can attract friction and power struggles as much as it does passion.',
+  8: 'This is an intense city for you. Your drive goes deep here. The shadow is obsession or destructive intensity — powerful transformation is available, but so is its darker counterpart.',
+  9: 'In this city, your energy expands toward the horizon. You feel driven by vision and belief. The shadow is restlessness — always chasing the next thing rather than building where you are.',
+  10: 'This place sharpens your professional drive — not just visibility, but the willingness to go after what you want. You act more boldly here, and that directness tends to open doors.',
+  11: 'In this city, your drive connects to something collective. You\'re most energised working toward shared goals. The shadow is conflict within groups or using collective causes to avoid personal accountability.',
+  12: 'This place channels your energy inward. Good for creative work and spiritual practice. The shadow is drive that turns against itself — motivation that collapses under the weight of isolation or avoidance.'
+};
+
+// ── JUPITER NATAL ────────────────────────────────────────────
+var JUPITER_NATAL = {
+  1: 'You have a natural confidence and generosity that people are drawn to. Life has tended to expand around you. The shadow is excess — overconfidence, overcommitting, or expecting things to work out without doing the work.',
+  2: 'Your relationship with abundance is deep and instinctive. You have a gift for generating resources. The shadow is extravagance or a belief in your own luck that leads to financial risk-taking you haven\'t earned.',
+  3: 'Your mind is expansive and your communication generous. You think in big pictures and love learning. The shadow is overstatement, or spreading yourself too thin across too many ideas and conversations.',
+  4: 'Your private world is abundant. Home, family, and rootedness have been genuine sources of nourishment. The shadow is excess at home — overindulgence, or using the comfort of home to avoid the challenges of the wider world.',
+  5: 'Joy comes naturally to you and life has been generous with pleasure and creativity. The shadow is excess — too much of everything good, or an expectation that joy should arrive without effort.',
+  6: 'You find genuine meaning in work and service. Growth comes through mastery and usefulness. The shadow is taking on too much, or a belief that more work always means more reward.',
+  7: 'Relationships have been a genuine source of expansion in your life. The shadow is over-idealising partners or expecting relationships to be easier than they are.',
+  8: 'Your growth tends to come through depth and transformation. You have a gift for finding hidden value. The shadow is risk-taking with shared resources or other people\'s trust.',
+  9: 'This is Jupiter at home — you were built for expansion and tend to be rewarded for it. The shadow is excess philosophical wandering, or using the search for meaning to avoid commitment.',
+  10: 'Your professional life has genuine potential for recognition and growth. The shadow is overreach — promising more than you can deliver, or expanding too fast without the foundations to support it.',
+  11: 'Community and collective endeavour are where your growth lives. The shadow is over-reliance on networks, or expecting opportunities to arrive through connection rather than merit.',
+  12: 'Your abundance is internal and spiritual. The shadow is using spiritual seeking as a way to avoid the concrete demands of the material world.'
+};
+
+// ── JUPITER RELOCATED ────────────────────────────────────────
+var JUPITER_RELOC = {
+  1: 'In this city, life feels more open. You arrive more optimistic and expansive. The shadow is overconfidence — assuming things will work out and underestimating the effort required.',
+  2: 'This place supports financial growth and a greater sense of security. The shadow is financial excess or overextension — Jupiter expands things, including mistakes.',
+  3: 'In this city, your world expands through conversation and connection. The shadow is scattering — too many ideas, too many connections, not enough depth in any of them.',
+  4: 'This place feels abundant in a quiet way. Home life flourishes here. The shadow is using that comfort and warmth to avoid the challenges that growth actually requires.',
+  5: 'In this city, joy and creativity expand. Life feels lighter and more generous. The shadow is indulgence or expecting pleasure without putting in the creative work.',
+  6: 'This place rewards good, careful work. The shadow is taking on too much — Jupiter in the 6th can expand your workload faster than your capacity to handle it.',
+  7: 'One of the most celebrated Jupiter lines. Relationships expand here and significant people find you. The shadow is over-idealising partners, or expecting relationships to be easier than they turn out to be.',
+  8: 'In this city, growth comes through depth and transformation. The shadow is risk-taking — Jupiter in the 8th can make you more willing to bet on things that haven\'t been earned.',
+  9: 'This place expands everything. Philosophy, travel, learning all feel more alive here. The shadow is restlessness or excess — never settling, always looking for more.',
+  10: 'Doors open here professionally. Your reputation can grow with less friction. The shadow is overreach — expanding faster than your foundation can support, or overpromising on what you\'ll deliver.',
+  11: 'In this city, you find your community and your network grows. The shadow is relying too much on luck and connection rather than your own sustained effort.',
+  12: 'This place offers spiritual richness and a deep sense of being held. The shadow is using retreat and inner life to avoid the concrete demands of the real world.'
+};
+
+// ── SATURN NATAL ─────────────────────────────────────────────
+var SATURN_NATAL = {
+  1: 'You came into the world with a certain gravity. Self-discipline and responsibility have always defined you — sometimes to the point of being too hard on yourself. Learning to extend the same grace to yourself that you give to your work is the real task.',
+  2: 'Security has never felt automatic — you\'ve had to build it deliberately and patiently. What you create materially tends to last. The shadow is chronic scarcity thinking, even when circumstances no longer warrant it.',
+  3: 'Your mind is structured and serious. You hold yourself to a high standard in how you communicate. The shadow is self-censorship — editing yourself so heavily that what comes out isn\'t really you.',
+  4: 'Your relationship with home and family has carried real weight. There may have been early lessons in self-sufficiency. The shadow is carrying old family burdens long past the point they need to be set down.',
+  5: 'Joy and self-expression have sometimes felt like things you had to earn rather than simply have. When you do create or love, it carries real depth. The challenge is letting yourself play without it needing to mean something.',
+  6: 'Work and discipline are central to who you are. The shadow is perfectionism that prevents completion, or using productivity as a way to feel worthy.',
+  7: 'Relationships have asked something serious of you. You don\'t enter commitments lightly. The shadow is that difficulty and emotional withdrawal can show up in close partnerships — love as a test rather than a gift.',
+  8: 'You\'ve had to confront depth — loss, power, psychological complexity — in ways that have shaped you fundamentally. The shadow is holding on too tightly to control in areas where surrender is what\'s actually needed.',
+  9: 'Your beliefs have been hard-won. You test philosophies against experience. The shadow is dogmatism — the beliefs you\'ve earned can become rigid walls rather than living foundations.',
+  10: 'Career and public life have always mattered deeply and demanded real effort. Recognition comes slowly but tends to last. The shadow is never feeling like enough, no matter what you\'ve built.',
+  11: 'Community and friendship have sometimes felt like hard work. The connections you do build tend to be real and enduring. The shadow is chronic loneliness or holding people at arm\'s length to avoid disappointment.',
+  12: 'Your deepest work is inner and largely invisible. The shadow is isolation, or a heaviness that comes from carrying your inner life entirely alone without ever letting anyone in.'
+};
+
+// ── SATURN RELOCATED ─────────────────────────────────────────
+var SATURN_RELOC = {
+  1: 'In this city, you carry more gravity and people take you seriously. The shadow is isolation — the seriousness of this placement can make connection feel effortful, and you may come across as more guarded than you intend.',
+  2: 'This place asks you to build deliberately. What you create materially here tends to be solid. The shadow is chronic anxiety about security that prevents you from ever feeling like you have enough.',
+  3: 'In this city, serious thinking and structured communication are rewarded. The shadow is self-censorship — editing yourself so carefully that your voice loses its life.',
+  4: 'This place asks for deep inner work and confronting old patterns. The shadow is it can feel heavy — like home becomes a site of excavation rather than rest.',
+  5: 'In this city, creativity requires real intention. What you make here carries weight. The shadow is joy feeling like work — this placement can make it hard to play without it meaning something.',
+  6: 'This place rewards discipline and craft above everything else. The shadow is that perfectionism and overwork are amplified here — the bar keeps moving no matter how much you do.',
+  7: 'Relationships here are serious and long-lasting. Learning through relationships — things can be difficult here. Partnerships ask more of you and reflect your patterns back clearly. The reward is genuine depth if you do the work.',
+  8: 'In this city, the deepest psychological work is supported. What you confront here goes all the way down. The shadow is that it can be relentlessly heavy — make sure you have support for what comes up.',
+  9: 'This place asks you to earn your beliefs through lived experience. The shadow is rigidity — the hard-won philosophy you develop here can become a cage if you stop questioning it.',
+  10: 'One of the most powerful career lines — recognition comes slowly but tends to be lasting. The shadow is the climb feels relentless and the weight of maintaining your reputation can be real.',
+  11: 'In this city, community requires real investment. What you build here is genuine. The shadow is loneliness — this placement can make belonging feel just out of reach, even when people are around.',
+  12: 'This place supports serious inner work and spiritual discipline. The shadow is isolation and heaviness — without conscious effort to connect, this placement can amplify a sense of being fundamentally alone.'
+};
+
+console.log("Descriptions loaded:", Object.keys(SUN_NATAL).length, "houses per planet");
+
 // ─── Description helpers ──────────────────────────────────────
 var HOUSE_ANCHORS = {
   1: 'the house of self, identity, and how you show up in the world',
@@ -885,84 +1116,24 @@ var HOUSE_ANCHORS = {
 };
 function getHouseDesc(h) { return HOUSE_ANCHORS[h] || 'your chart'; }
 
-// Sun natal descriptions by house
-var SUN_NATAL = {
-  1: 'Your energy goes inward, toward home, family, and private life. You are most yourself behind closed doors, and the foundation you build for yourself matters deeply.',
-  2: 'Security matters to you deeply. You shine when you\'re building something stable — financially, materially, in terms of your own self-worth. Your sense of self is tied to what you create and what you own.',
-  3: 'You come alive through communication, ideas, and your immediate world. Talking, writing, connecting locally — this is where your energy naturally flows. Curiosity has always driven you.',
-  4: 'Your energy goes inward, toward home, family, and private life. You are most yourself behind closed doors, and the foundation you build for yourself matters deeply.',
-  5: 'You were made to create, play, and express. Joy is not frivolous for you — it\'s essential. You shine brightest when you\'re making something, performing, or fully in the moment.',
-  6: 'You find meaning in the everyday — in work, in routine, in being useful. You shine through dedication and craft, and you take health and daily life seriously.',
-  7: 'You come into yourself through other people. Relationships are not just important to you — they\'re where you find your reflection. Partnership has always been central to who you are.',
-  8: 'You\'ve never been interested in the surface of things. You shine in depth, in transformation, in understanding what others avoid. Intensity is comfortable for you.',
-  9: 'You were born reaching for something bigger — a different culture, a different belief system, a broader understanding of the world. You shine when you\'re expanding.',
-  10: 'You were born with a sense of purpose that wants to be public. Career, legacy, and reputation matter to you — not out of vanity, but because you genuinely want to build something that lasts.',
-  11: 'You shine in community. Your energy is collective by nature — you think in terms of groups, movements, and the future. Friends and like-minded people are your lifeblood.',
-  12: 'Your light is quieter, more inward. You shine in solitude, in creative or spiritual work, in spaces away from the noise. You may have spent much of your life feeling slightly apart from the world — that\'s not a flaw, it\'s just where your depth lives.'
-};
-
-// Sun relocated descriptions by house
-var SUN_RELOC = {
-  1: 'Here you step forward. This place puts you front and center in a way you may not be used to. Expect to feel more visible, more energized, more like yourself in public.',
-  2: 'This location activates your relationship with money, resources, and self worth. You may find it easier to build financial stability here, or feel a stronger sense of what you truly value.',
-  3: 'Your energy goes into your immediate world — conversations, ideas, local connections. This is a place where you think clearly, communicate well, and feel plugged into your surroundings.',
-  4: 'This place calls you inward. Rather than pushing you toward ambition or visibility, it asks you to slow down, put down roots, and build something that feels like home.',
-  5: 'This location unlocks your creative and playful side. You may find yourself more expressive here, more willing to take risks, more open to joy. Life can feel lighter here.',
-  6: 'Here your energy goes into the work itself — the craft, the routine, the day to day. This can be a deeply productive place for you, where focus comes naturally and good habits stick.',
-  7: 'This place activates your relationship energy. You may find yourself more open to partnership here, attracting significant people, or seeing your existing relationships in a new light.',
-  8: 'This is not a place for small talk or surface living — it\'s a place of transformation, intensity, and getting to the truth of things. Powerful, but not always comfortable.',
-  9: 'This location expands you. Whether through the culture, the people, or simply the perspective shift of being somewhere new, this place pushes your thinking and broadens your world.',
-  10: 'This is a career city for you. Your ambition activates here, your reputation can grow, and the world is more likely to take notice of what you\'re building.',
-  11: 'In this city you find your people. Community, friendship, and collective energy are heightened here. This is a place where you can plug into something bigger than yourself.',
-  12: 'This location turns your energy inward and quiets the noise. It can be a deeply restorative place — good for creative or spiritual work — but it\'s not a place where ambition thrives easily.'
-};
-
-// Moon natal
-var MOON_NATAL = {
-  1:'Your emotional world is right on the surface — you feel things visibly, and people sense your inner life immediately. You\'ve always been someone others can read.',
-  2:'Your emotional security is tied to material comfort. Feeling financially stable, having beautiful things around you — these matter more than you sometimes admit.',
-  3:'Your emotions move through conversation and connection. You process by talking, writing, or simply being around people who stimulate your mind.',
-  4:'The home is your emotional centre. More than most, you need a private sanctuary to return to — somewhere that feels genuinely like yours.',
-  5:'Your emotional world is playful and expressive. You feel most like yourself when you\'re creating, entertaining, or deeply absorbed in something joyful.',
-  6:'You feel best when you\'re useful and organised. Emotional security comes through routine, purpose, and taking care of the small things that hold daily life together.',
-  7:'Your emotional wellbeing is deeply tied to your closest relationships. You feel most yourself when you\'re genuinely partnered — in love, friendship, or collaboration.',
-  8:'You feel things at a depth most people never reach. Emotional intensity is normal for you, and you need relationships that can hold that without flinching.',
-  9:'Your emotional world craves expansion and meaning. You feel most alive when you\'re learning, travelling, or engaged with ideas that stretch your understanding.',
-  10:'You have a public emotional presence — people sense your inner life, even in professional contexts. Your emotions are part of your authority.',
-  11:'Your emotional nourishment comes from community. You need to feel part of something larger — a group, a movement, a circle of genuine like-minds.',
-  12:'Your emotional world is largely invisible — rich and deep, but kept private. You may process feelings slowly and in solitude, which is a real strength.'
-};
-
-var MOON_RELOC = {
-  1:'Your emotional world becomes more visible here. People sense your inner life immediately in this place, which can feel exposing — or beautifully freeing.',
-  2:'This place grounds your emotional world in the physical. Comfort, beauty, and a sense of material security can arrive more easily here.',
-  3:'Your emotions flow more easily into words here. Conversations feel nourishing, and you may find yourself processing your inner world more openly.',
-  4:'Few places feel as homelike as this. Your emotional roots find something to hold onto here — this is a city for belonging.',
-  5:'Your emotional world opens into creativity and joy here. You may find yourself lighter, more playful, more willing to follow what genuinely excites you.',
-  6:'Emotional wellbeing here is tied to routine and usefulness. Good habits, purposeful work, and daily structure can all make this place feel genuinely right.',
-  7:'Relationships deepen here. You may find yourself more emotionally open to partners and close friends, or draw people who meet you with real care.',
-  8:'This place stirs something deep. Emotional intensity, transformation, and the kind of honesty that changes things — all of this is closer to the surface here.',
-  9:'Your emotional world expands here. The culture, the openness, the sense of possibility — this city can feel like an adventure for the soul.',
-  10:'Your emotional depth becomes part of your public presence here. People sense your inner life, which can become one of your greatest professional assets.',
-  11:'In this city, community nourishes you. You find your people here — those who share your values and make belonging feel genuinely possible.',
-  12:'This city quiets everything down. Your emotional world turns inward here — good for healing, solitude, and the kind of deep rest that public life doesn\'t allow.'
-};
-
 function getNatalText(planet, house, birthPlace) {
-  var desc = '';
-  if (planet === 'Sun') desc = SUN_NATAL[house];
-  else if (planet === 'Moon') desc = MOON_NATAL[house];
-  // Additional planets will be added here
+  var tables = {
+    Sun: SUN_NATAL, Moon: MOON_NATAL, Mercury: MERCURY_NATAL,
+    Venus: VENUS_NATAL, Mars: MARS_NATAL, Jupiter: JUPITER_NATAL, Saturn: SATURN_NATAL
+  };
+  var desc = (tables[planet] && tables[planet][house]) || '';
   if (!desc) desc = 'Your ' + planet + ' sits in ' + getHouseDesc(house) + ' at your birthplace — shaping this area of life in a deep, foundational way.';
-  return 'At your birthplace, your ' + planet + ' sits in ' + ordinal(house) + ' house — ' + HOUSE_ANCHORS[house] + '. ' + desc;
+  return 'At your birthplace, your ' + planet + ' sits in the ' + ordinal(house) + ' house — ' + HOUSE_ANCHORS[house] + '. ' + desc;
 }
 
 function getRelocText(planet, house, cityName) {
-  var desc = '';
-  if (planet === 'Sun') desc = SUN_RELOC[house];
-  else if (planet === 'Moon') desc = MOON_RELOC[house];
+  var tables = {
+    Sun: SUN_RELOC, Moon: MOON_RELOC, Mercury: MERCURY_RELOC,
+    Venus: VENUS_RELOC, Mars: MARS_RELOC, Jupiter: JUPITER_RELOC, Saturn: SATURN_RELOC
+  };
+  var desc = (tables[planet] && tables[planet][house]) || '';
   if (!desc) desc = 'In ' + cityName + ', your ' + planet + ' activates ' + getHouseDesc(house) + ' — bringing a new quality of energy to this part of your life.';
-  return 'In ' + cityName + ', your ' + planet + ' moves into ' + ordinal(house) + ' house — ' + HOUSE_ANCHORS[house] + '. ' + desc;
+  return 'In ' + cityName + ', your ' + planet + ' moves into the ' + ordinal(house) + ' house — ' + HOUSE_ANCHORS[house] + '. ' + desc;
 }
 
 // Opposite house pairs for "what changes"
