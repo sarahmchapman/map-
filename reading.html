@@ -815,51 +815,45 @@ function initPage() {
 
   // Summary line
   var summaryEl = document.getElementById('summaryText');
+  var list = document.getElementById('shiftsList');
+
   if (shifts.length === 0) {
-    summaryEl.innerHTML = 'Your chart is remarkably stable in <span class="summary-count">' + cityName + '</span> — the planets hold their positions. The energy here is familiar.';
+    // No house shifts — build reading from nearest astrocartography lines
+    summaryEl.innerHTML = 'Your chart holds its shape in <span class="summary-count">' + cityName + '</span> — the houses don't shift here. But the lines tell a story.';
+    buildLineReading(list, cityName, data, relocPlanets);
   } else {
-    summaryEl.innerHTML = '<span class="summary-count">' + shifts.length + ' planet' + (shifts.length > 1 ? 's' : '') + '</span> shift ' + (shifts.length > 1 ? 'houses' : 'house') + ' in ' + cityName + '. Here\'s what that means for you.';
+    summaryEl.innerHTML = '<span class="summary-count">' + shifts.length + ' planet' + (shifts.length > 1 ? 's' : '') + '</span> shift ' + (shifts.length > 1 ? 'houses' : 'house') + ' in ' + cityName + '. Here's what that means for you.';
+    shifts.forEach(function(sh) {
+      var col = PCOL_R[sh.planet] || '#888';
+      var sym = PSYM_R[sh.planet] || sh.planet;
+      var natalText = getNatalText(sh.planet, sh.natalHouse, birthPlace);
+      var relocText = getRelocText(sh.planet, sh.relocHouse, cityName);
+      var changeText = getChangeText(sh.planet, sh.natalHouse, sh.relocHouse);
+      var card = document.createElement('div');
+      card.className = 'shift-card';
+      card.innerHTML =
+        '<div class="shift-card-header">'
+          + '<span class="shift-glyph" style="color:' + col + '">' + sym + '</span>'
+          + '<span class="shift-planet-name" style="color:' + col + '">' + sh.planet + '</span>'
+          + '<span class="shift-arrow">·</span>'
+          + '<span class="shift-houses">' + ordinal(sh.natalHouse) + ' house → ' + ordinal(sh.relocHouse) + ' house</span>'
+        + '</div>'
+        + '<div class="shift-body">'
+          + '<div class="shift-label">At your birthplace</div>'
+          + '<div class="shift-prose">' + natalText + '</div>'
+          + '<div class="shift-rule"></div>'
+          + '<div class="shift-label">In ' + cityName + '</div>'
+          + '<div class="shift-prose">' + relocText + '</div>'
+          + (changeText
+            ? '<div class="shift-rule"></div>'
+              + '<div class="shift-label">What changes</div>'
+              + '<div class="shift-prose">' + changeText + '</div>'
+            : '')
+        + '</div>';
+      list.appendChild(card);
+    });
   }
 
-  // Build shift cards
-  var list = document.getElementById('shiftsList');
-  var FREE_LIMIT = 100; // show all shifts for now
-  shifts.forEach(function(sh, i) {
-    if (i >= FREE_LIMIT) return; // gated planets not shown yet
-
-    var col = PCOL_R[sh.planet] || '#888';
-    var sym = PSYM_R[sh.planet] || sh.planet;
-
-    // Get descriptions
-    var natalHouseDesc = getHouseDesc(sh.natalHouse);
-    var relocHouseDesc = getHouseDesc(sh.relocHouse);
-    var natalText = getNatalText(sh.planet, sh.natalHouse, birthPlace);
-    var relocText = getRelocText(sh.planet, sh.relocHouse, cityName);
-    var changeText = getChangeText(sh.planet, sh.natalHouse, sh.relocHouse);
-
-    var card = document.createElement('div');
-    card.className = 'shift-card';
-    card.innerHTML =
-      '<div class="shift-card-header">'
-        + '<span class="shift-glyph" style="color:' + col + '">' + sym + '</span>'
-        + '<span class="shift-planet-name" style="color:' + col + '">' + sh.planet + '</span>'
-        + '<span class="shift-arrow">·</span>'
-        + '<span class="shift-houses">' + ordinal(sh.natalHouse) + ' house → ' + ordinal(sh.relocHouse) + ' house</span>'
-      + '</div>'
-      + '<div class="shift-body">'
-        + '<div class="shift-label">At your birthplace</div>'
-        + '<div class="shift-prose">' + natalText + '</div>'
-        + '<div class="shift-rule"></div>'
-        + '<div class="shift-label">In ' + cityName + '</div>'
-        + '<div class="shift-prose">' + relocText + '</div>'
-        + (changeText
-          ? '<div class="shift-rule"></div>'
-            + '<div class="shift-label">What changes</div>'
-            + '<div class="shift-prose">' + changeText + '</div>'
-          : '')
-      + '</div>';
-    list.appendChild(card);
-  });
 
 
 
@@ -1155,6 +1149,106 @@ var OPPOSITE_PAIRS = {
 function getChangeText(planet, natalHouse, relocHouse) {
   var key = natalHouse + '-' + relocHouse;
   return OPPOSITE_PAIRS[key] || '';
+}
+
+// ─── Line reading (no house shifts) ─────────────────────────
+function buildLineReading(list, cityName, data, relocPlanets) {
+  // Find nearest lines to city using stored line data
+  var cityLat = data.cityLat;
+  var cityLng = data.cityLng;
+  var lineData = data.lineData || {};
+  var natalPlanets = data.planets || {};
+
+  // For each planet, compute distance to each line type
+  var PALL = ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto'];
+  var nearby = [];
+
+  PALL.forEach(function(p) {
+    var ld = lineData[p];
+    if (!ld || ld.mcLon == null) return;
+    var mcLon = ld.mcLon;
+    var icLon = ((mcLon + 180) + 360) % 360 - 180;
+    var ra = ld.ra;
+    var dec = ld.dec;
+
+    // Distance to MC line (vertical line at mcLon)
+    var dMC = Math.abs(cityLng - mcLon);
+    if (dMC > 180) dMC = 360 - dMC;
+    nearby.push({p:p, lt:'MC', d:dMC});
+
+    // Distance to IC line
+    var dIC = Math.abs(cityLng - icLon);
+    if (dIC > 180) dIC = 360 - dIC;
+    nearby.push({p:p, lt:'IC', d:dIC});
+
+    // Distance to ASC/DSC lines (approximation using dec)
+    if (dec != null && Math.abs(cityLat) < 89) {
+      var cH = -Math.tan(cityLat * Math.PI / 180) * Math.tan(dec * Math.PI / 180);
+      if (Math.abs(cH) <= 1) {
+        var H = Math.acos(Math.max(-1, Math.min(1, cH))) * 180 / Math.PI;
+        var ascLon = ((mcLon - H) + 540) % 360 - 180;
+        var dscLon = ((mcLon + H) + 540) % 360 - 180;
+        var dASC = Math.abs(cityLng - ascLon); if (dASC > 180) dASC = 360 - dASC;
+        var dDSC = Math.abs(cityLng - dscLon); if (dDSC > 180) dDSC = 360 - dDSC;
+        nearby.push({p:p, lt:'ASC', d:dASC});
+        nearby.push({p:p, lt:'DSC', d:dDSC});
+      }
+    }
+  });
+
+  // Sort by distance, take 3 closest
+  nearby.sort(function(a, b) { return a.d - b.d; });
+  var top = nearby.slice(0, 3);
+
+  if (top.length === 0) {
+    list.innerHTML = '<p style="font-family:var(--serif);font-style:italic;color:var(--ink-3);padding:1rem 0">No line data available for this location.</p>';
+    return;
+  }
+
+  // Build a card for each nearby line
+  top.forEach(function(item) {
+    var p = item.p;
+    var lt = item.lt;
+    var col = PCOL_R[p] || '#888';
+    var sym = PSYM_R[p] || p;
+    var pd = natalPlanets[p] || {};
+    var sign = pd.sign || '';
+
+    // Get descriptions from descriptions.js objects
+    var lineDesc = (typeof LINE_ACTIVATED !== 'undefined' && LINE_ACTIVATED[p] && LINE_ACTIVATED[p][lt]) || '';
+    var signMod = (typeof SIGN_MODIFIERS !== 'undefined' && SIGN_MODIFIERS[p] && sign && SIGN_MODIFIERS[p][sign]) || '';
+    var bestFor = (typeof BEST_FOR !== 'undefined' && BEST_FOR[p] && BEST_FOR[p][lt]) || '';
+    var watchFor = (typeof WATCH_FOR !== 'undefined' && WATCH_FOR[p] && WATCH_FOR[p][lt]) || '';
+
+    var ltLabel = {MC:'MC — Midheaven', IC:'IC — Imum Coeli', ASC:'AC — Ascendant', DSC:'DC — Descendant'}[lt] || lt;
+    var kmAway = Math.round(item.d * 111);
+    var proximity = item.d < 2 ? 'This line runs directly through ' + cityName + '.'
+      : item.d < 8 ? 'This line passes within ' + kmAway + 'km of ' + cityName + ' — its influence is active.'
+      : 'This line is approximately ' + kmAway + 'km from ' + cityName + ' — a background energy.';
+
+    var card = document.createElement('div');
+    card.className = 'shift-card';
+    card.innerHTML =
+      '<div class="shift-card-header">'
+        + '<span class="shift-glyph" style="color:' + col + '">' + sym + '</span>'
+        + '<div>'
+          + '<div class="shift-planet-name" style="color:' + col + '">' + p + (sign ? ' in ' + sign : '') + '</div>'
+          + '<div style="font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)">' + ltLabel + '</div>'
+        + '</div>'
+      + '</div>'
+      + '<div class="shift-body">'
+        + '<div class="shift-prose" style="font-size:.8rem;color:var(--ink-3);margin-bottom:.6rem">' + proximity + '</div>'
+        + (lineDesc ? '<div class="shift-label">What's activated</div><div class="shift-prose">' + lineDesc + ' ' + signMod + '</div>' : '')
+        + (bestFor || watchFor
+          ? '<div class="shift-rule"></div>'
+            + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">'
+            + (bestFor ? '<div style="background:var(--paper-2);border-radius:4px;padding:.55rem .65rem"><div style="font-size:7px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.25rem">Best for</div><div style="font-family:var(--serif);font-size:.8rem;font-style:italic;color:var(--ink-2);line-height:1.45">' + bestFor + '</div></div>' : '')
+            + (watchFor ? '<div style="background:var(--paper-2);border-radius:4px;padding:.55rem .65rem"><div style="font-size:7px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.25rem">Watch for</div><div style="font-family:var(--serif);font-size:.8rem;font-style:italic;color:var(--ink-2);line-height:1.45">' + watchFor + '</div></div>' : '')
+            + '</div>'
+          : '')
+      + '</div>';
+    list.appendChild(card);
+  });
 }
 
 // ─── Boot ────────────────────────────────────────────────────
