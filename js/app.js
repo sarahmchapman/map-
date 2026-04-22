@@ -1030,27 +1030,10 @@ function _buildChart(day,month,year,hour,min,name,tz){
 
 var PDESC={Sun:'identity, vitality, core self',Moon:'emotions, instincts, inner world',Mercury:'mind, communication, thinking',Venus:'love, beauty, values',Mars:'drive, action, desire',Jupiter:'growth, luck, expansion',Saturn:'discipline, structure, karma',Uranus:'change, rebellion, awakening',Neptune:'dreams, spirituality, illusion',Pluto:'transformation, power, rebirth',Chiron:'healing, wounds, integration',NNode:'karmic direction, soul growth',SNode:'karmic past, natural gifts'};
 function renderChart(){
+  // Only update the top bar — chart grid removed from map page
   var chart=activeChart;
   document.getElementById('barName').innerHTML='<em>'+chart.name+'</em>';
   document.getElementById('barMeta').textContent=chart.birthDate+' · '+chart.birthTime+' · '+chart.birthPlace;
-  var PORDER=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto'];
-  var grid=document.getElementById('chartGrid');grid.innerHTML='';
-  PORDER.forEach(function(p){
-    var d=chart.planets[p];if(!d||d.sign==='?')return;
-    var col=PCOL[p];
-    grid.innerHTML+='<div class="chart-row"><span class="cr-glyph" style="color:'+col+'">'+PSYM[p]+'</span><span class="cr-name">'+p+'<span style="font-size:.65rem;color:var(--ink-3);font-style:italic;margin-left:.4rem">'+(PDESC[p]||'')+'</span></span><span class="cr-pos">'+d.deg+'°'+pad(d.min)+"'"+'<span class="cr-sign"> '+d.sign+'</span></span></div>';
-  });
-  var ag=document.getElementById('anglesGrid');ag.innerHTML='';
-  [{k:'Ascendant',ab:'AC',full:'Ascendant',l:'identity, first impressions, physical presence'},{k:'Midheaven',ab:'MC',full:'Midheaven',l:'career, public life, reputation'},{k:'IC',ab:'IC',full:'Imum Coeli',l:'home, roots, ancestry'},{k:'Descendant',ab:'DC',full:'Descendant',l:'relationships, partnerships'}].forEach(function(a){
-    var d=chart.planets[a.k];if(!d||d.sign==='?')return;
-    ag.innerHTML+='<div class="chart-row"><span class="cr-glyph" style="color:var(--gold);font-size:.65rem;font-family:var(--sans);font-weight:600">'+a.ab+'</span><span class="cr-name">'+a.full+' <span class="cr-sign" style="font-style:italic;font-family:var(--serif);font-size:.75rem">'+a.l+'</span>'+'</span><span class="cr-pos">'+d.deg+'°'+pad(d.min)+"'"+'<span class="cr-sign"> '+d.sign+'</span></span></div>';
-  });
-  var al=document.getElementById('aspectList');al.innerHTML='';
-  if(!chart.aspects.length){al.innerHTML='<div style="font-family:var(--serif);font-style:italic;color:var(--ink-3);padding:.4rem 0">No major aspects within standard orbs.</div>';return;}
-  chart.aspects.forEach(function(a){
-    var p1d=chart.planets[a.p1],p2d=chart.planets[a.p2];
-    al.innerHTML+='<div class="asp-row '+a.type+'"><span class="asp-sym">'+a.sym+'</span><span class="asp-type">'+a.type+'</span><span class="asp-planets">'+PSYM[a.p1]+' '+a.p1+' '+p1d.deg+'° '+p1d.sign+' — '+PSYM[a.p2]+' '+a.p2+' '+p2d.deg+'° '+p2d.sign+'</span><span class="asp-orb">'+a.orb+'°</span></div>';
-  });
 }
 
 function buildToggleBar(){
