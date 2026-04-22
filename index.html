@@ -88,28 +88,8 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 .bar-meta{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);line-height:1.8}
 .new-btn{margin-left:auto;font-size:8px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);padding:.25rem .7rem;cursor:pointer;border-radius:20px;flex-shrink:0}
 .new-btn:hover{border-color:var(--gold);color:var(--gold)}
-.chart-section{padding:1.8rem 1.5rem 2rem;max-width:700px;margin:0 auto;width:100%}
-.chart-heading{font-size:12px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:.9rem;margin-top:1.6rem;display:flex;align-items:center;gap:.6rem}
-.chart-heading::after{content:'';flex:1;height:.5px;background:var(--paper-3)}
-.chart-heading:first-child{margin-top:0}
-.chart-grid{display:grid;grid-template-columns:1fr;gap:0;margin-bottom:.5rem}
-.chart-row{display:flex;align-items:center;padding:.55rem 0;border-bottom:.5px solid var(--paper-3);gap:10px;background:transparent}
-.chart-row:last-child{border-bottom:none}
-.cr-glyph{font-family:var(--serif);font-size:1.15rem;line-height:1;width:22px;text-align:center;flex-shrink:0}
-.cr-name{font-size:.95rem;font-weight:400;color:var(--ink-3);flex:1;letter-spacing:.01em}
-.cr-pos{font-family:var(--serif);font-size:1rem;color:var(--ink);font-weight:400}
-.cr-sign{font-size:.72rem;color:var(--ink-3);margin-left:3px;font-family:var(--sans)}
-.aspect-list{display:flex;flex-direction:column;gap:.3rem}
-.asp-row{display:flex;align-items:center;gap:.6rem;padding:.4rem .7rem;border-left:2px solid var(--paper-3);font-size:.82rem}
-.asp-sym{font-family:var(--serif);font-size:1rem;width:18px;text-align:center;flex-shrink:0}
-.asp-type{font-size:9px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;min-width:70px;color:var(--ink-3)}
-.asp-planets{font-family:var(--serif);font-size:.88rem;flex:1;color:var(--ink-2)}
-.asp-orb{font-size:.7rem;color:var(--ink-3)}
-.conjunction .asp-type,.conjunction .asp-sym{color:var(--gold)}
-.opposition  .asp-type,.opposition  .asp-sym{color:var(--red-d)}
-.trine       .asp-type,.trine       .asp-sym{color:var(--green)}
-.square      .asp-type,.square      .asp-sym{color:#7a5c30}
-.sextile     .asp-type,.sextile     .asp-sym{color:#4a6b7a}
+
+
 .map-section{padding:0 0 1.5rem;max-width:100%;margin:0 auto;width:100%}
 .filter-bar{background:var(--paper-2);border-top:.5px solid var(--paper-3);border-bottom:.5px solid var(--paper-3);padding:.55rem 1.2rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
 .filter-group{display:flex;align-items:center;gap:.3rem;flex-wrap:wrap}
@@ -268,14 +248,7 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
       </div>
     </div>
   </div>
-  <div class="chart-section">
-    <div class="chart-heading">Natal Chart</div>
-    <div class="chart-grid" id="chartGrid"></div>
-    <div class="chart-heading">Angles</div>
-    <div class="chart-grid" id="anglesGrid"></div>
-    <div class="chart-heading">Aspects</div>
-    <div class="aspect-list" id="aspectList"></div>
-  </div>
+
   <div style="text-align:center;padding:1.5rem 0 1rem;border-top:1px solid var(--paper-3);margin-top:1rem">
     <a href="/cdn-cgi/l/email-protection#f6939a8593819e9384939785828499b6919b979f9ad895999bc98583949c939582cb939a8593819e938493d6909393929497959d" style="font-family:var(--serif);font-size:.78rem;color:var(--ink-3);text-decoration:none;border-bottom:1px solid var(--paper-3)">share feedback</a>
     <span style="color:var(--paper-3);margin:0 .8rem">·</span>
