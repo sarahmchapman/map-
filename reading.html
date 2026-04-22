@@ -759,6 +759,13 @@ function initPage() {
 
   var data;
   try { data = JSON.parse(raw); } catch(e) {
+    console.error('elsewhere: failed to parse reading data', e);
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('noDataState').style.display = 'block';
+    return;
+  }
+  if (!data || !data.jd || !data.birthLat == null || !data.cityLat == null) {
+    console.error('elsewhere: missing required fields', data);
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('noDataState').style.display = 'block';
     return;
