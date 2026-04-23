@@ -1100,6 +1100,199 @@ var SATURN_RELOC = {
 
 console.log("Descriptions loaded:", Object.keys(SUN_NATAL).length, "houses per planet");
 
+// ── URANUS NATAL ─────────────────────────────────────────────
+var URANUS_NATAL = {
+  1: 'You\'ve never quite fit in the way others expected and you\'ve always known it. Your presence is distinctive, sometimes startling — people sense immediately that you operate by your own rules. The challenge is channelling that originality without using it to keep people at a distance.',
+  2: 'Your relationship with money and security is unconventional. Financial stability tends to come and go in sudden shifts rather than steady accumulation. The invitation is to find security within yourself rather than in what you own.',
+  3: 'Your mind works in flashes — sudden insights, unexpected connections, ideas that arrive from nowhere. You communicate in ways that surprise people. The shadow is inconsistency, or a restlessness that makes it hard to finish what you start.',
+  4: 'Your home life has been anything but conventional — frequent moves, an unusual family structure, or a deep sense of not quite belonging anywhere. The gift is genuine freedom from inherited patterns. The challenge is building something stable enough to rest in.',
+  5: 'Your creative expression is original and often ahead of its time. You love in unconventional ways and are drawn to people and experiences that feel electric. The shadow is inconsistency — burning bright and then suddenly needing space.',
+  6: 'You resist routine on a fundamental level. Your best work tends to happen outside conventional structures, in bursts of focused innovation rather than steady daily effort. The challenge is the parts of life that genuinely require consistency.',
+  7: 'You\'re drawn to unconventional relationships — unusual partners, unexpected connections, arrangements that don\'t follow the standard script. Freedom within relationship matters more to you than security. The shadow is commitment-avoidance disguised as a need for independence.',
+  8: 'Transformation in your life tends to be sudden and complete. Things that end, end abruptly. Things that begin, begin with no warning. The gift is genuine psychological freedom. The challenge is allowing intimacy without feeling that it threatens your autonomy.',
+  9: 'Your beliefs are genuinely your own — tested, questioned, arrived at through real experience rather than inherited. You resist orthodoxy in all its forms. The shadow is contrarianism for its own sake, or restlessness that moves you on before you\'ve gone deep.',
+  10: 'Your career path doesn\'t follow a conventional trajectory and probably never will. You\'re drawn to work that feels genuinely original — and tend to reinvent yourself professionally whenever a path starts to feel like a cage. The challenge is building enough continuity to be taken seriously.',
+  11: 'This is Uranus at home — you think about the future, you\'re drawn to collective innovation, and your social world is full of original, unconventional people. The shadow is emotional detachment — thinking in systems rather than feeling into relationships.',
+  12: 'Your liberation is internal and largely invisible. You carry a private rebellion — against inherited beliefs, against the version of yourself you were expected to become. The gift is genuine psychological originality. The challenge is bringing it into the world rather than keeping it hidden.'
+};
+
+// ── URANUS RELOCATED ─────────────────────────────────────────
+var URANUS_RELOC = {
+  1: 'In this city you feel electric — more original, more willing to reinvent yourself, more alive to what\'s possible. The shadow is restlessness that makes it hard to settle or be consistent. A good place to start something new, not to maintain something existing.',
+  2: 'This place disrupts your relationship with security and money — things may shift suddenly here, financially or in terms of what you value. Unsettling, but potentially liberating if you\'ve been holding onto something that no longer fits.',
+  3: 'Your thinking accelerates here — ideas arrive faster, connections form in unexpected ways. A good place for innovation and unconventional communication. The shadow is mental restlessness that scatters rather than creates.',
+  4: 'This place shakes up your sense of home and belonging. It may feel impossible to truly settle here — or you may find it liberates you from old family patterns in ways that feel unexpected and necessary.',
+  5: 'In this city your creative energy breaks from convention. You feel more experimental, more willing to take creative risks. The shadow is instability in love — electric connections that arrive and disappear just as suddenly.',
+  6: 'This place disrupts routine and daily structure. That can be creatively liberating — or genuinely difficult if your life requires consistency. Best for innovation and unconventional work, not for grinding through repetitive tasks.',
+  7: 'Relationships here are unpredictable. You may attract unconventional partners or find existing relationships shifting in unexpected directions. Freeing if you want change — destabilising if you need consistency.',
+  8: 'This place brings sudden, complete transformation. Things end here with finality. Things begin without warning. Powerful for anyone ready for real change — difficult if you\'re trying to hold onto what was.',
+  9: 'In this city your worldview breaks open. Beliefs you\'ve held for years may shift suddenly. New philosophies, cultures, and ways of understanding arrive with unusual force. Exciting and occasionally disorienting.',
+  10: 'This place disrupts your career in unpredictable ways — sudden changes of direction, unexpected opportunities, or a restlessness that makes it hard to stay on any single path. Best for reinvention, not consolidation.',
+  11: 'In this city you find your unconventional community. Innovation, collective thinking, and connection with genuinely original people all flow more easily here. The shadow is emotional detachment — connecting intellectually without going deeper.',
+  12: 'This place stirs something quietly revolutionary in your inner life. Old patterns, inherited beliefs, and the psychological structures you\'ve outgrown all start to loosen here. Subtle but genuinely liberating over time.'
+};
+
+// ── NEPTUNE NATAL ────────────────────────────────────────────
+var NEPTUNE_NATAL = {
+  1: 'You arrived in the world with a certain permeability — you absorb the atmosphere of a room, the moods of people around you, the unspoken undercurrents of a situation. That sensitivity is a genuine gift. The challenge is knowing where you end and others begin.',
+  2: 'Your relationship with money and material security has a fluid quality — it\'s hard to hold onto, hard to pin down, and sometimes hard to value in straightforward ways. The invitation is to find worth in what can\'t be owned. The shadow is financial confusion or a tendency to idealise what you don\'t have.',
+  3: 'Your mind works poetically and impressionistically — you communicate in images and feelings rather than facts and logic. You have a gift for language that touches people. The shadow is vagueness, difficulty being precise, or losing the thread of what you actually meant to say.',
+  4: 'Home and family carry a dreamlike or elusive quality for you — either deeply sacred and hard to describe, or somehow never quite what you hoped for. The gift is a profound connection to something ancestral and spiritual. The shadow is idealising where you come from, or never feeling like you fully arrived.',
+  5: 'Your creativity is genuinely inspired — you access something beyond the ordinary when you make art, music, or anything expressive. Love for you has a romantic, almost otherworldly quality. The shadow is illusion — seeing what you want to see in creative work and in lovers rather than what\'s actually there.',
+  6: 'Your daily life and work have a spiritual dimension for you whether you consciously cultivate it or not. You do your best work when it feels meaningful rather than merely functional. The shadow is difficulty with routine, boundaries at work, or health issues that are hard to diagnose.',
+  7: 'You seek something transcendent in relationships — a soul-level connection, a love that dissolves the ordinary. That longing is real and beautiful. The shadow is idealising partners, staying in relationships past the point of health, or attracting people who need saving.',
+  8: 'Your relationship with depth, loss, and transformation has a spiritual dimension. You sense things others don\'t in the undercurrents of intimate relationships. The shadow is confusion around shared resources or boundaries, and a tendency to merge so completely that you lose yourself.',
+  9: 'Your spiritual and philosophical life is rich and genuinely seeking. You\'re drawn to mysticism, transcendence, and the feeling that there\'s something larger holding everything together. The shadow is spiritual bypassing — using belief as a way to avoid the concrete demands of ordinary life.',
+  10: 'Your calling has a spiritual, creative, or service-oriented quality — you\'re drawn to work that means something beyond the material. The shadow is difficulty committing to a clear direction, or a public persona that doesn\'t quite match who you actually are.',
+  11: 'Your vision of what the world could be is genuinely inspiring. You\'re drawn to collective idealism and communities built around shared spiritual or creative values. The shadow is disillusionment when communities turn out to be human after all.',
+  12: 'This is Neptune at home — your inner life is rich, vast, and largely invisible to others. Spiritual practice, creative solitude, and compassionate service all come naturally here. The shadow is escapism, or losing yourself so completely in the inner world that the outer one becomes hard to navigate.'
+};
+
+// ── NEPTUNE RELOCATED ────────────────────────────────────────
+var NEPTUNE_RELOC = {
+  1: 'In this city you arrive softer, more open, more attuned to the invisible currents of a place. People sense something otherworldly in you here. The shadow is thin boundaries — absorbing too much of the city\'s energy without enough of your own to hold onto.',
+  2: 'This place softens your relationship with money and material security. Financial clarity can be elusive here — things are harder to pin down. The gift is a loosening of attachment to what you own. The shadow is financial confusion or idealism about what resources can provide.',
+  3: 'In this city your communication becomes more poetic and your thinking more impressionistic. A powerful place for creative writing or any work that requires emotional resonance. The shadow is vagueness — difficulty being concrete or following through on what you\'ve said.',
+  4: 'This place feels almost sacred — like a homecoming of the soul rather than just the body. Deeply restorative and spiritually rich. The shadow is using home as a place to disappear rather than to restore.',
+  5: 'In this city your creativity opens into something genuinely inspired. Romance here carries a transcendent quality. The shadow is idealisation — falling for who you imagine someone to be, or for a version of a creative project that doesn\'t survive contact with reality.',
+  6: 'This place asks you to find meaning in the everyday. Routine and service feel more spiritually significant here. The shadow is difficulty with structure and a tendency for health to become complicated or hard to diagnose.',
+  7: 'Relationships here carry a spiritual depth that can feel like genuine soul connection. The shadow is one of the most important to take seriously — this placement dissolves the line between who someone is and who you want them to be. Stay grounded.',
+  8: 'In this city the boundary between the physical and spiritual worlds feels thinner. Deep psychological and spiritual work is powerfully supported here. The shadow is confusion around shared resources, boundaries, and what\'s actually real in intimate relationships.',
+  9: 'This place expands your spiritual and philosophical world in ways that can feel genuinely transcendent. The shadow is spiritual bypassing — using the richness of this city\'s energy as a way to float above the things that need your grounded attention.',
+  10: 'In this city your calling becomes clearer but harder to define. Creative, spiritual, and healing work all thrive here. The shadow is drift — inspiration without enough structure to make it real.',
+  11: 'This place connects you to collective idealism and communities built around genuine shared vision. The shadow is disillusionment — the community here may not live up to what it promised, and the gap between the ideal and the real can sting.',
+  12: 'This is one of the most spiritually resonant placements possible. The veil between ordinary and transcendent experience is genuinely thin here. The shadow is dissolution — losing yourself so completely that re-entry into the practical world becomes difficult.'
+};
+
+// ── PLUTO NATAL ──────────────────────────────────────────────
+var PLUTO_NATAL = {
+  1: 'You came into the world with intensity — though it doesn\'t always look the way people expect. You may be quiet, watchful, the person who says little but misses nothing. There\'s a depth in you that people sense before you\'ve said a word. The shadow is using that intensity as power over others rather than power within yourself.',
+  2: 'Your relationship with money, security, and self-worth has been a site of deep transformation. Things have been gained and lost in ways that have fundamentally changed how you understand value. The gift is a hard-won relationship with what actually matters. The shadow is control around resources, or using financial power as a substitute for genuine security.',
+  3: 'Your mind cuts through surface explanations and goes straight to what\'s underneath. You communicate with precision and intensity — words carry real weight when you use them. The shadow is using that precision as a weapon, or an obsessive quality to your thinking that makes it hard to let things rest.',
+  4: 'Your roots go deep and have cost you something. Family, ancestry, and the psychological foundations of your life have all been sites of real transformation — sometimes through loss, sometimes through confronting what was buried. You feel your home life more intensely than most people realise. What you\'ve rebuilt on those foundations is genuinely yours.',
+  5: 'Your creative expression and your approach to love both have an intensity that sets them apart. You don\'t create or love casually — everything you make and everyone you love receives the full weight of your attention. The shadow is possessiveness, or using love and creativity as a form of control.',
+  6: 'Work and daily life have been sites of deep transformation for you. You\'ve likely overhauled how you live and work more than once — and each time something more essential has emerged. The shadow is compulsion around health or work, or using productivity as a way to manage deeper anxieties.',
+  7: 'Your closest relationships have been your greatest teachers — and your most demanding ones. You feel the undercurrents of a relationship with unusual accuracy, often knowing things about a partner before they\'ve said them. The gift is the depth of connection you can access. The shadow is power struggles or attracting relationships that mirror your unhealed wounds.',
+  8: 'This is Pluto at home. You have a natural relationship with depth, transformation, and what lies beneath the surface. Your intuition in intimate situations is rarely wrong — you sense what others are hiding, sometimes before they know it themselves. The shadow is obsession, or using your insight into others as a form of control.',
+  9: 'Your beliefs have been forged in fire. What you now understand about meaning, truth, and how the world works has come through real confrontation with darkness and complexity. The shadow is dogmatism — the certainty that comes from hard experience can tip into an unwillingness to be wrong.',
+  10: 'Your public life and career carry a transformative quality. You\'re drawn to work that involves real power — or that challenges existing power structures. The shadow is an obsession with status or control, or a tendency to reinvent your public identity so completely that people don\'t know who you actually are.',
+  11: 'Your relationship with community and collective action has a transformative edge. You\'re drawn to groups that are doing something real — changing things, confronting power, rebuilding something from the ground up. The shadow is using collective energy to avoid personal accountability, or power dynamics within groups.',
+  12: 'Your deepest transformation happens in private, in the places no one sees. You carry a powerful inner life and an intuition that runs so deep it can feel like knowing rather than sensing. The challenge is bringing what you\'ve worked through in private into the light of your actual life — and trusting that the world can hold what you carry.'
+};
+
+// ── PLUTO RELOCATED ──────────────────────────────────────────
+var PLUTO_RELOC = {
+  1: 'In this city your intensity is fully on the surface. You feel more powerful here — and more exposed. Transformation of your identity is available in this place, but it tends to be thorough rather than comfortable. Not a city for staying the same.',
+  2: 'This place brings deep transformation to your relationship with money, security, and self-worth. Things may be gained or lost here in ways that fundamentally change how you understand value. Unsettling, but potentially liberating from old stories about what you need to feel safe.',
+  3: 'In this city your thinking goes deeper and your communication carries more weight. This is a place for getting to the truth of things — in your own mind and in how you speak to others. The shadow is obsessive thinking or a sharpness in communication that can wound.',
+  4: 'This place reaches into your deepest foundations — family patterns, ancestral wounds, the psychological bedrock of who you are. Profound territory for healing and inner work. Make sure you have support for what comes up, because this line doesn\'t stay on the surface.',
+  5: 'In this city your creative work takes on a darker, more powerful quality. Love here is intense and potentially transformative. The shadow is all-or-nothing energy in relationships — consuming connections that change you, sometimes at real cost.',
+  6: 'This place transforms how you work and how you live day to day. Old habits, routines, and approaches to health may all need to be rebuilt here. Demanding, but the version of your daily life that emerges tends to be more authentic than what you started with.',
+  7: 'Relationships in this city are transformative and intense. You may encounter people here who fundamentally change you — or who hold up a mirror to the parts of yourself you\'ve been avoiding. Deep connection is possible. So are power struggles. This line demands honesty.',
+  8: 'This is one of the most intense lines possible. Transformation here is deep, complete, and rarely comfortable. This place confronts you with power, loss, and what actually survives when everything surface-level is stripped away. Extraordinary for inner work — difficult for ordinary living.',
+  9: 'In this city your beliefs and understanding of the world are up for complete transformation. What you thought you knew about meaning, truth, and how things work may be fundamentally challenged here. Disorienting, but the worldview that emerges tends to be genuinely earned.',
+  10: 'This place brings intense transformation to your career and public life. Power, reinvention, and confrontation with authority are all themes here. You may rise significantly or be forced to rebuild completely. Either way, what you construct professionally in this city tends to carry real weight.',
+  11: 'In this city collective transformation is available. You\'re drawn to groups and communities that are genuinely trying to change something. The shadow is power dynamics within those groups, or using collective causes to avoid the more personal work of transformation.',
+  12: 'This place reaches into your unconscious and stirs what\'s been buried. Shadow work, ancestral healing, and deep psychological transformation are all powerfully supported here. It can feel overwhelming without adequate support — make sure you have people and practices to hold you through what surfaces.'
+};
+
+// ── CHIRON NATAL ─────────────────────────────────────────────
+var CHIRON_NATAL = {
+  1: 'Your wound lives close to the surface — in your body, your presence, your sense of whether you have the right to take up space. You may have grown up feeling fundamentally different or out of place. The gift that emerges from that is an unusual sensitivity to others who feel the same — and an authenticity that people find genuinely trustworthy.',
+  2: 'Your wound involves worth — financial, material, and personal. At some point you absorbed the belief that you weren\'t enough, didn\'t have enough, or didn\'t deserve security. The gift is a hard-won understanding of real value that has nothing to do with what you own or earn.',
+  3: 'Your wound lives in communication — in feeling unheard, misunderstood, or like your voice doesn\'t matter. You may have learned early that what you said wasn\'t welcome. The gift is the ability to hear others with unusual care, and eventually, a voice that carries real weight because it was hard-won.',
+  4: 'Your wound is rooted in home and belonging — in never quite feeling safe, held, or like you had a place that was truly yours. The gift is the capacity to create that sense of home for others, and eventually for yourself, in ways that go deeper than most people ever manage.',
+  5: 'Your wound involves self-expression and being seen — perhaps you were told your creativity didn\'t matter, or that joy was frivolous, or that the real you wasn\'t welcome. The gift is a creative life that carries genuine depth because it was born from real longing rather than easy confidence.',
+  6: 'Your wound lives in the body and in daily life — in chronic health issues, a sense of never being useful enough, or a relationship to work that carries more anxiety than satisfaction. The gift is a profound understanding of what it means to truly care for yourself and others in the most ordinary, essential ways.',
+  7: 'Your wound lives in relationship — in early experiences of abandonment, betrayal, or simply never feeling truly met by another person. The gift is the capacity for a depth of partnership that most people never reach, because you know what it actually costs and what it\'s actually worth.',
+  8: 'Your wound involves intimacy, loss, and trust — experiences of betrayal or violation that made depth feel dangerous. The gift is an extraordinary capacity for genuine transformation, both in yourself and in the people you allow close. You know how to hold the darkest things.',
+  9: 'Your wound lives in meaning — in a faith that was broken, a worldview that failed you, or a sense that the larger story never quite included you. The gift is a philosophy of life that\'s been genuinely tested, and a capacity to hold space for others who are in the middle of losing their own certainties.',
+  10: 'Your wound involves achievement and recognition — perhaps you worked hard and were overlooked, or succeeded and still felt like a fraud. The gift is work that comes from genuine calling rather than the need for approval, and a natural capacity to mentor others who are finding their way.',
+  11: 'Your wound lives in belonging — in never quite finding your people, or finding them and still feeling on the outside. The gift is a rare understanding of what genuine community actually requires, and the ability to create it for others even when it\'s been elusive for you.',
+  12: 'Your wound is the most private kind — carried in solitude, rarely spoken, sometimes barely acknowledged even to yourself. The gift is a spiritual depth and compassion that can hold others in their darkest moments, because you\'ve sat in your own darkness and found your way through.'
+};
+
+// ── CHIRON RELOCATED ─────────────────────────────────────────
+var CHIRON_RELOC = {
+  1: 'In this city your wounds and your gifts arrive together at the surface. You can\'t hide here — what you\'ve been through is visible, and that vulnerability becomes your greatest asset. A powerful place for healing work, but not a comfortable one.',
+  2: 'This place activates your deepest questions about worth and security. Old beliefs about what you deserve — financially, materially, personally — come up here to be examined. Difficult, but an opportunity to finally rewrite those stories.',
+  3: 'In this city your voice finds its way. Old wounds around communication and being heard begin to soften here — you may find yourself saying things you\'ve never been able to articulate before. A powerful place for writing, therapy, or any work that requires honest self-expression.',
+  4: 'This place reaches into your earliest wounds around home and belonging. It can feel tender and exposing — but it also offers the possibility of finally building the sense of rootedness that has felt out of reach. Deep healing is available here if you\'re willing to do the work.',
+  5: 'In this city your creative gifts and your wounds around self-expression come to the surface together. This is a place for making things that matter — art, connection, love — that carries the weight of real experience rather than performance.',
+  6: 'This place brings healing to your relationship with your body, your work, and your daily life. Old patterns around self-care, usefulness, and worth all surface here to be tended. A good city for rebuilding how you actually live.',
+  7: 'Relationships in this city mirror your deepest wounds around partnership and being met. The people you encounter here are not accidental — they reflect back exactly what needs healing. Demanding, but potentially transformative for your capacity for real intimacy.',
+  8: 'This place opens the deepest wounds — around trust, loss, and intimacy. Profound healing is available here, but it asks everything of you. Make sure you have support. What you work through in this city tends to be permanent.',
+  9: 'In this city your relationship with meaning, belief, and the larger story of your life comes up for healing. Old certainties may dissolve here — and what replaces them tends to be more genuinely yours than what came before.',
+  10: 'This place brings your wounds around achievement and recognition into the professional sphere. You may find yourself called to work that draws directly on what you\'ve survived — teaching, healing, mentoring. Your vulnerability here becomes your authority.',
+  11: 'In this city your wounds around belonging and community come to the surface — and so does your capacity to heal them. You may find your people here, or find that the search itself becomes the thing that opens you.',
+  12: 'This place supports the most private and profound kind of healing — the work that happens in solitude, in dreams, in the quiet places where the wound lives. Not a city for outward achievement, but a powerful one for finally tending what has been carried alone for too long.'
+};
+
+// ── NORTH NODE NATAL ─────────────────────────────────────────
+var NNODE_NATAL = {
+  1: 'Your growth this lifetime is toward self — toward claiming your own identity, your own desires, your own right to exist on your own terms. You\'ve likely spent lifetimes, or at least years, defining yourself through others. The invitation is to discover who you actually are when no one else is in the room.',
+  2: 'Your growth is toward embodiment — toward slowing down, building something real, and learning to find security within yourself rather than in ideas or movement. The invitation is to trust the physical world, to value what you have, and to build something that lasts.',
+  3: 'Your growth is toward curiosity and connection in the immediate world — toward conversations, ideas, and the richness of everyday life. The invitation is to stop looking for the grand meaning and find it instead in what\'s right in front of you.',
+  4: 'Your growth is toward home, roots, and emotional depth. You may be drawn to public life and achievement, but the deeper invitation is inward — toward genuine belonging, emotional honesty, and building a private life that truly nourishes you.',
+  5: 'Your growth is toward joy, creativity, and the courage to express who you actually are. The invitation is to stop serving the collective or the system and start living as an individual — to create, to love, and to take up space with confidence.',
+  6: 'Your growth is toward service, craft, and the discipline of daily life. The invitation is to bring your gifts down from the spiritual or imaginative realm and into practical, useful form. The ordinary is where your growth lives.',
+  7: 'Your growth is toward genuine partnership — toward learning to truly see another person, to compromise without losing yourself, and to build something with someone else rather than always going it alone.',
+  8: 'Your growth is toward depth — toward intimacy, transformation, and the willingness to go beneath the surface of things. The invitation is to stop managing life from a safe distance and to let it actually change you.',
+  9: 'Your growth is toward expansion — toward philosophy, travel, and a broader understanding of what life can be. The invitation is to develop your own worldview rather than simply processing information, and to trust your own search for meaning.',
+  10: 'Your growth is toward stepping into public life and taking your place in the world. The invitation is to stop hiding behind the domestic or the private and to build something that carries your name — a legacy, a calling, a contribution.',
+  11: 'Your growth is toward community and collective vision — toward finding your people and contributing to something larger than yourself. The invitation is to move beyond personal concerns and connect your individual gifts to a shared purpose.',
+  12: 'Your growth is toward surrender — toward solitude, spiritual depth, and the willingness to let go of control. The invitation is to stop achieving and start being, to develop an inner life that sustains you, and to find the peace that lives beneath all the doing.'
+};
+
+// ── NORTH NODE RELOCATED ─────────────────────────────────────
+var NNODE_RELOC = {
+  1: 'In this city you\'re called toward yourself. This place supports stepping into your own identity more fully — who you are independent of others, what you want, how you show up when no one else is defining the terms.',
+  2: 'This place calls you toward groundedness and real security. The invitation here is to slow down, build something tangible, and develop a relationship with stability that comes from within rather than from circumstances.',
+  3: 'In this city your growth comes through connection and curiosity. Conversations, ideas, and the texture of everyday life here all carry more meaning than they might elsewhere. Stay present to what\'s immediate.',
+  4: 'This place calls you inward and downward — toward roots, emotional honesty, and genuine belonging. A powerful city for doing the private work that public life often makes it easy to avoid.',
+  5: 'In this city you\'re invited to play, create, and be seen as yourself. This place supports the kind of self-expression that requires courage — the work that carries your actual name rather than a safe version of it.',
+  6: 'This place calls you toward service and craft. Your growth here comes through the discipline of showing up daily, doing useful work, and building a life that functions well in the most ordinary sense.',
+  7: 'In this city your growth comes through relationship. The people you meet here are not accidental — they\'re part of your karmic curriculum. Stay open to what genuine partnership asks of you.',
+  8: 'This place calls you toward depth. The invitation here is to stop managing from a safe distance and to let real transformation happen — through intimacy, loss, or the simple willingness to go all the way in.',
+  9: 'In this city your worldview expands. This is a place for developing your own philosophy — not borrowing someone else\'s framework but building one through genuine experience and questioning.',
+  10: 'This place calls you toward your public purpose. The invitation here is to step into visibility, to take your work seriously, and to build something that carries real weight in the world.',
+  11: 'In this city you find your collective purpose. This place supports connecting your individual gifts to something larger — a community, a movement, a shared vision that matters beyond your personal story.',
+  12: 'This place calls you toward your inner life. The invitation here is genuine surrender — to solitude, spiritual practice, and the kind of rest that only comes when you stop trying to control everything.'
+};
+
+// ── SOUTH NODE NATAL ─────────────────────────────────────────
+var SNODE_NATAL = {
+  1: 'Independence and self-reliance come naturally to you — you\'ve always known how to stand alone. The gift is genuine confidence and self-sufficiency. The invitation is to let others in, to build things with people rather than always going it alone.',
+  2: 'You have a natural ease with the material world — with money, comfort, and knowing your own worth. The gift is groundedness and a reliable sense of what you value. The invitation is to loosen your grip on security and trust that what matters most can\'t be owned.',
+  3: 'Communication and intellectual agility come naturally to you. You\'ve always been quick, curious, and good with words. The gift is a sharp and adaptable mind. The invitation is to go deeper rather than broader — to commit to something rather than staying in perpetual motion.',
+  4: 'You have a deep natural connection to home, roots, and emotional life. Family and private world have always been your foundation. The gift is genuine emotional depth and a sense of where you come from. The invitation is to bring that depth into the public world rather than keeping it entirely private.',
+  5: 'Creativity, self-expression, and personal joy come naturally to you. You know how to play, how to love, and how to make things. The gift is warmth and genuine creative instinct. The invitation is to direct that energy toward something collective rather than purely personal.',
+  6: 'Service, craft, and daily discipline come naturally to you. You know how to work hard and do things well. The gift is reliability and a genuine capacity for useful contribution. The invitation is to trust the bigger picture rather than getting lost in the details.',
+  7: 'Relationship and partnership come naturally to you — you know how to connect, how to compromise, and how to show up for others. The gift is genuine relational intelligence. The invitation is to develop an equally strong relationship with yourself.',
+  8: 'Depth, intensity, and transformation come naturally to you. You\'ve always been comfortable with what others avoid — loss, power, the shadow. The gift is psychological courage and genuine insight. The invitation is to trust life\'s surface as well as its depths.',
+  9: 'Philosophy, travel, and the search for meaning come naturally to you. You\'ve always been drawn to the big picture and the broader horizon. The gift is genuine wisdom and an expansive worldview. The invitation is to bring that wisdom home — to apply it in the daily, the local, the particular.',
+  10: 'Authority, ambition, and public life come naturally to you. You know how to build, how to lead, and how to be taken seriously. The gift is real-world competence and a natural sense of structure. The invitation is to lead with vulnerability as well as strength.',
+  11: 'Community, collective thinking, and vision come naturally to you. You\'ve always been drawn to groups, movements, and the future. The gift is genuine social intelligence and an instinct for what\'s possible. The invitation is to connect heart-to-heart as well as mind-to-mind.',
+  12: 'Solitude, spiritual depth, and the inner life come naturally to you. You\'ve always had a rich relationship with the invisible world. The gift is genuine compassion and a deep well of inner knowing. The invitation is to bring what you carry inward out into the world where others can benefit from it.'
+};
+
+// ── SOUTH NODE RELOCATED ─────────────────────────────────────
+var SNODE_RELOC = {
+  1: 'In this city your natural confidence and self-sufficiency feel effortless. You arrive knowing how to be here. The invitation is to use that ease as a foundation rather than a refuge — to reach toward others rather than relying on independence alone.',
+  2: 'This place activates your natural ease with comfort and material security. Things that ground and sustain you flow more easily here. The invitation is to enjoy that without clinging to it.',
+  3: 'In this city your communication gifts feel completely natural. Conversations flow, ideas connect, and you feel genuinely at home in your own mind. The invitation is to use that fluency to go somewhere new rather than staying in familiar intellectual territory.',
+  4: 'This place feels ancestrally familiar — like you\'ve been here before in some way. Your emotional depth and connection to roots feel natural here. The invitation is to honour that familiarity without letting it become a reason to stop growing.',
+  5: 'In this city your creativity and personal warmth feel effortless. You know how to enjoy yourself here and how to express what\'s genuinely yours. The invitation is to let that ease serve something larger than personal pleasure.',
+  6: 'This place activates your natural capacity for work, service, and daily discipline. Things get done here without much struggle. The invitation is to trust the bigger picture as well as the details.',
+  7: 'In this city relationships feel familiar and easy to navigate. Your relational intelligence is fully online here. The invitation is to bring that same fluency to your relationship with yourself.',
+  8: 'This place activates your natural ease with depth and transformation. The shadow and the complex feel navigable here in a way they might not elsewhere. The invitation is to let that comfort with darkness be a gift to others rather than a private domain.',
+  9: 'In this city your philosophical gifts and love of expansion feel completely natural. The invitation is to bring that wisdom down from the abstract and apply it to something specific and close.',
+  10: 'This place activates your natural authority and professional competence. You know how to build and be taken seriously here. The invitation is to lead with your full humanity rather than just your capability.',
+  11: 'In this city your collective instincts and social vision feel effortless. Community comes easily here. The invitation is to let that ease open into genuine intimacy rather than staying at the level of the group.',
+  12: 'This place activates your natural connection to solitude and the inner world. Rest, reflection, and spiritual depth all come easily here. The invitation is to carry what you find inward back out into the world.'
+};
+
+
 // ─── Description helpers ──────────────────────────────────────
 var HOUSE_ANCHORS = {
   1: 'the house of self, identity, and how you show up in the world',
@@ -1120,7 +1313,9 @@ function getHouseDesc(h) { return HOUSE_ANCHORS[h] || 'your chart'; }
 function getNatalText(planet, house, birthPlace) {
   var tables = {
     Sun: SUN_NATAL, Moon: MOON_NATAL, Mercury: MERCURY_NATAL,
-    Venus: VENUS_NATAL, Mars: MARS_NATAL, Jupiter: JUPITER_NATAL, Saturn: SATURN_NATAL
+    Venus: VENUS_NATAL, Mars: MARS_NATAL, Jupiter: JUPITER_NATAL, Saturn: SATURN_NATAL,
+    Uranus: URANUS_NATAL, Neptune: NEPTUNE_NATAL, Pluto: PLUTO_NATAL,
+    Chiron: CHIRON_NATAL, NNode: NNODE_NATAL, SNode: SNODE_NATAL
   };
   var desc = (tables[planet] && tables[planet][house]) || '';
   if (!desc) desc = 'Your ' + planet + ' sits in ' + getHouseDesc(house) + ' at your birthplace — shaping this area of life in a deep, foundational way.';
@@ -1130,7 +1325,9 @@ function getNatalText(planet, house, birthPlace) {
 function getRelocText(planet, house, cityName) {
   var tables = {
     Sun: SUN_RELOC, Moon: MOON_RELOC, Mercury: MERCURY_RELOC,
-    Venus: VENUS_RELOC, Mars: MARS_RELOC, Jupiter: JUPITER_RELOC, Saturn: SATURN_RELOC
+    Venus: VENUS_RELOC, Mars: MARS_RELOC, Jupiter: JUPITER_RELOC, Saturn: SATURN_RELOC,
+    Uranus: URANUS_RELOC, Neptune: NEPTUNE_RELOC, Pluto: PLUTO_RELOC,
+    Chiron: CHIRON_RELOC, NNode: NNODE_RELOC, SNode: SNODE_RELOC
   };
   var desc = (tables[planet] && tables[planet][house]) || '';
   if (!desc) desc = 'In ' + cityName + ', your ' + planet + ' activates ' + getHouseDesc(house) + ' — bringing a new quality of energy to this part of your life.';
