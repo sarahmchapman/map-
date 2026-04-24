@@ -26,64 +26,57 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);display:fl
 <script>
 var SUPABASE_URL = 'https://wdulylmxhvlxhjfmfivu.supabase.co';
 var SUPABASE_KEY = 'sb_publishable_pBoHzlLsZiLAr7EYF824DA_R6pw5sdR';
-var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+var _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 async function handleCallback() {
   try {
-    // Exchange the token from URL
-    var { data, error } = await sb.auth.getSession();
+    var msgEl = document.getElementById('msg');
+
+    // Supabase automatically handles the code exchange from URL params
+    // Just call getSession after a brief moment for it to process
+    var { data, error } = await _sb.auth.getSession();
 
     if (error || !data.session) {
-      // Try exchanging code from URL params
+      // Try exchanging code manually
       var params = new URLSearchParams(window.location.search);
       var code = params.get('code');
+
       if (code) {
-        var result = await sb.auth.exchangeCodeForSession(code);
-        if (result.error) throw result.error;
+        var result = await _sb.auth.exchangeCodeForSession(code);
+        if (result.error) {
+          console.error('Exchange error:', result.error);
+          msgEl.textContent = 'Sign in failed. Please try again.';
+          setTimeout(function() { window.location.href = '/'; }, 2000);
+          return;
+        }
         data = result.data;
+      } else {
+        msgEl.textContent = 'Sign in failed. Please try again.';
+        setTimeout(function() { window.location.href = '/'; }, 2000);
+        return;
       }
     }
 
     if (!data || !data.session) {
-      document.getElementById('msg').textContent = 'Something went wrong. Please try again.';
+      msgEl.textContent = 'Sign in failed. Please try again.';
       setTimeout(function() { window.location.href = '/'; }, 2000);
       return;
     }
 
     var user = data.session.user;
+    msgEl.textContent = 'You\'re in. Taking you to your chart…';
 
-    // Save session to localStorage for the main app
+    // Save minimal user info so index.html can use it immediately
     localStorage.setItem('elsewhere_user', JSON.stringify({
       id: user.id,
       email: user.email
     }));
 
-    // Check if profile exists, if so load birth data
-    var response = await fetch('/api/auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'get_profile', user_id: user.id })
-    });
-    var profileData = await response.json();
+    // Supabase already saved the full session to localStorage automatically
+    // Flag that we should auto-submit on the next page load
+    localStorage.setItem('elsewhere_autologin', '1');
 
-    if (profileData.profile) {
-      localStorage.setItem('elsewhere_profile', JSON.stringify(profileData.profile));
-      document.getElementById('msg').textContent = 'Welcome back. Taking you to your map…';
-    } else {
-      document.getElementById('msg').textContent = 'You\'re in. Taking you to your chart…';
-    }
-
-    // Store session so index.html picks it up immediately
-    var session = data.session;
-    if (session) {
-      localStorage.setItem('elsewhere_session', JSON.stringify({
-        access_token: session.access_token,
-        refresh_token: session.refresh_token,
-        user: { id: session.user.id, email: session.user.email }
-      }));
-    }
-
-    setTimeout(function() { window.location.href = '/?autologin=1'; }, 1200);
+    setTimeout(function() { window.location.href = '/'; }, 1000);
 
   } catch (err) {
     console.error('Auth callback error:', err);
