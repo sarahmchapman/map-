@@ -14,9 +14,13 @@ function initSupabase() {
   if (typeof supabase === 'undefined') return;
   _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  // Check if returning from magic link
-  var autoLogin = localStorage.getItem('elsewhere_autologin') === '1';
-  if (autoLogin) localStorage.removeItem('elsewhere_autologin');
+  // Check if returning from magic link or profile page
+  var autoLogin = localStorage.getItem('elsewhere_autologin') === '1'
+    || window.location.search.indexOf('fromprofile=1') > -1;
+  if (autoLogin) {
+    localStorage.removeItem('elsewhere_autologin');
+    window.history.replaceState({}, '', '/');
+  }
 
   // Supabase stores session in localStorage automatically — just get it
   _sb.auth.getSession().then(function(result) {
