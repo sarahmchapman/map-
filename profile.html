@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>elsewhere — your profile</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#1a1714;--ink-2:#2e2b28;--ink-3:#4a4540;
+  --paper:#faf8f4;--paper-2:#f2ede5;--paper-3:#e8e0d2;
+  --gold:#b8955a;--gold-light:#d4b07a;--gold-faint:rgba(184,149,90,.13);
+  --serif:'Cormorant Garamond',Georgia,serif;--sans:'Jost',sans-serif;
+}
+html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margin:0;font-size:16px}
+
+/* ── Header ── */
+.site-header{width:100%;padding:.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;border-bottom:.5px solid var(--paper-3);background:var(--paper);position:sticky;top:0;z-index:20}
+.site-wordmark{font-family:var(--serif);font-size:1.05rem;font-weight:300;letter-spacing:.35em;text-transform:lowercase;color:var(--ink);text-decoration:none}
+.header-actions{display:flex;align-items:center;gap:.75rem}
+.nav-btn{font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);padding:.3rem .8rem;cursor:pointer;border-radius:20px;text-decoration:none;transition:all .2s;display:inline-flex;align-items:center;gap:.3rem}
+.nav-btn:hover{border-color:var(--gold);color:var(--gold)}
+.signed-in-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0}
+
+/* ── Page ── */
+.page{max-width:680px;margin:0 auto;padding:3rem 1.5rem 5rem}
+
+/* ── Loading ── */
+#loadingState{text-align:center;padding:4rem 1.5rem;font-family:var(--serif);font-style:italic;color:var(--ink-3)}
+#mainContent{display:none}
+#noAuthState{display:none;text-align:center;padding:4rem 1.5rem}
+
+/* ── Profile header ── */
+.profile-eyebrow{font-size:9px;font-weight:500;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:.6rem;text-align:center}
+.profile-name{font-family:var(--serif);font-size:clamp(2rem,6vw,3rem);font-weight:300;line-height:1.1;text-align:center;margin-bottom:.4rem}
+.profile-name em{font-style:italic;color:var(--gold)}
+.profile-meta{font-family:var(--serif);font-style:italic;font-size:.85rem;color:var(--ink-3);text-align:center;margin-bottom:2.5rem;line-height:1.7}
+
+/* ── Section heading ── */
+.section-heading{font-size:10px;font-weight:500;letter-spacing:.25em;text-transform:uppercase;color:var(--gold);margin-bottom:1.2rem;display:flex;align-items:center;gap:.6rem}
+.section-heading::after{content:'';flex:1;height:.5px;background:var(--paper-3)}
+
+/* ── Chart wheel ── */
+.chart-panel{background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:8px;padding:1.5rem;display:flex;flex-direction:column;align-items:center;margin-bottom:2rem}
+canvas.chart-wheel{display:block;width:100%;max-width:340px;aspect-ratio:1/1;height:auto}
+
+/* ── Chart summary ── */
+.chart-summary{margin-bottom:2.5rem}
+.summary-trio{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1.5rem}
+.trio-item{text-align:center;padding:1rem .75rem;background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:6px}
+.trio-label{font-size:8px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:.3rem}
+.trio-value{font-family:var(--serif);font-size:1rem;font-weight:300;color:var(--ink);margin-bottom:.3rem}
+.trio-desc{font-family:var(--serif);font-style:italic;font-size:.75rem;color:var(--ink-3);line-height:1.5}
+
+/* ── Planet positions ── */
+.planets-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:2.5rem}
+@media(min-width:480px){.planets-grid{grid-template-columns:1fr 1fr 1fr}}
+.planet-row{display:flex;align-items:center;gap:.6rem;padding:.55rem .75rem;background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:4px}
+.planet-sym{font-size:1rem;width:20px;text-align:center;flex-shrink:0}
+.planet-name{font-size:.65rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);flex:1}
+.planet-pos{font-family:var(--serif);font-size:.88rem;color:var(--ink)}
+
+/* ── Places explored ── */
+.places-list{display:flex;flex-direction:column;gap:.75rem;margin-bottom:2.5rem}
+.place-card{display:flex;align-items:center;gap:1rem;padding:.9rem 1.1rem;background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:6px;text-decoration:none;transition:border-color .2s}
+.place-card:hover{border-color:var(--gold)}
+.place-name{font-family:var(--serif);font-size:1rem;color:var(--ink);flex:1}
+.place-date{font-size:.7rem;color:var(--ink-3);letter-spacing:.08em}
+.place-arrow{color:var(--gold);font-size:.8rem}
+.no-places{font-family:var(--serif);font-style:italic;font-size:.88rem;color:var(--ink-3);padding:.75rem 0}
+
+/* ── Sign out ── */
+.signout-btn{font-size:9px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);padding:.65rem 1.5rem;cursor:pointer;width:100%;max-width:200px;display:block;margin:0 auto;transition:all .2s}
+.signout-btn:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ── Footer ── */
+.page-footer{text-align:center;padding:1.5rem 0 1rem;border-top:.5px solid var(--paper-3);margin-top:2rem}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="/" class="site-wordmark">elsewhere</a>
+  <div class="header-actions">
+    <span style="font-size:.72rem;font-family:var(--serif);font-style:italic;color:var(--ink-3)" id="headerEmail"></span>
+    <div class="signed-in-dot"></div>
+    <a href="/" class="nav-btn">← Back to map</a>
+  </div>
+</header>
+
+<div class="page">
+  <div id="loadingState"><p>Loading your chart…</p></div>
+
+  <div id="noAuthState">
+    <p style="font-family:var(--serif);font-style:italic;color:var(--ink-3);margin-bottom:1.5rem">You need to be signed in to view your profile.</p>
+    <a href="/" class="nav-btn" style="display:inline-flex">Go to elsewhere</a>
+  </div>
+
+  <div id="mainContent">
+
+    <!-- Profile header -->
+    <div style="margin-bottom:2.5rem">
+      <p class="profile-eyebrow">Your chart</p>
+      <h1 class="profile-name" id="profileName">—</h1>
+      <p class="profile-meta" id="profileMeta">—</p>
+    </div>
+
+    <!-- Natal chart wheel -->
+    <div class="section-heading">Natal chart</div>
+    <div class="chart-panel">
+      <canvas class="chart-wheel" id="natalWheel" width="340" height="340"></canvas>
+    </div>
+
+    <!-- Sun Moon Rising summary -->
+    <div class="section-heading">Your signature</div>
+    <div class="chart-summary">
+      <div class="summary-trio">
+        <div class="trio-item">
+          <div class="trio-label">Sun</div>
+          <div class="trio-value" id="sunSign">—</div>
+          <div class="trio-desc" id="sunDesc">—</div>
+        </div>
+        <div class="trio-item">
+          <div class="trio-label">Moon</div>
+          <div class="trio-value" id="moonSign">—</div>
+          <div class="trio-desc" id="moonDesc">—</div>
+        </div>
+        <div class="trio-item">
+          <div class="trio-label">Rising</div>
+          <div class="trio-value" id="risingSign">—</div>
+          <div class="trio-desc" id="risingDesc">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- All planet positions -->
+    <div class="section-heading">Planet positions</div>
+    <div class="planets-grid" id="planetsGrid"></div>
+
+    <!-- Places explored -->
+    <div class="section-heading">Places explored</div>
+    <div class="places-list" id="placesList"></div>
+
+    <!-- Sign out -->
+    <button class="signout-btn" onclick="signOut()">Sign out</button>
+
+    <div class="page-footer">
+      <a href="mailto:elsewhereastro@gmail.com" style="font-family:var(--serif);font-size:.78rem;color:var(--ink-3);text-decoration:none;border-bottom:1px solid var(--paper-3)">share feedback</a>
+      <span style="color:var(--paper-3);margin:0 .8rem">·</span>
+      <span style="font-family:var(--serif);font-size:.78rem;color:var(--ink-3)">© 2025 elsewhere</span>
+    </div>
+
+  </div><!-- /mainContent -->
+</div><!-- /page -->
+
+<script src="/descriptions.js?v=5"></script>
+<script src="/js/app.js?v=2"></script>
+<script>
+var SUPABASE_URL = 'https://wdulylmxhvlxhjfmfivu.supabase.co';
+var SUPABASE_KEY = 'sb_publishable_pBoHzlLsZiLAr7EYF824DA_R6pw5sdR';
+var _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── Sign descriptions (brief, drawn from existing copy) ──────
+var SIGN_BRIEF = {
+  Aries:'Bold, pioneering, direct',
+  Taurus:'Grounded, sensual, steady',
+  Gemini:'Quick, curious, adaptable',
+  Cancer:'Nurturing, deep, protective',
+  Leo:'Radiant, generous, creative',
+  Virgo:'Precise, devoted, discerning',
+  Libra:'Graceful, fair, relational',
+  Scorpio:'Intense, perceptive, transformative',
+  Sagittarius:'Expansive, philosophical, free',
+  Capricorn:'Disciplined, ambitious, lasting',
+  Aquarius:'Original, visionary, collective',
+  Pisces:'Compassionate, intuitive, fluid'
+};
+
+// ── Planet colors and symbols ─────────────────────────────────
+var PCOL = {Sun:'#c9973f',Moon:'#5a7aa8',Mercury:'#4a8a6a',Venus:'#c0607a',Mars:'#9b3535',Jupiter:'#7a5a30',Saturn:'#6a6055',Uranus:'#3a7a7a',Neptune:'#4a4a9a',Pluto:'#7a4a6a',Chiron:'#2a2a2a',NNode:'#2c6e49',SNode:'#5a9e7a'};
+var PSYM = {Sun:'☉',Moon:'☽',Mercury:'☿',Venus:'♀',Mars:'♂',Jupiter:'♃',Saturn:'♄',Uranus:'♅',Neptune:'♆',Pluto:'♇',Chiron:'⚷',NNode:'☊',SNode:'☋'};
+var PORDER = ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode','SNode'];
+
+// ── Draw chart wheel (reused from reading.html) ───────────────
+function drawNatalWheel(planets) {
+  var canvas = document.getElementById('natalWheel');
+  if (!canvas) return;
+  var dpr = window.devicePixelRatio || 1;
+  var displaySize = canvas.offsetWidth || 340;
+  canvas.width = displaySize * dpr;
+  canvas.height = displaySize * dpr;
+  canvas.style.width = displaySize + 'px';
+  canvas.style.height = displaySize + 'px';
+
+  var ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  var size = displaySize;
+  var cx = size/2, cy = size/2;
+  var rOuter = size*0.47, rZodiac = size*0.37, rHouse = size*0.265, rPlanet = size*0.185, rCenter = size*0.055;
+
+  ctx.fillStyle = '#faf8f4';
+  ctx.fillRect(0, 0, size, size);
+
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx, cy, rOuter, 0, Math.PI*2); ctx.clip();
+  ctx.fillStyle = '#faf8f4'; ctx.fill();
+  ctx.fillStyle = '#f2ede5';
+  ctx.beginPath(); ctx.arc(cx, cy, rOuter, 0, Math.PI*2); ctx.arc(cx, cy, rZodiac, 0, Math.PI*2, true); ctx.fill();
+
+  var ascLon = (planets.Ascendant && planets.Ascendant.totalDeg != null) ? planets.Ascendant.totalDeg : 0;
+  function lonToAngle(lon) { return (180 - ((lon - ascLon + 360) % 360)) * Math.PI / 180; }
+
+  var SIGN_ABBR = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
+  for (var s = 0; s < 12; s++) {
+    var divAngle = lonToAngle(s * 30);
+    ctx.strokeStyle = '#c8bfb0'; ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(cx + rZodiac*Math.cos(divAngle), cy + rZodiac*Math.sin(divAngle));
+    ctx.lineTo(cx + rOuter*Math.cos(divAngle), cy + rOuter*Math.sin(divAngle));
+    ctx.stroke();
+    var midAngle = lonToAngle(s*30+15);
+    var labelR = (rZodiac+rOuter)/2;
+    ctx.font = 'italic 300 ' + Math.round(size*0.036)+'px Cormorant Garamond, Georgia, serif';
+    ctx.fillStyle = '#b8955a'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(SIGN_ABBR[s], cx+labelR*Math.cos(midAngle), cy+labelR*Math.sin(midAngle));
+  }
+
+  for (var h = 0; h < 12; h++) {
+    var hAngle = lonToAngle(ascLon + h*30);
+    var isAngle = (h % 3 === 0);
+    ctx.strokeStyle = isAngle ? '#b8955a' : '#d4c9b8'; ctx.lineWidth = isAngle ? 1 : 0.5;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx+rZodiac*Math.cos(hAngle), cy+rZodiac*Math.sin(hAngle)); ctx.stroke();
+    var numLon = ascLon + h*30+15;
+    var numAngle = lonToAngle(numLon); var numR = (rHouse+rZodiac)/2;
+    ctx.font = Math.round(size*0.028)+'px Jost, sans-serif';
+    ctx.fillStyle = '#9a9080'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(String(h+1), cx+numR*Math.cos(numAngle), cy+numR*Math.sin(numAngle));
+  }
+
+  ctx.strokeStyle = '#c8bfb0'; ctx.lineWidth = 1;
+  [rOuter, rZodiac, rHouse].forEach(function(r){ ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke(); });
+
+  var mcLon = planets.Midheaven ? planets.Midheaven.totalDeg : ascLon+90;
+  [{lon:ascLon,label:'AC'},{lon:ascLon+180,label:'DC'},{lon:mcLon,label:'MC'},{lon:mcLon+180,label:'IC'}].forEach(function(a){
+    var ang = lonToAngle(a.lon);
+    ctx.strokeStyle = '#b8955a'; ctx.lineWidth = 1; ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+rHouse*Math.cos(ang), cy+rHouse*Math.sin(ang)); ctx.stroke();
+    ctx.setLineDash([]);
+    var lblR = rHouse+size*0.025;
+    ctx.font = '500 '+Math.round(size*0.032)+'px Jost, sans-serif';
+    ctx.fillStyle = '#b8955a'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(a.label, cx+lblR*Math.cos(ang), cy+lblR*Math.sin(ang));
+  });
+
+  var plotted = [];
+  PORDER.forEach(function(p) {
+    var pd = planets[p]; if (!pd || pd.totalDeg == null) return;
+    var angle = lonToAngle(pd.totalDeg);
+    var finalAngle = angle;
+    var minSep = 0.18;
+    for (var attempt = 0; attempt < 8; attempt++) {
+      var tooClose = plotted.some(function(pl){ var diff = Math.abs(finalAngle-pl.angle); if(diff>Math.PI)diff=2*Math.PI-diff; return diff<minSep; });
+      if (!tooClose) break;
+      finalAngle += minSep;
+    }
+    plotted.push({p:p,angle:finalAngle});
+    var px2 = cx+rPlanet*Math.cos(finalAngle), py2 = cy+rPlanet*Math.sin(finalAngle);
+    ctx.font = '400 '+Math.round(size*0.07)+'px sans-serif';
+    ctx.fillStyle = PCOL[p]||'#888'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(PSYM[p]||p[0], px2, py2);
+  });
+
+  ctx.restore();
+  ctx.beginPath(); ctx.arc(cx,cy,rCenter,0,Math.PI*2);
+  ctx.fillStyle = '#f2ede5'; ctx.strokeStyle = '#c8bfb0'; ctx.lineWidth = 0.5;
+  ctx.fill(); ctx.stroke();
+}
+
+// ── Format date ───────────────────────────────────────────────
+function formatDate(str) {
+  if (!str) return '—';
+  return str;
+}
+
+// ── Build profile page ────────────────────────────────────────
+async function initProfile() {
+  try {
+    var { data: sessionData } = await _sb.auth.getSession();
+    if (!sessionData || !sessionData.session) {
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('noAuthState').style.display = 'block';
+      return;
+    }
+
+    var user = sessionData.session.user;
+    document.getElementById('headerEmail').textContent = user.email;
+
+    // Load profile
+    var { data: profile, error } = await _sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
+    if (error || !profile) {
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('noAuthState').style.display = 'block';
+      return;
+    }
+
+    // Load readings
+    var { data: readings } = await _sb.from('readings').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+
+    // Compute natal chart
+    var jd = dateToJD(profile.birth_date, profile.birth_time);
+    var planets = computePlanets(jd, profile.birth_lat, profile.birth_lng);
+
+    // Update header
+    document.getElementById('profileName').innerHTML = profile.name ? '<em>' + profile.name + '</em>' : '<em>Your chart</em>';
+    document.getElementById('profileMeta').textContent = [profile.birth_date, profile.birth_time, profile.birth_place].filter(Boolean).join(' · ');
+
+    // Draw wheel
+    setTimeout(function() { drawNatalWheel(planets); }, 50);
+
+    // Sun/Moon/Rising summary
+    var sun = planets.Sun, moon = planets.Moon, asc = planets.Ascendant;
+    if (sun) {
+      document.getElementById('sunSign').textContent = sun.sign;
+      document.getElementById('sunDesc').textContent = SIGN_BRIEF[sun.sign] || '';
+    }
+    if (moon) {
+      document.getElementById('moonSign').textContent = moon.sign;
+      document.getElementById('moonDesc').textContent = SIGN_BRIEF[moon.sign] || '';
+    }
+    if (asc) {
+      document.getElementById('risingSign').textContent = asc.sign;
+      document.getElementById('risingDesc').textContent = SIGN_BRIEF[asc.sign] || '';
+    }
+
+    // Planet positions grid
+    var grid = document.getElementById('planetsGrid');
+    PORDER.forEach(function(p) {
+      var pd = planets[p]; if (!pd || !pd.sign) return;
+      var div = document.createElement('div');
+      div.className = 'planet-row';
+      div.innerHTML = '<span class="planet-sym" style="color:'+( PCOL[p]||'#888')+'">'+PSYM[p]+'</span>'
+        + '<span class="planet-name">'+p+'</span>'
+        + '<span class="planet-pos">'+pd.deg+'°'+pd.sign+'</span>';
+      grid.appendChild(div);
+    });
+
+    // Places explored
+    var list = document.getElementById('placesList');
+    if (!readings || readings.length === 0) {
+      list.innerHTML = '<p class="no-places">No cities explored yet. Go to your map and click Dive Deeper on any line.</p>';
+    } else {
+      readings.forEach(function(r) {
+        var date = new Date(r.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+        var a = document.createElement('a');
+        a.className = 'place-card';
+        a.href = '#';
+        a.innerHTML = '<span class="place-name">'+r.city_name+'</span>'
+          + '<span class="place-date">'+date+'</span>'
+          + '<span class="place-arrow">→</span>';
+        list.appendChild(a);
+      });
+    }
+
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'block';
+
+  } catch(err) {
+    console.error('Profile error:', err);
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('noAuthState').style.display = 'block';
+  }
+}
+
+// ── Parse birth date/time to JD ───────────────────────────────
+function dateToJD(birthDate, birthTime) {
+  if (!birthDate) return 2451545.0;
+  var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var parts = birthDate.split(' ');
+  var day = parseInt(parts[0]) || 1;
+  var month = months.indexOf(parts[1]) + 1 || 1;
+  var year = parseInt(parts[2]) || 2000;
+  var hour = 12, min = 0;
+  if (birthTime) {
+    var tp = birthTime.split(':');
+    hour = parseInt(tp[0]) || 12;
+    min = parseInt(tp[1]) || 0;
+  }
+  // Simple JD calculation
+  var a = Math.floor((14 - month) / 12);
+  var y = year + 4800 - a;
+  var m = month + 12 * a - 3;
+  var jdn = day + Math.floor((153*m+2)/5) + 365*y + Math.floor(y/4) - Math.floor(y/100) + Math.floor(y/400) - 32045;
+  return jdn + (hour - 12) / 24 + min / 1440;
+}
+
+// ── Sign out ──────────────────────────────────────────────────
+function signOut() {
+  _sb.auth.signOut().then(function() {
+    window.location.href = '/';
+  });
+}
+
+// ── Boot ─────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', initProfile);
+window.addEventListener('resize', function() {
+  var canvas = document.getElementById('natalWheel');
+  if (canvas && window._profilePlanets) drawNatalWheel(window._profilePlanets);
+});
+</script>
+</body>
+</html>
