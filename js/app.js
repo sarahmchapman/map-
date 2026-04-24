@@ -14,6 +14,8 @@ function initSupabase() {
   if (typeof supabase === 'undefined') return;
   _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+  var isAutoLogin = window.location.search.indexOf('autologin=1') > -1;
+
   // Check for session stored by auth-callback
   var storedSession = localStorage.getItem('elsewhere_session');
   if (storedSession) {
@@ -27,7 +29,9 @@ function initSupabase() {
           if (result.data && result.data.session) {
             _currentUser = result.data.session.user;
             localStorage.removeItem('elsewhere_session');
-            onUserSignedIn(_currentUser);
+            // Clean URL
+            window.history.replaceState({}, '', '/');
+            onUserSignedIn(_currentUser, true); // true = auto-submit
           }
         });
         return;
@@ -39,7 +43,7 @@ function initSupabase() {
   _sb.auth.getSession().then(function(result) {
     if (result.data && result.data.session) {
       _currentUser = result.data.session.user;
-      onUserSignedIn(_currentUser);
+      onUserSignedIn(_currentUser, isAutoLogin);
     }
   });
 
@@ -56,7 +60,7 @@ function initSupabase() {
   });
 }
 
-function onUserSignedIn(user) {
+function onUserSignedIn(user, autoSubmit) {
   // Load profile
   fetch('/api/auth', {
     method: 'POST',
@@ -65,11 +69,10 @@ function onUserSignedIn(user) {
   }).then(function(r) { return r.json(); }).then(function(data) {
     if (data.profile) {
       _currentProfile = data.profile;
-      // Pre-fill form if on form screen
-      prefillForm(_currentProfile);
+      prefillForm(_currentProfile, autoSubmit);
     } else {
-      // New user — save their profile with current form data if available
       saveProfileFromForm(user);
+      updateAuthUI(true);
     }
     updateAuthUI(true);
   }).catch(function(err) {
@@ -78,7 +81,7 @@ function onUserSignedIn(user) {
   });
 }
 
-function prefillForm(profile) {
+function prefillForm(profile, autoSubmit) {
   if (!profile) return;
   // Only prefill if form fields are empty
   if (profile.name && !document.getElementById('inName').value) {
@@ -108,12 +111,12 @@ function prefillForm(profile) {
     }
   }
 
-  // If profile is complete, auto-submit to go straight to map
-  if (profile.birth_date && profile.birth_place && profile.birth_lat && selectedGeo) {
+  // Auto-submit if requested and profile is complete
+  if (autoSubmit && profile.birth_date && profile.birth_place && profile.birth_lat && selectedGeo) {
     setTimeout(function() {
-      var form = document.getElementById('birthForm');
+      var form = document.getElementById('chartForm');
       if (form) form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-    }, 300);
+    }, 400);
   }
 }
 
