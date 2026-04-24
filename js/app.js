@@ -14,36 +14,15 @@ function initSupabase() {
   if (typeof supabase === 'undefined') return;
   _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  var isAutoLogin = window.location.search.indexOf('autologin=1') > -1;
+  // Check if returning from magic link
+  var autoLogin = localStorage.getItem('elsewhere_autologin') === '1';
+  if (autoLogin) localStorage.removeItem('elsewhere_autologin');
 
-  // Check for session stored by auth-callback
-  var storedSession = localStorage.getItem('elsewhere_session');
-  if (storedSession) {
-    try {
-      var sess = JSON.parse(storedSession);
-      if (sess.access_token && sess.refresh_token) {
-        _sb.auth.setSession({
-          access_token: sess.access_token,
-          refresh_token: sess.refresh_token
-        }).then(function(result) {
-          if (result.data && result.data.session) {
-            _currentUser = result.data.session.user;
-            localStorage.removeItem('elsewhere_session');
-            // Clean URL
-            window.history.replaceState({}, '', '/');
-            onUserSignedIn(_currentUser, true); // true = auto-submit
-          }
-        });
-        return;
-      }
-    } catch(e) {}
-  }
-
-  // Check for existing session
+  // Supabase stores session in localStorage automatically — just get it
   _sb.auth.getSession().then(function(result) {
     if (result.data && result.data.session) {
       _currentUser = result.data.session.user;
-      onUserSignedIn(_currentUser, isAutoLogin);
+      onUserSignedIn(_currentUser, autoLogin);
     }
   });
 
