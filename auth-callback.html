@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>elsewhere — signing you in</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--ink:#1a1714;--ink-3:#4a4540;--paper:#faf8f4;--gold:#b8955a;--serif:'Cormorant Garamond',Georgia,serif;--sans:'Jost',sans-serif;}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:2rem}
+.wordmark{font-family:var(--serif);font-size:1rem;font-weight:300;letter-spacing:.35em;text-transform:lowercase;color:var(--gold);margin-bottom:2rem}
+.msg{font-family:var(--serif);font-size:1.1rem;font-style:italic;color:var(--ink-3);line-height:1.6}
+.star{color:var(--gold);font-size:1.2rem;margin-bottom:1rem}
+</style>
+</head>
+<body>
+<div>
+  <div class="wordmark">elsewhere</div>
+  <div class="star">✦</div>
+  <p class="msg" id="msg">Signing you in…</p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+var SUPABASE_URL = 'https://wdulylmxhvlxhjfmfivu.supabase.co';
+var SUPABASE_KEY = 'sb_publishable_pBoHzlLsZiLAr7EYF824DA_R6pw5sdR';
+var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function handleCallback() {
+  try {
+    // Exchange the token from URL
+    var { data, error } = await sb.auth.getSession();
+
+    if (error || !data.session) {
+      // Try exchanging code from URL params
+      var params = new URLSearchParams(window.location.search);
+      var code = params.get('code');
+      if (code) {
+        var result = await sb.auth.exchangeCodeForSession(code);
+        if (result.error) throw result.error;
+        data = result.data;
+      }
+    }
+
+    if (!data || !data.session) {
+      document.getElementById('msg').textContent = 'Something went wrong. Please try again.';
+      setTimeout(function() { window.location.href = '/'; }, 2000);
+      return;
+    }
+
+    var user = data.session.user;
+
+    // Save session to localStorage for the main app
+    localStorage.setItem('elsewhere_user', JSON.stringify({
+      id: user.id,
+      email: user.email
+    }));
+
+    // Check if profile exists, if so load birth data
+    var response = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'get_profile', user_id: user.id })
+    });
+    var profileData = await response.json();
+
+    if (profileData.profile) {
+      localStorage.setItem('elsewhere_profile', JSON.stringify(profileData.profile));
+      document.getElementById('msg').textContent = 'Welcome back. Taking you to your map…';
+    } else {
+      document.getElementById('msg').textContent = 'You\'re in. Taking you to your chart…';
+    }
+
+    setTimeout(function() { window.location.href = '/'; }, 1200);
+
+  } catch (err) {
+    console.error('Auth callback error:', err);
+    document.getElementById('msg').textContent = 'Something went wrong. Redirecting…';
+    setTimeout(function() { window.location.href = '/'; }, 2000);
+  }
+}
+
+handleCallback();
+</script>
+</body>
+</html>
