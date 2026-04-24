@@ -76,7 +76,7 @@ async function handleCallback() {
     // Flag that we should auto-submit on the next page load
     localStorage.setItem('elsewhere_autologin', '1');
 
-    setTimeout(function() { window.location.href = '/'; }, 1000);
+    setTimeout(function() { window.location.href = '/profile.html'; }, 1000);
 
   } catch (err) {
     console.error('Auth callback error:', err);
