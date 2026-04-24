@@ -120,16 +120,22 @@ function updateAuthUI(signedIn) {
   if (signedIn) {
     signInBtn.style.display = 'none';
     accountBtn.style.display = 'inline-flex';
-    // Update button label with name if available
     if (_currentProfile && _currentProfile.name) {
       accountBtn.textContent = _currentProfile.name;
+    } else {
+      accountBtn.textContent = 'Profile';
     }
-    // Make it link to profile
     accountBtn.onclick = function() { window.location.href = '/profile.html'; };
   } else {
     signInBtn.style.display = 'inline-flex';
     accountBtn.style.display = 'none';
   }
+}
+
+// Show sign in button as soon as map screen is visible
+function showMapAuthUI() {
+  var signInBtn = document.getElementById('signInBtn');
+  if (signInBtn && !_currentUser) signInBtn.style.display = 'inline-flex';
 }
 
 function openAuthModal() {
@@ -1204,6 +1210,7 @@ function _buildChart(day,month,year,hour,min,name,tz){
   document.getElementById('formScreen').style.display='none';
   document.getElementById('mapScreen').style.display='block';
   window.scrollTo(0,0);
+  showMapAuthUI();
   ['All','Love','Career','Healing','Self'].forEach(function(f){var b=document.getElementById('ff-'+f);if(b)b.classList.toggle('on',f==='All');});
   ['MC','IC','ASC','DSC'].forEach(function(lt){var b=document.getElementById('lt-'+lt);if(b)b.classList.add('on');});
   renderChart();buildToggleBar();buildLegend();drawMap();
