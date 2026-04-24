@@ -1197,8 +1197,8 @@ function _buildChart(day,month,year,hour,min,name,tz){
       birth_place: selectedGeo.display,
       birth_lat: selectedGeo.lat,
       birth_lng: selectedGeo.lng
-    }, { onConflict: 'id' }).catch(function(err) {
-      console.error('Save profile error:', err);
+    }, { onConflict: 'id' }).then(function(result) {
+      if (result.error) console.error('Save profile error:', result.error);
     });
   }
   document.getElementById('formScreen').style.display='none';
