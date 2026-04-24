@@ -34,7 +34,6 @@
 <meta name="twitter:description" content="Free astrocartography tool. Enter your birth data and see your planetary lines across the globe.">
 <title>elsewhere — astrocartography</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -158,6 +157,9 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     <div class="rule"><div class="rule-line"></div><div class="rule-star"></div><div class="rule-line"></div></div>
     <p class="subtitle">Enter your birth data to draw your planetary lines across the globe.</p>
   </header>
+  <div style="text-align:center;margin-bottom:1.5rem">
+    <p style="font-family:var(--serif);font-style:italic;font-size:.85rem;color:var(--ink-3)">Have an account? <button onclick="openAuthModal()" style="background:none;border:none;font-family:var(--serif);font-style:italic;font-size:.85rem;color:var(--gold);cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:3px">Sign in</button> to load your chart.</p>
+  </div>
   <div class="asterism">✦ &nbsp; ✦ &nbsp; ✦</div>
   <form id="chartForm" onsubmit="handleSubmit(event)">
     <div class="slabel">Date of birth</div>
@@ -206,8 +208,6 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     <span class="site-wordmark" style="margin-right:.75rem;flex-shrink:0">elsewhere</span>
     <div style="flex:1;min-width:0"><div class="bar-name" id="barName">—</div><div class="bar-meta" id="barMeta">—</div></div>
     <button class="new-btn" onclick="resetToForm()">↩ New chart</button>
-    <button class="new-btn" id="accountBtn" onclick="openAccountModal()" style="display:none">Account</button>
-    <button class="new-btn" id="signInBtn" onclick="openAuthModal()">Sign in</button>
   </div>
   <div class="map-section">
     <div class="chart-heading" style="margin-top:1.8rem;margin-bottom:.5rem;padding:0 1.5rem;max-width:700px;margin-left:auto;margin-right:auto">Astrocartography Map</div>
@@ -259,42 +259,7 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
   </div>
 </div>
 
-<!-- Auth Modal -->
-<div id="authModal" style="display:none;position:fixed;inset:0;background:rgba(26,23,20,.7);z-index:1000;display:none;align-items:center;justify-content:center;padding:1.5rem">
-  <div style="background:var(--paper);max-width:400px;width:100%;padding:2.5rem 2rem;position:relative">
-    <button onclick="closeAuthModal()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--ink-3)">✕</button>
-    <p style="font-family:var(--serif);font-size:.75rem;font-weight:300;letter-spacing:.35em;text-transform:lowercase;color:var(--gold);margin-bottom:1.5rem">elsewhere</p>
-    <h2 style="font-family:var(--serif);font-size:1.6rem;font-weight:300;line-height:1.2;margin-bottom:.6rem">Save your chart</h2>
-    <p style="font-family:var(--serif);font-style:italic;font-size:.88rem;color:var(--ink-3);line-height:1.7;margin-bottom:1.8rem">Enter your email and we'll send you a magic link — no password needed. Your birth data will be saved so you never have to re-enter it.</p>
-    <div id="authForm">
-      <input type="email" id="authEmail" placeholder="your@email.com" style="font-family:var(--sans);font-size:1rem;font-weight:300;color:var(--ink);background:transparent;border:none;border-bottom:.5px solid var(--paper-3);padding:.55rem 0;width:100%;outline:none;margin-bottom:1.5rem">
-      <button onclick="sendMagicLink()" style="font-size:10px;font-weight:500;letter-spacing:.25em;text-transform:uppercase;color:var(--paper);background:var(--ink);border:none;padding:.9rem 2rem;cursor:pointer;width:100%;transition:background .2s" onmouseover="this.style.background='var(--gold)'" onmouseout="this.style.background='var(--ink)'">Send magic link</button>
-
-    </div>
-    <div id="authSent" style="display:none;text-align:center">
-      <div style="font-size:1.5rem;color:var(--gold);margin-bottom:.8rem">✦</div>
-      <p style="font-family:var(--serif);font-size:1rem;color:var(--ink);margin-bottom:.5rem">Check your email</p>
-      <p style="font-family:var(--serif);font-style:italic;font-size:.85rem;color:var(--ink-3);line-height:1.6">We sent a magic link to <span id="authEmailSent" style="color:var(--ink)"></span>. Click it to sign in and save your chart.</p>
-    </div>
-  </div>
-</div>
-
-<!-- Account Modal -->
-<div id="accountModal" style="display:none;position:fixed;inset:0;background:rgba(26,23,20,.7);z-index:1000;align-items:center;justify-content:center;padding:1.5rem">
-  <div style="background:var(--paper);max-width:400px;width:100%;padding:2.5rem 2rem;position:relative">
-    <button onclick="closeAccountModal()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--ink-3)">✕</button>
-    <p style="font-family:var(--serif);font-size:.75rem;font-weight:300;letter-spacing:.35em;text-transform:lowercase;color:var(--gold);margin-bottom:1.5rem">elsewhere</p>
-    <h2 style="font-family:var(--serif);font-size:1.6rem;font-weight:300;margin-bottom:.5rem" id="accountName">Your account</h2>
-    <p style="font-family:var(--serif);font-style:italic;font-size:.85rem;color:var(--ink-3);margin-bottom:1.8rem" id="accountEmail"></p>
-    <div style="border-top:.5px solid var(--paper-3);padding-top:1.2rem;margin-bottom:1.2rem">
-      <p style="font-size:.65rem;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:.4rem">Readings used</p>
-      <p style="font-family:var(--serif);font-size:1.1rem;color:var(--ink)" id="accountReadings">—</p>
-    </div>
-    <button onclick="signOut()" style="font-size:10px;font-weight:500;letter-spacing:.25em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);padding:.7rem 1.5rem;cursor:pointer;width:100%;transition:all .2s" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--paper-3)';this.style.color='var(--ink-3)'">Sign out</button>
-  </div>
-</div>
-
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="/descriptions.js?v=5"></script>
-<script src="/js/app.js?v=2"></script>
+<script src="/js/app.js?v=1"></script>
 </body>
 </html>
