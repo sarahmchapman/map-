@@ -3,7 +3,21 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_SERVICE_KEY,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    },
+    db: {
+      schema: 'public'
+    },
+    global: {
+      headers: {
+        'x-supabase-bypass-rls': 'true'
+      }
+    }
+  }
 );
 
 export default async function handler(req, res) {
@@ -62,9 +76,12 @@ export default async function handler(req, res) {
         .from('profiles')
         .select('*')
         .eq('id', user_id)
-        .single();
+        .maybeSingle();
 
-      if (error) return res.status(400).json({ error: error.message });
+      if (error) {
+        console.error('get_profile error:', error);
+        return res.status(400).json({ error: error.message, details: error });
+      }
       return res.json({ profile: data });
     }
 
