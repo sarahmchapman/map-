@@ -40,24 +40,20 @@ function initSupabase() {
 }
 
 function onUserSignedIn(user, autoSubmit) {
-  // Load profile
-  fetch('/api/auth', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'get_profile', user_id: user.id })
-  }).then(function(r) { return r.json(); }).then(function(data) {
-    if (data.profile) {
-      _currentProfile = data.profile;
-      prefillForm(_currentProfile, autoSubmit);
-    } else {
-      saveProfileFromForm(user);
+  // Load profile directly from Supabase
+  _sb.from('profiles').select('*').eq('id', user.id).maybeSingle()
+    .then(function(result) {
+      if (result.data) {
+        _currentProfile = result.data;
+        prefillForm(_currentProfile, autoSubmit);
+      } else {
+        saveProfileFromForm(user);
+      }
       updateAuthUI(true);
-    }
-    updateAuthUI(true);
-  }).catch(function(err) {
-    console.error('Profile load error:', err);
-    updateAuthUI(true);
-  });
+    }).catch(function(err) {
+      console.error('Profile load error:', err);
+      updateAuthUI(true);
+    });
 }
 
 function prefillForm(profile, autoSubmit) {
@@ -100,26 +96,20 @@ function prefillForm(profile, autoSubmit) {
 }
 
 function saveProfileFromForm(user) {
-  // Called after sign-in to save whatever birth data is in localStorage
   var raw = localStorage.getItem('elsewhere_reading');
   if (!raw) return;
   try {
     var data = JSON.parse(raw);
-    fetch('/api/auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'save_profile',
-        user_id: user.id,
-        email: user.email,
-        name: data.name || '',
-        birth_date: data.birthDate || '',
-        birth_time: '',
-        birth_place: data.birthPlace || '',
-        birth_lat: data.birthLat,
-        birth_lng: data.birthLng
-      })
-    });
+    _sb.from('profiles').upsert({
+      id: user.id,
+      email: user.email,
+      name: data.name || '',
+      birth_date: data.birthDate || '',
+      birth_time: '',
+      birth_place: data.birthPlace || '',
+      birth_lat: data.birthLat,
+      birth_lng: data.birthLng
+    }, { onConflict: 'id' });
   } catch(e) {}
 }
 
@@ -159,13 +149,14 @@ function sendMagicLink() {
   btn.textContent = 'Sending…';
   btn.disabled = true;
 
-  fetch('/api/auth', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'send_magic_link', email: email })
-  }).then(function(r) { return r.json(); }).then(function(data) {
-    if (data.error) {
-      alert('Error: ' + data.error);
+  _sb.auth.signInWithOtp({
+    email: email,
+    options: {
+      emailRedirectTo: 'https://elsewhereastro.com/auth-callback.html'
+    }
+  }).then(function(result) {
+    if (result.error) {
+      alert('Error: ' + result.error.message);
       btn.textContent = 'Send magic link';
       btn.disabled = false;
     } else {
@@ -1197,21 +1188,18 @@ function _buildChart(day,month,year,hour,min,name,tz){
 
   // Save profile to Supabase if signed in
   if (_currentUser) {
-    fetch('/api/auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'save_profile',
-        user_id: _currentUser.id,
-        email: _currentUser.email,
-        name: name,
-        birth_date: day+' '+MONTH_NAMES[month-1]+' '+year,
-        birth_time: pad(hour)+':'+pad(min),
-        birth_place: selectedGeo.display,
-        birth_lat: selectedGeo.lat,
-        birth_lng: selectedGeo.lng
-      })
-    }).catch(function(err) { console.error('Save profile error:', err); });
+    _sb.from('profiles').upsert({
+      id: _currentUser.id,
+      email: _currentUser.email,
+      name: name,
+      birth_date: day+' '+MONTH_NAMES[month-1]+' '+year,
+      birth_time: pad(hour)+':'+pad(min),
+      birth_place: selectedGeo.display,
+      birth_lat: selectedGeo.lat,
+      birth_lng: selectedGeo.lng
+    }, { onConflict: 'id' }).catch(function(err) {
+      console.error('Save profile error:', err);
+    });
   }
   document.getElementById('formScreen').style.display='none';
   document.getElementById('mapScreen').style.display='block';
@@ -1421,21 +1409,19 @@ function _openReading(lat,lng){
   }));
   // Save reading to account if signed in
   if (_currentUser) {
-    fetch('/api/auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'save_reading',
-        user_id: _currentUser.id,
-        city_name: cityName,
-        city_lat: lat,
-        city_lng: lng
-      })
-    }).then(function(r) { return r.json(); }).then(function(data) {
-      if (data.success && _currentProfile) {
+    _sb.from('readings').insert({
+      user_id: _currentUser.id,
+      city_name: cityName,
+      city_lat: lat,
+      city_lng: lng
+    }).then(function(result) {
+      if (!result.error && _currentProfile) {
         _currentProfile.readings_used = (_currentProfile.readings_used || 0) + 1;
+        _sb.from('profiles').update({
+          readings_used: _currentProfile.readings_used
+        }).eq('id', _currentUser.id);
       }
-    }).catch(function(err) { console.error('Save reading error:', err); });
+    });
   }
   window.open('/reading.html','_blank');
 }
