@@ -83,7 +83,7 @@ async function handleCallback() {
       }));
     }
 
-    setTimeout(function() { window.location.href = '/'; }, 1200);
+    setTimeout(function() { window.location.href = '/?autologin=1'; }, 1200);
 
   } catch (err) {
     console.error('Auth callback error:', err);
