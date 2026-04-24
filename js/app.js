@@ -1213,6 +1213,7 @@ function _buildChart(day,month,year,hour,min,name,tz){
   }
   document.getElementById('formScreen').style.display='none';
   document.getElementById('mapScreen').style.display='block';
+  document.documentElement.style.visibility = 'visible';
   window.scrollTo(0,0);
   showMapAuthUI();
   ['All','Love','Career','Healing','Self'].forEach(function(f){var b=document.getElementById('ff-'+f);if(b)b.classList.toggle('on',f==='All');});
