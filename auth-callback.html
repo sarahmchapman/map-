@@ -73,6 +73,16 @@ async function handleCallback() {
       document.getElementById('msg').textContent = 'You\'re in. Taking you to your chart…';
     }
 
+    // Store session so index.html picks it up immediately
+    var session = data.session;
+    if (session) {
+      localStorage.setItem('elsewhere_session', JSON.stringify({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
+        user: { id: session.user.id, email: session.user.email }
+      }));
+    }
+
     setTimeout(function() { window.location.href = '/'; }, 1200);
 
   } catch (err) {
