@@ -120,6 +120,12 @@ function updateAuthUI(signedIn) {
   if (signedIn) {
     signInBtn.style.display = 'none';
     accountBtn.style.display = 'inline-flex';
+    // Update button label with name if available
+    if (_currentProfile && _currentProfile.name) {
+      accountBtn.textContent = _currentProfile.name;
+    }
+    // Make it link to profile
+    accountBtn.onclick = function() { window.location.href = '/profile.html'; };
   } else {
     signInBtn.style.display = 'inline-flex';
     accountBtn.style.display = 'none';
@@ -172,13 +178,7 @@ function sendMagicLink() {
 }
 
 function openAccountModal() {
-  if (!_currentProfile && !_currentUser) return;
-  var modal = document.getElementById('accountModal');
-  modal.style.display = 'flex';
-  document.getElementById('accountEmail').textContent = _currentUser ? _currentUser.email : '';
-  document.getElementById('accountName').textContent = (_currentProfile && _currentProfile.name) ? _currentProfile.name : 'Your account';
-  var used = (_currentProfile && _currentProfile.readings_used) ? _currentProfile.readings_used : 0;
-  document.getElementById('accountReadings').textContent = used + ' of 3 free readings used';
+  window.location.href = '/profile.html';
 }
 
 function closeAccountModal() {
