@@ -14,6 +14,27 @@ function initSupabase() {
   if (typeof supabase === 'undefined') return;
   _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+  // Check for session stored by auth-callback
+  var storedSession = localStorage.getItem('elsewhere_session');
+  if (storedSession) {
+    try {
+      var sess = JSON.parse(storedSession);
+      if (sess.access_token && sess.refresh_token) {
+        _sb.auth.setSession({
+          access_token: sess.access_token,
+          refresh_token: sess.refresh_token
+        }).then(function(result) {
+          if (result.data && result.data.session) {
+            _currentUser = result.data.session.user;
+            localStorage.removeItem('elsewhere_session');
+            onUserSignedIn(_currentUser);
+          }
+        });
+        return;
+      }
+    } catch(e) {}
+  }
+
   // Check for existing session
   _sb.auth.getSession().then(function(result) {
     if (result.data && result.data.session) {
@@ -65,12 +86,10 @@ function prefillForm(profile) {
   }
   if (profile.birth_place && !document.getElementById('cityInput').value) {
     document.getElementById('cityInput').value = profile.birth_place;
-    // Set the hidden geo data
     selectedGeo = { lat: profile.birth_lat, lng: profile.birth_lng, display: profile.birth_place };
   }
   if (profile.birth_date) {
     var parts = profile.birth_date.split(' ');
-    // birth_date stored as "DD Month YYYY"
     var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     if (parts.length === 3) {
       if (!document.getElementById('inDay').value) document.getElementById('inDay').value = parts[0];
@@ -87,6 +106,14 @@ function prefillForm(profile) {
       if (!document.getElementById('inHour').value) document.getElementById('inHour').value = timeParts[0];
       if (!document.getElementById('inMinute').value) document.getElementById('inMinute').value = timeParts[1];
     }
+  }
+
+  // If profile is complete, auto-submit to go straight to map
+  if (profile.birth_date && profile.birth_place && profile.birth_lat && selectedGeo) {
+    setTimeout(function() {
+      var form = document.getElementById('birthForm');
+      if (form) form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    }, 300);
   }
 }
 
