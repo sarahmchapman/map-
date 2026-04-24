@@ -1,6 +1,215 @@
 
 // elsewhere — astrocartography
 // Pre-generated reading descriptions
+// ═══════════════════════════════════════════════════════════
+// AUTH — Supabase magic link
+// ═══════════════════════════════════════════════════════════
+var SUPABASE_URL = 'https://wdulylmxhvlxhjfmfivu.supabase.co';
+var SUPABASE_KEY = 'sb_publishable_pBoHzlLsZiLAr7EYF824DA_R6pw5sdR';
+var _sb = null;
+var _currentUser = null;
+var _currentProfile = null;
+
+function initSupabase() {
+  if (typeof supabase === 'undefined') return;
+  _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // Check for existing session
+  _sb.auth.getSession().then(function(result) {
+    if (result.data && result.data.session) {
+      _currentUser = result.data.session.user;
+      onUserSignedIn(_currentUser);
+    }
+  });
+
+  // Listen for auth changes
+  _sb.auth.onAuthStateChange(function(event, session) {
+    if (event === 'SIGNED_IN' && session) {
+      _currentUser = session.user;
+      onUserSignedIn(_currentUser);
+    } else if (event === 'SIGNED_OUT') {
+      _currentUser = null;
+      _currentProfile = null;
+      updateAuthUI(false);
+    }
+  });
+}
+
+function onUserSignedIn(user) {
+  // Load profile
+  fetch('/api/auth', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'get_profile', user_id: user.id })
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    if (data.profile) {
+      _currentProfile = data.profile;
+      // Pre-fill form if on form screen
+      prefillForm(_currentProfile);
+    } else {
+      // New user — save their profile with current form data if available
+      saveProfileFromForm(user);
+    }
+    updateAuthUI(true);
+  }).catch(function(err) {
+    console.error('Profile load error:', err);
+    updateAuthUI(true);
+  });
+}
+
+function prefillForm(profile) {
+  if (!profile) return;
+  // Only prefill if form fields are empty
+  if (profile.name && !document.getElementById('inName').value) {
+    document.getElementById('inName').value = profile.name;
+  }
+  if (profile.birth_place && !document.getElementById('cityInput').value) {
+    document.getElementById('cityInput').value = profile.birth_place;
+    // Set the hidden geo data
+    selectedGeo = { lat: profile.birth_lat, lng: profile.birth_lng, display: profile.birth_place };
+  }
+  if (profile.birth_date) {
+    var parts = profile.birth_date.split(' ');
+    // birth_date stored as "DD Month YYYY"
+    var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    if (parts.length === 3) {
+      if (!document.getElementById('inDay').value) document.getElementById('inDay').value = parts[0];
+      if (!document.getElementById('inMonth').value) {
+        var mIdx = months.indexOf(parts[1]) + 1;
+        if (mIdx > 0) document.getElementById('inMonth').value = mIdx;
+      }
+      if (!document.getElementById('inYear').value) document.getElementById('inYear').value = parts[2];
+    }
+  }
+  if (profile.birth_time) {
+    var timeParts = profile.birth_time.split(':');
+    if (timeParts.length >= 2) {
+      if (!document.getElementById('inHour').value) document.getElementById('inHour').value = timeParts[0];
+      if (!document.getElementById('inMinute').value) document.getElementById('inMinute').value = timeParts[1];
+    }
+  }
+}
+
+function saveProfileFromForm(user) {
+  // Called after sign-in to save whatever birth data is in localStorage
+  var raw = localStorage.getItem('elsewhere_reading');
+  if (!raw) return;
+  try {
+    var data = JSON.parse(raw);
+    fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'save_profile',
+        user_id: user.id,
+        email: user.email,
+        name: data.name || '',
+        birth_date: data.birthDate || '',
+        birth_time: '',
+        birth_place: data.birthPlace || '',
+        birth_lat: data.birthLat,
+        birth_lng: data.birthLng
+      })
+    });
+  } catch(e) {}
+}
+
+function updateAuthUI(signedIn) {
+  var signInBtn = document.getElementById('signInBtn');
+  var accountBtn = document.getElementById('accountBtn');
+  if (!signInBtn || !accountBtn) return;
+  if (signedIn) {
+    signInBtn.style.display = 'none';
+    accountBtn.style.display = 'inline-flex';
+  } else {
+    signInBtn.style.display = 'inline-flex';
+    accountBtn.style.display = 'none';
+  }
+}
+
+function openAuthModal() {
+  var modal = document.getElementById('authModal');
+  modal.style.display = 'flex';
+  document.getElementById('authForm').style.display = 'block';
+  document.getElementById('authSent').style.display = 'none';
+  setTimeout(function() { document.getElementById('authEmail').focus(); }, 100);
+}
+
+function closeAuthModal() {
+  document.getElementById('authModal').style.display = 'none';
+}
+
+function sendMagicLink() {
+  var email = document.getElementById('authEmail').value.trim();
+  if (!email || !email.includes('@')) {
+    alert('Please enter a valid email address.');
+    return;
+  }
+
+  var btn = document.querySelector('#authForm button');
+  btn.textContent = 'Sending…';
+  btn.disabled = true;
+
+  fetch('/api/auth', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'send_magic_link', email: email })
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    if (data.error) {
+      alert('Error: ' + data.error);
+      btn.textContent = 'Send magic link';
+      btn.disabled = false;
+    } else {
+      document.getElementById('authEmailSent').textContent = email;
+      document.getElementById('authForm').style.display = 'none';
+      document.getElementById('authSent').style.display = 'block';
+    }
+  }).catch(function(err) {
+    alert('Something went wrong. Please try again.');
+    btn.textContent = 'Send magic link';
+    btn.disabled = false;
+  });
+}
+
+function openAccountModal() {
+  if (!_currentProfile && !_currentUser) return;
+  var modal = document.getElementById('accountModal');
+  modal.style.display = 'flex';
+  document.getElementById('accountEmail').textContent = _currentUser ? _currentUser.email : '';
+  document.getElementById('accountName').textContent = (_currentProfile && _currentProfile.name) ? _currentProfile.name : 'Your account';
+  var used = (_currentProfile && _currentProfile.readings_used) ? _currentProfile.readings_used : 0;
+  document.getElementById('accountReadings').textContent = used + ' of 3 free readings used';
+}
+
+function closeAccountModal() {
+  document.getElementById('accountModal').style.display = 'none';
+}
+
+function signOut() {
+  if (_sb) {
+    _sb.auth.signOut().then(function() {
+      closeAccountModal();
+      _currentUser = null;
+      _currentProfile = null;
+      updateAuthUI(false);
+    });
+  }
+}
+
+// Close modals on backdrop click
+document.addEventListener('click', function(e) {
+  var authModal = document.getElementById('authModal');
+  var accountModal = document.getElementById('accountModal');
+  if (e.target === authModal) closeAuthModal();
+  if (e.target === accountModal) closeAccountModal();
+});
+
+// Init on load
+document.addEventListener('DOMContentLoaded', function() {
+  initSupabase();
+});
+
+
 // 40 base descriptions (planet x angle) + 120 sign modifiers (planet x sign)
 
 
@@ -976,6 +1185,25 @@ function _buildChart(day,month,year,hour,min,name,tz){
   ltypeState={MC:true,IC:true,ASC:true,DSC:true};
   selectedFocus='Love';
   activeChart={name:name,_jd:jd,birthDate:day+' '+MONTH_NAMES[month-1]+' '+year,birthTime:pad(hour)+':'+pad(min)+' (UTC'+(tz>=0?'+':'')+tz+')',birthPlace:selectedGeo.display,geo:selectedGeo,planets:planets,aspects:aspects};
+
+  // Save profile to Supabase if signed in
+  if (_currentUser) {
+    fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'save_profile',
+        user_id: _currentUser.id,
+        email: _currentUser.email,
+        name: name,
+        birth_date: day+' '+MONTH_NAMES[month-1]+' '+year,
+        birth_time: pad(hour)+':'+pad(min),
+        birth_place: selectedGeo.display,
+        birth_lat: selectedGeo.lat,
+        birth_lng: selectedGeo.lng
+      })
+    }).catch(function(err) { console.error('Save profile error:', err); });
+  }
   document.getElementById('formScreen').style.display='none';
   document.getElementById('mapScreen').style.display='block';
   window.scrollTo(0,0);
@@ -1182,6 +1410,24 @@ function _openReading(lat,lng){
       return out;
     })()
   }));
+  // Save reading to account if signed in
+  if (_currentUser) {
+    fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'save_reading',
+        user_id: _currentUser.id,
+        city_name: cityName,
+        city_lat: lat,
+        city_lng: lng
+      })
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      if (data.success && _currentProfile) {
+        _currentProfile.readings_used = (_currentProfile.readings_used || 0) + 1;
+      }
+    }).catch(function(err) { console.error('Save reading error:', err); });
+  }
   window.open('/reading.html','_blank');
 }
 
