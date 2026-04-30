@@ -1224,6 +1224,7 @@ function _buildChart(day,month,year,hour,min,name,tz){
     .then(function(r){return r.json();})
     .then(function(data){
       acgData=data.lines;
+      acgData._parans=data.parans||[];
       // Build Chiron lines client-side since API can\'t compute them
       if(activeChart&&activeChart.planets._chironRA!=null){
         var cRA=activeChart.planets._chironRA;
@@ -1395,10 +1396,15 @@ function _openReading(lat,lng){
       lineData[p]={
         mcLon:acg[p].mcLon!=null?acg[p].mcLon:null,
         ra:acg[p].ra!=null?acg[p].ra:null,
-        dec:acg[p].dec!=null?acg[p].dec:null
+        dec:acg[p].dec!=null?acg[p].dec:null,
+        MC:acg[p].MC?acg[p].MC.slice(0,90):null,
+        IC:acg[p].IC?acg[p].IC.slice(0,90):null,
+        ASC:acg[p].ASC?acg[p].ASC.slice(0,90):null,
+        DSC:acg[p].DSC?acg[p].DSC.slice(0,90):null
       };
     }
   });
+  var parans = (acg._parans||[]);
   localStorage.setItem('elsewhere_reading',JSON.stringify({
     jd:activeChart._jd,
     birthLat:activeChart.geo.lat,
@@ -1417,7 +1423,8 @@ function _openReading(lat,lng){
         if(pd)out[p]={sign:pd.sign,deg:pd.deg,min:pd.min,totalDeg:pd.totalDeg};
       });
       return out;
-    })()
+    })(),
+    parans:parans
   }));
   // Save reading to account if signed in
   if (_currentUser) {
