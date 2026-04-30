@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>elsewhere — your report</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#1a1714;--ink-2:#2e2b28;--ink-3:#4a4540;
+  --paper:#faf8f4;--paper-2:#f2ede5;--paper-3:#e8e0d2;
+  --gold:#b8955a;--serif:'Cormorant Garamond',Georgia,serif;--sans:'Jost',sans-serif;
+}
+html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margin:0}
+
+/* ── Header ── */
+.site-header{width:100%;padding:.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;border-bottom:.5px solid var(--paper-3);background:var(--paper);position:sticky;top:0;z-index:20}
+.site-wordmark{font-family:var(--serif);font-size:1.05rem;font-weight:300;letter-spacing:.35em;text-transform:lowercase;color:var(--ink);text-decoration:none}
+.nav-btn{font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);padding:.3rem .8rem;cursor:pointer;border-radius:20px;text-decoration:none;transition:all .2s}
+.nav-btn:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ── Page ── */
+.page{max-width:680px;margin:0 auto;padding:3rem 1.5rem 5rem}
+
+/* ── Category selector ── */
+.category-screen{text-align:center}
+.cat-eyebrow{font-size:9px;font-weight:500;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem}
+.cat-title{font-family:var(--serif);font-size:clamp(1.8rem,5vw,2.8rem);font-weight:300;line-height:1.2;margin-bottom:.6rem}
+.cat-title em{font-style:italic;color:var(--gold)}
+.cat-subtitle{font-family:var(--serif);font-style:italic;font-size:.9rem;color:var(--ink-3);line-height:1.7;margin-bottom:2.5rem;max-width:460px;margin-left:auto;margin-right:auto}
+.cat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;max-width:500px;margin:0 auto 1.5rem}
+.cat-card{background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:8px;padding:1.5rem 1rem;cursor:pointer;transition:all .2s;text-align:center}
+.cat-card:hover{border-color:var(--gold);background:var(--paper)}
+.cat-card.selected{border-color:var(--gold);background:var(--gold-faint,rgba(184,149,90,.08))}
+.cat-icon{font-size:1.6rem;margin-bottom:.6rem}
+.cat-name{font-family:var(--serif);font-size:1.1rem;font-weight:300;color:var(--ink);margin-bottom:.3rem}
+.cat-desc{font-family:var(--serif);font-style:italic;font-size:.75rem;color:var(--ink-3);line-height:1.5}
+.cat-price{font-size:.7rem;font-weight:500;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-top:.5rem}
+.generate-btn{font-size:10px;font-weight:500;letter-spacing:.25em;text-transform:uppercase;color:var(--paper);background:var(--ink);border:none;padding:.9rem 2.5rem;cursor:pointer;transition:background .2s;display:inline-block;margin-top:.5rem}
+.generate-btn:hover{background:var(--gold)}
+.generate-btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* ── Loading ── */
+.loading-screen{text-align:center;padding:4rem 1.5rem;display:none}
+.loading-star{font-size:2rem;color:var(--gold);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.loading-text{font-family:var(--serif);font-style:italic;font-size:1rem;color:var(--ink-3);margin-top:1rem;line-height:1.7}
+
+/* ── Report ── */
+.report-screen{display:none}
+.report-header{text-align:center;margin-bottom:3rem;padding-bottom:2rem;border-bottom:.5px solid var(--paper-3)}
+.report-eyebrow{font-size:9px;font-weight:500;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:.6rem}
+.report-title{font-family:var(--serif);font-size:clamp(1.8rem,5vw,2.6rem);font-weight:300;line-height:1.1;margin-bottom:.5rem}
+.report-title em{font-style:italic;color:var(--gold)}
+.report-meta{font-family:var(--serif);font-style:italic;font-size:.85rem;color:var(--ink-3)}
+
+/* City markers */
+.city-markers{display:flex;justify-content:center;gap:1.5rem;margin:2rem 0;flex-wrap:wrap}
+.city-marker{text-align:center}
+.city-num{width:28px;height:28px;border-radius:50%;background:var(--gold);color:var(--paper);font-size:.7rem;font-weight:500;display:flex;align-items:center;justify-content:center;margin:0 auto .4rem}
+.city-marker-name{font-family:var(--serif);font-size:.82rem;color:var(--ink-2);max-width:120px}
+
+/* Report prose */
+.report-prose{font-family:var(--serif);font-size:1rem;line-height:1.85;color:var(--ink-2)}
+.report-prose p{margin-bottom:1.2rem}
+
+/* Section dividers */
+.city-section{margin:2.5rem 0;padding:2rem;background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:8px}
+.city-section-num{font-size:9px;font-weight:500;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:.4rem}
+.city-section-name{font-family:var(--serif);font-size:1.4rem;font-weight:300;color:var(--ink);margin-bottom:1.2rem;padding-bottom:.8rem;border-bottom:.5px solid var(--paper-3)}
+.city-section-name em{font-style:italic;color:var(--gold)}
+
+.report-intro{margin-bottom:2rem;padding:.1rem 0}
+.report-closing{margin-top:2rem;padding:1.5rem;border-top:.5px solid var(--paper-3);font-family:var(--serif);font-style:italic;font-size:.92rem;color:var(--ink-3);line-height:1.8}
+
+/* Actions */
+.report-actions{text-align:center;margin-top:2.5rem;display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+.action-btn{font-size:9px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;padding:.65rem 1.5rem;cursor:pointer;transition:all .2s;border-radius:20px;text-decoration:none;display:inline-flex;align-items:center;gap:.4rem}
+.action-btn.primary{color:var(--paper);background:var(--ink);border:.5px solid var(--ink)}
+.action-btn.primary:hover{background:var(--gold);border-color:var(--gold)}
+.action-btn.secondary{color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3)}
+.action-btn.secondary:hover{border-color:var(--gold);color:var(--gold)}
+
+/* No auth */
+.no-auth{text-align:center;padding:4rem 1.5rem}
+
+/* Footer */
+.page-footer{text-align:center;padding:1.5rem 0 1rem;border-top:.5px solid var(--paper-3);margin-top:3rem}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="/" class="site-wordmark">elsewhere</a>
+  <div style="display:flex;gap:.75rem;align-items:center">
+    <a href="/profile.html" class="nav-btn">Profile</a>
+    <a href="/?fromprofile=1" class="nav-btn">← Map</a>
+  </div>
+</header>
+
+<div class="page">
+
+  <!-- No auth state -->
+  <div class="no-auth" id="noAuthState" style="display:none">
+    <p style="font-family:var(--serif);font-style:italic;color:var(--ink-3);margin-bottom:1.5rem">You need to cast your chart first to generate a report.</p>
+    <a href="/" class="nav-btn" style="display:inline-flex">Cast your chart</a>
+  </div>
+
+  <!-- Category selector -->
+  <div class="category-screen" id="categoryScreen">
+    <p class="cat-eyebrow">Astrocartography report</p>
+    <h1 class="cat-title">Your best places for <em id="catTitleWord">—</em></h1>
+    <p class="cat-subtitle">A personalised reading of the top three cities in the world where your chart comes most alive — based on your planetary lines, parans, and relocated chart.</p>
+
+    <div class="cat-grid">
+      <div class="cat-card" onclick="selectCategory('Love')" id="cat-Love">
+        <div class="cat-icon">♀</div>
+        <div class="cat-name">Love</div>
+        <div class="cat-desc">Where your heart opens and connection flows</div>
+        <div class="cat-price">$0.99</div>
+      </div>
+      <div class="cat-card" onclick="selectCategory('Career')" id="cat-Career">
+        <div class="cat-icon">♄</div>
+        <div class="cat-name">Career</div>
+        <div class="cat-desc">Where your ambition activates and doors open</div>
+        <div class="cat-price">$0.99</div>
+      </div>
+      <div class="cat-card" onclick="selectCategory('Healing')" id="cat-Healing">
+        <div class="cat-icon">⚷</div>
+        <div class="cat-name">Healing</div>
+        <div class="cat-desc">Where your deepest restoration becomes possible</div>
+        <div class="cat-price">$0.99</div>
+      </div>
+    </div>
+
+    <button class="generate-btn" id="generateBtn" onclick="generateReport()" disabled>
+      Generate my report — $0.99
+    </button>
+    <p style="font-family:var(--serif);font-style:italic;font-size:.75rem;color:var(--ink-3);margin-top:.75rem">Payment coming soon — generating free during beta</p>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-screen" id="loadingScreen">
+    <div class="loading-star">✦</div>
+    <p class="loading-text" id="loadingText">Reading your planetary lines…</p>
+  </div>
+
+  <!-- Report -->
+  <div class="report-screen" id="reportScreen">
+    <div class="report-header">
+      <p class="report-eyebrow" id="reportEyebrow">Your love report</p>
+      <h1 class="report-title">Best places for <em id="reportCatTitle">—</em></h1>
+      <p class="report-meta" id="reportMeta">—</p>
+    </div>
+
+    <div class="city-markers" id="cityMarkers"></div>
+
+    <div id="reportContent"></div>
+
+    <div class="report-actions">
+      <button class="action-btn secondary" onclick="showCategoryScreen()">← Generate another</button>
+      <a href="/?fromprofile=1" class="action-btn primary">Back to map</a>
+    </div>
+
+    <div class="page-footer">
+      <a href="mailto:elsewhereastro@gmail.com" style="font-family:var(--serif);font-size:.78rem;color:var(--ink-3);text-decoration:none;border-bottom:1px solid var(--paper-3)">share feedback</a>
+      <span style="color:var(--paper-3);margin:0 .8rem">·</span>
+      <span style="font-family:var(--serif);font-size:.78rem;color:var(--ink-3)">© 2025 elsewhere</span>
+    </div>
+  </div>
+
+</div>
+
+<script src="/descriptions.js?v=5"></script>
+<script src="/js/app.js?v=2"></script>
+<script>
+var SUPABASE_URL = 'https://wdulylmxhvlxhjfmfivu.supabase.co';
+var SUPABASE_KEY = 'sb_publishable_pBoHzlLsZiLAr7EYF824DA_R6pw5sdR';
+var _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+var _selectedCategory = null;
+var _chartData = null;
+var _userId = null;
+
+// ── Load chart data ───────────────────────────────────────────
+async function initReport() {
+  // Check auth
+  var { data: sessionData } = await _sb.auth.getSession();
+  if (sessionData && sessionData.session) {
+    _userId = sessionData.session.user.id;
+  }
+
+  // Get chart data from localStorage
+  var raw = localStorage.getItem('elsewhere_reading');
+  if (!raw) {
+    // Try to get from profile
+    var profile = localStorage.getItem('elsewhere_profile');
+    if (!profile) {
+      document.getElementById('noAuthState').style.display = 'block';
+      document.getElementById('categoryScreen').style.display = 'none';
+      return;
+    }
+  }
+
+  // Chart data should be in elsewhere_reading from last dive deeper
+  if (raw) {
+    try {
+      var data = JSON.parse(raw);
+      _chartData = data;
+
+      // Update title word based on URL param
+      var urlParams = new URLSearchParams(window.location.search);
+      var cat = urlParams.get('category');
+      if (cat && ['Love', 'Career', 'Healing'].includes(cat)) {
+        selectCategory(cat);
+      } else {
+        updateTitleWord('love');
+      }
+    } catch(e) {
+      document.getElementById('noAuthState').style.display = 'block';
+      document.getElementById('categoryScreen').style.display = 'none';
+    }
+  }
+}
+
+function updateTitleWord(word) {
+  document.getElementById('catTitleWord').textContent = word;
+}
+
+function selectCategory(cat) {
+  _selectedCategory = cat;
+
+  // Update cards
+  ['Love', 'Career', 'Healing'].forEach(function(c) {
+    document.getElementById('cat-' + c).classList.toggle('selected', c === cat);
+  });
+
+  // Update title
+  updateTitleWord(cat.toLowerCase());
+
+  // Enable button
+  var btn = document.getElementById('generateBtn');
+  btn.disabled = false;
+}
+
+// ── Generate report ───────────────────────────────────────────
+async function generateReport() {
+  if (!_selectedCategory || !_chartData) return;
+
+  // Show loading
+  document.getElementById('categoryScreen').style.display = 'none';
+  document.getElementById('loadingScreen').style.display = 'block';
+
+  var loadingMessages = [
+    'Reading your planetary lines…',
+    'Calculating parans and intersections…',
+    'Computing relocated charts…',
+    'Writing your personalised reading…'
+  ];
+  var msgEl = document.getElementById('loadingText');
+  var msgIdx = 0;
+  var msgInterval = setInterval(function() {
+    msgIdx = (msgIdx + 1) % loadingMessages.length;
+    msgEl.textContent = loadingMessages[msgIdx];
+  }, 2500);
+
+  try {
+    var response = await fetch('/api/report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        category: _selectedCategory,
+        chartData: {
+          jd: _chartData.jd,
+          birthLat: _chartData.birthLat,
+          birthLng: _chartData.birthLng,
+          birthPlace: _chartData.birthPlace,
+          birthDate: _chartData.birthDate,
+          birthTime: _chartData.birthTime || '',
+          name: _chartData.name || 'You',
+          planets: _chartData.planets || {},
+          aspects: _chartData.aspects || [],
+          acgLines: _chartData.lineData || {}
+        },
+        userId: _userId
+      })
+    });
+
+    clearInterval(msgInterval);
+    var data = await response.json();
+
+    if (data.error) {
+      alert('Error generating report: ' + data.error);
+      showCategoryScreen();
+      return;
+    }
+
+    renderReport(data);
+
+  } catch(err) {
+    clearInterval(msgInterval);
+    console.error('Report error:', err);
+    alert('Something went wrong. Please try again.');
+    showCategoryScreen();
+  }
+}
+
+// ── Render report ─────────────────────────────────────────────
+function renderReport(data) {
+  var report = data.report;
+  var cities = data.cities || [];
+
+  // Update header
+  document.getElementById('reportEyebrow').textContent = 'Your ' + _selectedCategory.toLowerCase() + ' report';
+  document.getElementById('reportCatTitle').textContent = _selectedCategory.toLowerCase();
+  document.getElementById('reportMeta').textContent =
+    (_chartData.name || 'You') + ' · ' + (_chartData.birthPlace || '') +
+    (data.paransFound ? ' · ' + data.paransFound + ' parans found' : '');
+
+  // City markers
+  var markersEl = document.getElementById('cityMarkers');
+  markersEl.innerHTML = cities.map(function(city, i) {
+    return '<div class="city-marker">'
+      + '<div class="city-num">' + (i + 1) + '</div>'
+      + '<div class="city-marker-name">' + city + '</div>'
+      + '</div>';
+  }).join('');
+
+  // Parse and render report sections
+  var content = document.getElementById('reportContent');
+  content.innerHTML = parseReport(report, cities);
+
+  // Hide loading, show report
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('reportScreen').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+
+// ── Parse report text into HTML sections ─────────────────────
+function parseReport(text, cities) {
+  // Split by city sections
+  var parts = text.split(/---([^-]+)---/);
+  var html = '';
+
+  for (var i = 0; i < parts.length; i++) {
+    var part = parts[i].trim();
+    if (!part) continue;
+
+    if (part === 'INTRO') {
+      var content = (parts[i + 1] || '').trim();
+      html += '<div class="report-intro">'
+        + '<div class="report-prose">' + formatProse(content) + '</div>'
+        + '</div>';
+      i++;
+    } else if (part.startsWith('CITY 1:') || part.startsWith('CITY 2:') || part.startsWith('CITY 3:')) {
+      var num = parseInt(part.charAt(5));
+      var cityName = part.replace(/CITY \d+: /, '');
+      var content = (parts[i + 1] || '').trim();
+      html += '<div class="city-section">'
+        + '<div class="city-section-num">City ' + num + '</div>'
+        + '<div class="city-section-name"><em>' + cityName + '</em></div>'
+        + '<div class="report-prose">' + formatProse(content) + '</div>'
+        + '</div>';
+      i++;
+    } else if (part === 'CLOSING') {
+      var content = (parts[i + 1] || '').trim();
+      html += '<div class="report-closing">' + formatProse(content) + '</div>';
+      i++;
+    } else if (part && !part.match(/^(INTRO|CLOSING|CITY \d+:)/)) {
+      // Untagged content — treat as prose
+      html += '<div class="report-prose">' + formatProse(part) + '</div>';
+    }
+  }
+
+  return html;
+}
+
+function formatProse(text) {
+  if (!text) return '';
+  return text.split('\n\n')
+    .filter(function(p) { return p.trim(); })
+    .map(function(p) { return '<p>' + p.trim() + '</p>'; })
+    .join('');
+}
+
+function showCategoryScreen() {
+  document.getElementById('reportScreen').style.display = 'none';
+  document.getElementById('categoryScreen').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+
+// ── Boot ─────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', initReport);
+</script>
+</body>
+</html>
