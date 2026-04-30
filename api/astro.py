@@ -37,6 +37,118 @@ def make_lines(ra,dec,G):
         asc.append([lat,n180(ra-H-G)]); dsc.append([lat,n180(ra+H-G)])
     return {'MC':mc,'IC':ic,'ASC':asc,'DSC':dsc,'mcLon':mc_lon,'ra':ra,'dec':dec}
 
+def calc_parans(planet_data, jd):
+    """
+    Calculate parans for all planet pairs.
+    
+    A paran occurs when two planets are simultaneously on angles
+    at the same Local Sidereal Time for a given latitude.
+    
+    For each latitude band (-89 to 89), we check:
+    - When planet A crosses MC/IC: LST = RA_A (MC) or RA_A + 180 (IC)
+    - When planet A crosses ASC/DSC: depends on RA, Dec, and latitude
+    - Same for planet B
+    - If any pair of crossing times match (same LST), that's a paran
+    
+    Returns list of parans: {planet1, planet2, line1, line2, latitude, longitude}
+    """
+    G = gmst(jd)
+    parans = []
+    planet_names = list(planet_data.keys())
+    
+    # For each latitude, calculate the LST at which each planet crosses each angle
+    # MC crossing: LST = RA (planet culminates when LST = RA)
+    # IC crossing: LST = RA + 180
+    # ASC crossing: LST = RA - H where H = hour angle at rising
+    # DSC crossing: LST = RA + H where H = hour angle at setting
+    
+    for lat in range(-78, 79, 2):  # Check every 2 degrees latitude for performance
+        lat_r = R(lat)
+        
+        # Calculate LST values for each planet on each angle at this latitude
+        planet_lsts = {}
+        
+        for name, data in planet_data.items():
+            ra = data['ra']
+            dec = data['dec']
+            dec_r = R(dec)
+            
+            lsts = {}
+            
+            # MC: LST = RA
+            lsts['MC'] = n360(ra)
+            
+            # IC: LST = RA + 180
+            lsts['IC'] = n360(ra + 180)
+            
+            # ASC/DSC: need to find hour angle
+            cos_H = -math.tan(lat_r) * math.tan(dec_r)
+            if abs(cos_H) <= 1.0:
+                H = math.acos(max(-1, min(1, cos_H))) * 180 / math.pi
+                # ASC: LST = RA - H (planet rises)
+                lsts['ASC'] = n360(ra - H)
+                # DSC: LST = RA + H (planet sets)
+                lsts['DSC'] = n360(ra + H)
+            
+            planet_lsts[name] = lsts
+        
+        # Now check all planet pairs for matching LST values at this latitude
+        for i in range(len(planet_names)):
+            for j in range(i + 1, len(planet_names)):
+                p1 = planet_names[i]
+                p2 = planet_names[j]
+                
+                lsts1 = planet_lsts.get(p1, {})
+                lsts2 = planet_lsts.get(p2, {})
+                
+                if not lsts1 or not lsts2:
+                    continue
+                
+                # Check every combination of angle types
+                for lt1, lst1 in lsts1.items():
+                    for lt2, lst2 in lsts2.items():
+                        # Calculate angular difference between LST values
+                        diff = abs(lst1 - lst2)
+                        if diff > 180:
+                            diff = 360 - diff
+                        
+                        # Within 1 degree = paran (tight orb for accuracy)
+                        if diff <= 1.0:
+                            # Calculate approximate longitude for this paran
+                            # The longitude where this paran is exact
+                            # LST = GMST + longitude, so longitude = LST - GMST
+                            avg_lst = (lst1 + lst2) / 2
+                            paran_lng = n180(avg_lst - G)
+                            
+                            parans.append({
+                                'planet1': p1,
+                                'planet2': p2,
+                                'line1': lt1,
+                                'line2': lt2,
+                                'latitude': lat,
+                                'longitude': paran_lng,
+                                'orb': round(diff, 2)
+                            })
+    
+    # Deduplicate: remove parans too close to existing ones
+    deduped = []
+    for p in parans:
+        # Check if similar paran already exists within 4 degrees latitude
+        is_dup = any(
+            d['planet1'] == p['planet1'] and 
+            d['planet2'] == p['planet2'] and
+            d['line1'] == p['line1'] and
+            d['line2'] == p['line2'] and
+            abs(d['latitude'] - p['latitude']) <= 4
+            for d in deduped
+        )
+        if not is_dup:
+            deduped.append(p)
+    
+    return deduped
+
+
+
 def build_acg_swe(jd):
     G=gmst(jd)
     PLANETS={'Sun':swe.SUN,'Moon':swe.MOON,'Mercury':swe.MERCURY,
@@ -67,7 +179,11 @@ def build_acg_swe(jd):
             'DSC': [[pt[0], n180(pt[1]+180)] for pt in nn['DSC']],
             'mcLon': n180(nn['mcLon']+180), 'ra': nn['ra'], 'dec': nn['dec']
         }
-    return lines
+    # Calculate parans
+    planet_ra_dec = {name: {'ra': data['ra'], 'dec': data['dec']} 
+                     for name, data in lines.items() if 'ra' in data}
+    parans = calc_parans(planet_ra_dec, jd)
+    return lines, parans
 
 S=1e-8
 def vs(t,tau): return sum(v[0]*math.cos(v[1]+v[2]*tau) for v in t)
@@ -163,7 +279,11 @@ def build_acg_vsop87(jd):
     lines={}
     for name,lon in lons.items():
         ra,dec=lon_to_ra_dec(lon); lines[name]=make_lines(ra,dec,G)
-    return lines
+    # Calculate parans
+    planet_ra_dec = {name: {'ra': data['ra'], 'dec': data['dec']} 
+                     for name, data in lines.items() if 'ra' in data}
+    parans = calc_parans(planet_ra_dec, jd)
+    return lines, parans
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -177,10 +297,10 @@ class handler(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps({'error':'jd required'}).encode()); return
             jd=float(params['jd'][0])
             if HAS_SWE:
-                lines=build_acg_swe(jd); source='swisseph'
+                lines,parans=build_acg_swe(jd); source='swisseph'
             else:
-                lines=build_acg_vsop87(jd); source='vsop87'
-            self.wfile.write(json.dumps({'lines':lines,'source':source}).encode())
+                lines,parans=build_acg_vsop87(jd); source='vsop87'
+            self.wfile.write(json.dumps({'lines':lines,'parans':parans,'source':source}).encode())
         except Exception as ex:
             self.wfile.write(json.dumps({'error':str(ex),'tb':traceback.format_exc(),'has_swe':HAS_SWE}).encode())
     def log_message(self,format,*args): pass
