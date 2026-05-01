@@ -1224,6 +1224,7 @@ function _buildChart(day,month,year,hour,min,name,tz){
     .then(function(r){return r.json();})
     .then(function(data){
       acgData=data.lines;
+      acgData._parans=data.parans||[];
       // Build Chiron lines client-side since API can\'t compute them
       if(activeChart&&activeChart.planets._chironRA!=null){
         var cRA=activeChart.planets._chironRA;
@@ -1395,10 +1396,15 @@ function _openReading(lat,lng){
       lineData[p]={
         mcLon:acg[p].mcLon!=null?acg[p].mcLon:null,
         ra:acg[p].ra!=null?acg[p].ra:null,
-        dec:acg[p].dec!=null?acg[p].dec:null
+        dec:acg[p].dec!=null?acg[p].dec:null,
+        MC:acg[p].MC?acg[p].MC.slice(0,90):null,
+        IC:acg[p].IC?acg[p].IC.slice(0,90):null,
+        ASC:acg[p].ASC?acg[p].ASC.slice(0,90):null,
+        DSC:acg[p].DSC?acg[p].DSC.slice(0,90):null
       };
     }
   });
+  var parans = (acg._parans||[]);
   localStorage.setItem('elsewhere_reading',JSON.stringify({
     jd:activeChart._jd,
     birthLat:activeChart.geo.lat,
@@ -1417,7 +1423,8 @@ function _openReading(lat,lng){
         if(pd)out[p]={sign:pd.sign,deg:pd.deg,min:pd.min,totalDeg:pd.totalDeg};
       });
       return out;
-    })()
+    })(),
+    parans:parans
   }));
   // Save reading to account if signed in
   if (_currentUser) {
@@ -1436,369 +1443,6 @@ function _openReading(lat,lng){
     });
   }
   window.open('/reading.html','_blank');
-}
-
-
-// ═══════════════════════════════════════════════════════════
-// ASPECT DESCRIPTIONS
-// ═══════════════════════════════════════════════════════════
-var ASPECT_DESCS = {
-  'Sun-Moon': {
-    conjunction: 'Your sense of self and your emotional needs are deeply aligned. You lead with your whole self — there's little internal conflict between what you want and what you feel.',
-    opposition: 'Your identity and emotional needs pull in opposite directions. You may feel torn between what you want and what you need, or project one side onto others.',
-    trine: 'Your will and emotions flow together naturally. Confidence and feeling are in harmony — you tend to know what you want and trust it.',
-    square: 'There's internal tension between your ego and your emotional needs. Growth comes through learning to honour both without sacrificing one for the other.',
-    sextile: 'Your conscious self and emotional world work well together, creating a quiet inner coherence that others often find reassuring.'
-  },
-  'Sun-Mercury': {
-    conjunction: 'Your identity and mind are fused — you think and speak as yourself completely. You're articulate and self-expressive, though sometimes too close to your own ideas to see them objectively.',
-    opposition: 'Not possible — Mercury is never far enough from the Sun for an opposition.',
-    trine: 'Your thinking and self-expression are naturally aligned. Communication feels effortless and authentic.',
-    square: 'Not possible within Mercury's orbit.',
-    sextile: 'Your mind and identity work together smoothly, making communication and self-expression feel natural.'
-  },
-  'Sun-Venus': {
-    conjunction: 'You radiate warmth, charm, and an appreciation for beauty. Love and identity are intertwined — you need creative and relational expression to feel fully yourself.',
-    opposition: 'Not possible — Venus is never far enough from the Sun.',
-    trine: 'Grace and self-confidence come naturally. You have a genuine gift for connection and making others feel valued.',
-    square: 'Not possible within Venus's orbit.',
-    sextile: 'Charm and warmth come naturally to you, and you find it easy to connect with others in ways that feel genuine.'
-  },
-  'Sun-Mars': {
-    conjunction: 'You are energetic, driven, and direct. You lead with confidence and action — sometimes to the point of impatience. Your will and drive are completely fused.',
-    opposition: 'Energy and will can work at cross-purposes. You may attract confrontation or project your drive onto others. Learning to channel this tension is the work.',
-    trine: 'Your ambition and action flow together. You pursue what you want with confidence and rarely second-guess yourself.',
-    square: 'Drive and ego are in constant friction. This creates real motivation but also conflict — you push hard and sometimes push too hard.',
-    sextile: 'Confidence and drive support each other. You act decisively when it counts and rarely waste energy on internal conflict.'
-  },
-  'Sun-Jupiter': {
-    conjunction: 'Optimism and expansion are central to who you are. You tend toward generosity, confidence, and a belief that things will work out — and they often do.',
-    opposition: 'The pull between self-expression and expansion can lead to overreach or overdoing. Learning restraint without losing your natural enthusiasm is the challenge.',
-    trine: 'Luck, confidence, and opportunity flow naturally through your life. You have a gift for being in the right place at the right time.',
-    square: 'Growth and ambition can overextend you. The energy here is real but benefits from focus and realistic assessment of what's possible.',
-    sextile: 'Optimism and opportunity show up at useful moments. You have a genuine ability to grow through connection and openness.'
-  },
-  'Sun-Saturn': {
-    conjunction: 'Discipline and responsibility are core to your identity. You take life seriously and build things that last — though you can be hard on yourself in the process.',
-    opposition: 'Authority and self-expression may feel in conflict. You may struggle with self-doubt or project high standards onto others.',
-    trine: 'Ambition and discipline work together without friction. You build things that last and earn recognition through genuine sustained effort.',
-    square: 'Self-expression and structure are in tension. The friction here is real but produces resilience — what you build through this aspect endures.',
-    sextile: 'Discipline and identity work well together. You have the capacity to build something real without losing yourself in the process.'
-  },
-  'Sun-Uranus': {
-    conjunction: 'You are original, unconventional, and drawn to freedom. Your identity is built around being different — and that distinctiveness is a genuine gift.',
-    opposition: 'The tension between individual expression and freedom can be disruptive. You may rebel against yourself as much as others.',
-    trine: 'Originality and self-expression flow freely. You innovate naturally and your uniqueness tends to be recognised and valued.',
-    square: 'Freedom and identity clash. This can produce brilliance and disruption in equal measure — the challenge is directing the energy rather than being scattered by it.',
-    sextile: 'Your originality expresses itself in ways that feel natural and useful. You have a gift for seeing things differently without alienating people.'
-  },
-  'Sun-Neptune': {
-    conjunction: 'Your identity has a spiritual or creative dimension that's hard to define but impossible to ignore. You feel things deeply and are drawn to what transcends the ordinary.',
-    opposition: 'The boundary between self and other can be blurry. Illusions about your identity or others can arise — clarity requires effort but is deeply rewarding.',
-    trine: 'Inspiration and creative imagination flow into your sense of self naturally. You have a genuine connection to the spiritual and artistic dimensions of life.',
-    square: 'Identity and idealism are in tension. You may struggle to see yourself or your circumstances clearly — but what you create through this fog tends to carry real depth.',
-    sextile: 'Intuition and imagination enrich your sense of self quietly and consistently. You sense things others miss.'
-  },
-  'Sun-Pluto': {
-    conjunction: 'Power, depth, and transformation are central to who you are. You have real intensity and a capacity for reinvention that others rarely match.',
-    opposition: 'Power dynamics and transformation can feel like they're happening to you rather than through you. Learning to own your depth without being consumed by it is the work.',
-    trine: 'Depth and personal power express themselves through you naturally. You transform through experience without being destroyed by it.',
-    square: 'The tension between ego and power is real and ongoing. Profound transformation is available here — so is the temptation to control rather than evolve.',
-    sextile: 'Depth and intensity show up in your life at useful moments, supporting genuine growth without overwhelming you.'
-  },
-  'Moon-Mercury': {
-    conjunction: 'Your emotions and thoughts are tightly linked — you process feelings through words and your intellect is emotionally intuitive.',
-    opposition: 'Head and heart pull apart. Logic and feeling seem to contradict each other, requiring ongoing integration.',
-    trine: 'Your emotional intelligence and mental clarity work beautifully together. You communicate feelings naturally and think with empathy.',
-    square: 'Emotions and thinking create friction. Feelings interfere with clear thought and vice versa — but the tension produces real depth when integrated.',
-    sextile: 'Your emotional intelligence and communication ability support each other naturally.'
-  },
-  'Moon-Venus': {
-    conjunction: 'Love, beauty, and emotional security are deeply intertwined. You express care through warmth and aesthetic sensitivity.',
-    opposition: 'Emotional needs and relational desires can feel at odds. You may seek connection while also needing space.',
-    trine: 'Love and emotional wellbeing flow together easily. You have a natural capacity for nurturing relationships.',
-    square: 'Your need for comfort and your desire for love are in tension — emotional security and relationships both require conscious attention.',
-    sextile: 'Warmth and emotional intelligence make you genuinely easy to love and love well.'
-  },
-  'Moon-Mars': {
-    conjunction: 'Emotions and drives are fused — you feel and act simultaneously, with real intensity. Anger and passion are close to the surface.',
-    opposition: 'Emotional needs and active drives can conflict. You may feel pulled between sensitivity and assertiveness.',
-    trine: 'Emotional energy and action flow together. You act on your feelings decisively and trust your gut.',
-    square: 'Feelings and impulses create friction. Emotional reactions can be sudden and intense — learning to pause before acting is the ongoing practice.',
-    sextile: 'Your emotional energy and drive support each other, giving you motivation that's genuinely felt rather than just willed.'
-  },
-  'Moon-Jupiter': {
-    conjunction: 'Emotional generosity and optimism are natural to you. You have a genuine faith in people and a capacity for joy that sustains you.',
-    opposition: 'Emotional needs and expansive desires can pull in different directions. Finding the middle ground between security and growth is the work.',
-    trine: 'Emotional abundance and growth come naturally. You tend to feel supported by life and that faith tends to be rewarded.',
-    square: 'The tension between emotional security and expansion is real. You need both safety and growth — learning to honour both without sacrificing one is the work.',
-    sextile: 'Emotional warmth and optimism show up naturally in your relationships, making you someone people feel genuinely good around.'
-  },
-  'Moon-Saturn': {
-    conjunction: 'Emotional life is shaped by discipline, responsibility, and sometimes difficulty. Deep feelings coexist with restraint — and what you build emotionally lasts.',
-    opposition: 'Emotional needs and structures can feel at odds. Security and freedom from restriction both matter — finding balance is ongoing work.',
-    trine: 'Emotional maturity and structure work together quietly. You handle feeling with patience and build emotional foundations that endure.',
-    square: 'Emotional needs and structure create real friction. The inner life can feel constrained — but the depth of feeling available through this aspect is genuine.',
-    sextile: 'Emotional steadiness and responsibility show up in your relationships in ways that make you genuinely reliable.'
-  },
-  'Moon-Uranus': {
-    conjunction: 'Your emotional life is unpredictable and original. You need freedom to feel and resist emotional routine — which can be both liberating and unsettling.',
-    opposition: 'The need for emotional security and the need for freedom pull against each other constantly.',
-    trine: 'Emotional freedom and originality flow naturally. You feel most at home when your inner world has room to be unconventional.',
-    square: 'Security and freedom are in tension emotionally. Sudden shifts in feeling and disruption to domestic life are recurring themes.',
-    sextile: 'Emotional originality shows up in useful ways — you feel things freshly and aren't trapped by old emotional patterns.'
-  },
-  'Moon-Neptune': {
-    conjunction: 'Your emotional world is deeply sensitive, imaginative, and porous. The boundary between your feelings and others' can be thin — both a gift and a vulnerability.',
-    opposition: 'Emotional reality and idealism can blur. You may romanticise relationships or struggle to see emotional situations clearly.',
-    trine: 'Emotional intuition and imagination flow together beautifully. You sense the undercurrents of situations and people with unusual accuracy.',
-    square: 'Emotional clarity and idealism are in tension. Confusion, illusion, and deep compassion can all arise from this aspect.',
-    sextile: 'Emotional sensitivity and intuition support each other quietly — you pick up on things others miss.'
-  },
-  'Moon-Pluto': {
-    conjunction: 'Your emotional life is intense, deep, and transformative. Feelings run at a depth most people never reach — and this has shaped you fundamentally.',
-    opposition: 'Emotional intensity and power dynamics are themes. Relationships can become sites of profound transformation — or control.',
-    trine: 'Emotional depth and transformative capacity work together. You process difficult feelings completely and emerge stronger.',
-    square: 'Emotional intensity and power create ongoing friction. The inner life can be overwhelming — but the depth of emotional truth available here is extraordinary.',
-    sextile: 'Emotional depth shows up at useful moments, giving you genuine insight into yourself and others.'
-  },
-  'Mercury-Venus': {
-    conjunction: 'Your communication is naturally charming and aesthetically sensitive. You express beauty through words and connect easily through conversation.',
-    opposition: 'Not possible within Mercury and Venus's orbits.',
-    trine: 'Charm and communication flow together. You express yourself gracefully and find it easy to connect through words.',
-    square: 'Not possible within these orbits.',
-    sextile: 'Communication and social grace work naturally together, making you easy to talk to and pleasant to be around.'
-  },
-  'Mercury-Mars': {
-    conjunction: 'Your mind and drive are fused — you think fast, speak directly, and can be forceful in communication.',
-    opposition: 'Thought and action can work at cross-purposes. Debate and argument may be recurring themes.',
-    trine: 'Thinking and action flow together. You communicate decisively and act on your ideas without second-guessing.',
-    square: 'The mind and drive create friction. You can be sharp-tongued under pressure — the challenge is directing the energy rather than scattering it.',
-    sextile: 'Clear thinking and decisive action support each other, helping you communicate with confidence when it counts.'
-  },
-  'Mercury-Jupiter': {
-    conjunction: 'Your thinking is expansive, philosophical, and optimistic. You see the big picture and communicate it with enthusiasm.',
-    opposition: 'Big-picture thinking and attention to detail can feel at odds. Overstatement and missing the particulars are recurring risks.',
-    trine: 'Breadth of vision and communication flow together. You think generously and express ideas in ways that inspire others.',
-    square: 'Expansive thinking and practical communication create tension. You have big ideas but translating them into clear, grounded expression is the challenge.',
-    sextile: 'Broad thinking and good communication support each other. You have the gift of making complex ideas accessible.'
-  },
-  'Mercury-Saturn': {
-    conjunction: 'Your thinking is structured, serious, and precise. You communicate with care and authority — sometimes to the point of rigidity.',
-    opposition: 'Structured thinking and spontaneous expression can feel at odds.',
-    trine: 'Disciplined thinking and clear communication work together. You think carefully and say what you mean.',
-    square: 'Mental structure and free expression create friction. Your thinking can be inhibited by self-criticism or too much caution.',
-    sextile: 'Careful thinking and measured communication show up usefully — you tend to say things that hold up over time.'
-  },
-  'Mercury-Uranus': {
-    conjunction: 'Your mind is electric, original, and sometimes ahead of its time. Ideas arrive suddenly and connections form in unexpected ways.',
-    opposition: 'Conventional thinking and radical ideas pull against each other.',
-    trine: 'Original thinking and communication flow freely. You innovate naturally and have a gift for expressing unconventional ideas.',
-    square: 'Mental originality and conventional expression create friction. Brilliance and disruption can alternate — the challenge is focus.',
-    sextile: 'Original thinking shows up at useful moments without alienating people.'
-  },
-  'Mercury-Neptune': {
-    conjunction: 'Your thinking is intuitive, imaginative, and impressionistic. You think in images and feelings rather than logic — a genuine gift for creative work.',
-    opposition: 'Clear thinking and imaginative idealism can blur. Confusion and inspiration exist in close proximity.',
-    trine: 'Intuition and communication flow together. You express complex, subtle things in ways that genuinely land.',
-    square: 'Clear thinking and imagination create friction. The mind can be clouded by idealism or intuition — but what you produce when the two work together has real depth.',
-    sextile: 'Intuitive thinking shows up at useful moments, enriching your communication with subtlety.'
-  },
-  'Mercury-Pluto': {
-    conjunction: 'Your mind is penetrating, obsessive, and drawn to depth. You think below the surface and communicate with precision and force.',
-    opposition: 'The drive to go deep and the need to communicate clearly can conflict.',
-    trine: 'Depth of thinking and communication flow together. You express powerful ideas and people feel the weight of your words.',
-    square: 'Mental intensity and power create friction. Obsessive thinking is a risk — but so is genuine transformation through the mind.',
-    sextile: 'Depth of understanding shows up when it matters, giving your communication real substance.'
-  },
-  'Venus-Mars': {
-    conjunction: 'Love and desire are fused — you pursue what you want with passion and your romantic and physical drives are strongly aligned.',
-    opposition: 'Love and desire can work at cross-purposes. You may want intimacy and independence simultaneously.',
-    trine: 'Love and desire flow together harmoniously. Relationships tend to be passionate and creatively alive.',
-    square: 'Affection and desire create friction. The tension here can produce real chemistry — and real conflict.',
-    sextile: 'Love and desire support each other in ways that make relationships feel both warm and alive.'
-  },
-  'Venus-Jupiter': {
-    conjunction: 'Love and abundance are naturally linked for you. You attract good things and give generously in return.',
-    opposition: 'Love and expansion can overreach. The risk is too much of a good thing — overindulgence or idealising relationships.',
-    trine: 'Luck in love and relationships flows naturally. You attract good things and know how to appreciate them.',
-    square: 'Love and expansion are in tension. Relationships can be enriching but also excessive — too much, too fast.',
-    sextile: 'Love and abundance support each other quietly — relationships tend to bring genuine growth.'
-  },
-  'Venus-Saturn': {
-    conjunction: 'Love and commitment are deeply serious matters to you. You don't love lightly — and what you build in relationships tends to last.',
-    opposition: 'Love and structure can feel at odds. The desire for connection and the need for control or restriction may create distance.',
-    trine: 'Love and commitment work together. You build enduring relationships with patience and genuine care.',
-    square: 'Love and structure create friction. Relationships ask something difficult of you — but what endures through this is real.',
-    sextile: 'Reliability and warmth show up together in how you love — people feel genuinely safe with you.'
-  },
-  'Venus-Uranus': {
-    conjunction: 'Love is unconventional, exciting, and sometimes unstable for you. You need freedom within relationship and are drawn to what feels electric.',
-    opposition: 'The need for love and the need for freedom can pull in opposite directions.',
-    trine: 'Love and freedom flow together. You attract unusual connections and enjoy relationships that give you room to breathe.',
-    square: 'Love and freedom are in tension. Relationships can be exciting and disruptive in equal measure.',
-    sextile: 'Originality in love shows up in ways that keep relationships fresh without destabilising them.'
-  },
-  'Venus-Neptune': {
-    conjunction: 'Love is transcendent, romantic, and idealistic for you. The beauty you seek in relationships is real — and so is the risk of seeing what you want rather than what's there.',
-    opposition: 'Love and idealism can blur. You may romanticise partners or situations to your own cost.',
-    trine: 'Romantic imagination and love flow together beautifully. You have a genuine capacity for soul-level connection.',
-    square: 'Love and idealism create confusion. The desire for transcendent connection is real — so is the risk of illusion.',
-    sextile: 'Romantic sensitivity shows up in love in ways that deepen connection without losing touch with reality.'
-  },
-  'Venus-Pluto': {
-    conjunction: 'Love is intense, transformative, and all-consuming for you. Relationships change you fundamentally — there's no such thing as casual love here.',
-    opposition: 'Power and love are deeply linked. Relationships can be transformative — and complicated by control or obsession.',
-    trine: 'Depth and love work together. You attract and sustain intense relationships that genuinely transform both people.',
-    square: 'Love and power create friction. Relationships are sites of real transformation — and real struggle.',
-    sextile: 'Depth in love shows up at the right moments, giving your relationships genuine substance beneath the surface.'
-  },
-  'Mars-Jupiter': {
-    conjunction: 'Drive and expansion are fused — you pursue goals with optimism and confidence, sometimes overextending yourself.',
-    opposition: 'Action and expansion can work at cross-purposes. Ambition can become scattered or excessive.',
-    trine: 'Drive and opportunity flow together. You act at the right moments and your efforts tend to be well-timed.',
-    square: 'Drive and ambition create friction. You want more than your current resources allow — the tension produces real motivation but also overreach.',
-    sextile: 'Drive and opportunity support each other. You tend to act decisively when doors open.'
-  },
-  'Mars-Saturn': {
-    conjunction: 'Drive and discipline are deeply linked. You work hard and build lasting things — but can be frustrated by your own high standards.',
-    opposition: 'Action and structure can feel at odds. Drive may be blocked by structure, or structure overwhelmed by drive.',
-    trine: 'Discipline and action work together. You work hard, build carefully, and tend to finish what you start.',
-    square: 'Drive and structure create ongoing friction. Progress can feel blocked — but what you build through this aspect endures.',
-    sextile: 'Disciplined action shows up when it matters, helping you build things that last.'
-  },
-  'Mars-Uranus': {
-    conjunction: 'Your drive is electric, original, and sometimes explosive. You act suddenly and unconventionally, breaking patterns wherever you go.',
-    opposition: 'Freedom and drive can work at cross-purposes. Sudden disruptions to your plans are a recurring theme.',
-    trine: 'Original action and drive flow together. You innovate boldly and act on instinct in ways that tend to work.',
-    square: 'Drive and freedom create friction. Sudden energy, disruption, and the urge to break free from constraint can all arise together.',
-    sextile: 'Originality in action shows up usefully — you act decisively in unconventional situations.'
-  },
-  'Mars-Neptune': {
-    conjunction: 'Drive and inspiration are fused. You act on intuition and are drawn to work that feels meaningful — though direction can be elusive.',
-    opposition: 'Action and idealism can blur. You may chase inspiration without direction, or lose energy to confusion.',
-    trine: 'Drive and inspiration flow together. You act on vision and your efforts tend to carry genuine meaning.',
-    square: 'Drive and idealism create friction. You may struggle to act on your dreams or to dream practically enough.',
-    sextile: 'Intuitive action shows up at useful moments, helping you move in the right direction even when the path isn't clear.'
-  },
-  'Mars-Pluto': {
-    conjunction: 'Your drive is intense, focused, and transformative. When you want something you pursue it completely — and your determination can be formidable.',
-    opposition: 'Drive and power can work at cross-purposes. Power struggles and intensity are recurring themes.',
-    trine: 'Power and drive work together. You pursue what you want with focus and emerge from difficulty stronger.',
-    square: 'Drive and power create ongoing friction. Intensity, control, and transformation are all in play — the challenge is directing the energy rather than being overwhelmed by it.',
-    sextile: 'Power and drive show up together when it matters, giving you real depth of focus in pursuit of what you want.'
-  },
-  'Jupiter-Saturn': {
-    conjunction: 'Expansion and structure are fused — you grow deliberately and build things that genuinely last. You understand both freedom and discipline.',
-    opposition: 'Growth and structure pull in opposite directions. The tension between freedom and responsibility is a recurring life theme.',
-    trine: 'Expansion and discipline work together. You grow steadily and build on solid foundations.',
-    square: 'Growth and structure create friction. The desire to expand bumps against the need for stability — but what you build through this tension tends to be significant.',
-    sextile: 'Growth and structure support each other in ways that allow you to build something real without overextending.'
-  },
-  'Jupiter-Uranus': {
-    conjunction: 'Expansion and originality are fused — you grow through breakthrough, innovation, and unexpected opportunity.',
-    opposition: 'Growth and freedom can pull against each other. Sudden changes and reversals of fortune are recurring themes.',
-    trine: 'Expansion and originality flow together. Unexpected opportunities tend to open at the right moments.',
-    square: 'Growth and freedom create tension. The desire to break free and expand simultaneously can scatter energy.',
-    sextile: 'Unexpected opportunities show up at useful moments, allowing genuine growth through original paths.'
-  },
-  'Jupiter-Neptune': {
-    conjunction: 'Expansion and spirituality are deeply linked. You have a genuine faith in something larger than yourself and tend toward generosity and idealism.',
-    opposition: 'Growth and idealism can blur. The risk is building on illusion rather than reality.',
-    trine: 'Spiritual expansion and growth flow together. You have a genuine capacity for faith, vision, and inspired living.',
-    square: 'Growth and idealism create tension. Grand visions can become unrealistic — the challenge is grounding inspiration in practical action.',
-    sextile: 'Spiritual insight and growth support each other quietly, enriching your life without becoming impractical.'
-  },
-  'Jupiter-Pluto': {
-    conjunction: 'Power and expansion are fused. You pursue growth with real intensity and have a capacity for transformation on a significant scale.',
-    opposition: 'Growth and power can work at cross-purposes. The desire to expand may conflict with the need to transform.',
-    trine: 'Power and growth work together. You pursue significant goals and have the depth to achieve them.',
-    square: 'Power and expansion create friction. Ambition can overreach — but what you build through this tension tends to be lasting.',
-    sextile: 'Power and growth support each other at useful moments, giving your ambitions genuine substance.'
-  },
-  'Saturn-Uranus': {
-    conjunction: 'Structure and freedom are fused — you build unconventional things that last. The tension between tradition and innovation is core to how you work.',
-    opposition: 'Structure and freedom pull in opposite directions. The desire to break free from constraint is a recurring life theme.',
-    trine: 'Structure and originality work together. You build things that are both innovative and enduring.',
-    square: 'Structure and freedom create friction. Rebellion against constraint and the need for stability alternate throughout your life.',
-    sextile: 'Structure and originality support each other, allowing you to innovate within useful boundaries.'
-  },
-  'Saturn-Neptune': {
-    conjunction: 'Structure and spirituality are fused. You work to make your dreams real and your spiritual life practical.',
-    opposition: 'Structure and idealism pull against each other. Building something real while staying connected to your vision is the ongoing challenge.',
-    trine: 'Discipline and inspiration work together. You have a genuine capacity to make something spiritual or creative into something lasting.',
-    square: 'Structure and idealism create tension. The gap between vision and reality can feel frustrating — but what you build through this friction tends to have both depth and form.',
-    sextile: 'Discipline and inspiration support each other, helping you bring your vision into practical form.'
-  },
-  'Saturn-Pluto': {
-    conjunction: 'Discipline and transformation are fused. You build through intensity and difficulty — and what you create tends to be fundamentally sound.',
-    opposition: 'Structure and transformation can work at cross-purposes. Periods of rebuilding from the ground up are recurring themes.',
-    trine: 'Discipline and depth work together. You build through difficulty and the structures you create tend to endure real pressure.',
-    square: 'Structure and transformation create friction. Dismantling and rebuilding — professionally, psychologically — tends to be recurring work.',
-    sextile: 'Discipline and depth show up together when it matters, helping you build things that can withstand real pressure.'
-  },
-  'Uranus-Neptune': {
-    conjunction: 'Originality and spirituality are fused at a generational level — you carry a collective vision for what transcends and what liberates.',
-    opposition: 'Freedom and dissolution pull against each other at a collective level.',
-    trine: 'Innovation and spiritual vision work together at a collective level.',
-    square: 'Freedom and dissolution create tension at a collective level.',
-    sextile: 'Collective innovation and spiritual vision support each other.'
-  },
-  'Uranus-Pluto': {
-    conjunction: 'Revolution and transformation are fused at a generational level — you carry collective energy for radical change.',
-    opposition: 'Freedom and power pull against each other at a collective level.',
-    trine: 'Revolutionary energy and transformation work together collectively.',
-    square: 'Freedom and power create tension at a collective level — the impulse to break free and the impulse to transform are both active.',
-    sextile: 'Revolutionary and transformative energy support each other collectively.'
-  },
-  'Neptune-Pluto': {
-    conjunction: 'Spirituality and transformation are fused at a generational level.',
-    opposition: 'Dissolution and transformation pull against each other at a collective level.',
-    trine: 'Spiritual and transformative energy work together at a collective level.',
-    square: 'Spiritual dissolution and transformation create tension collectively.',
-    sextile: 'Spiritual vision and transformative depth support each other collectively.'
-  }
-};
-
-function getAspectKey(p1, p2) {
-  var pairs = [p1+'-'+p2, p2+'-'+p1];
-  for (var i = 0; i < pairs.length; i++) {
-    if (ASPECT_DESCS[pairs[i]]) return pairs[i];
-  }
-  return null;
-}
-
-function getAspectDesc(p1, p2, type) {
-  var key = getAspectKey(p1, p2);
-  if (!key) return '';
-  var d = ASPECT_DESCS[key];
-  if (!d) return '';
-  return d[type] || '';
-}
-
-function buildAspectHTML(aspects, planet) {
-  // Filter aspects relevant to this planet
-  var relevant = aspects.filter(function(a) {
-    return a.p1 === planet || a.p2 === planet;
-  });
-  if (!relevant.length) return '';
-
-  var html = '<div class="rc-rule"></div><div class="rc-slbl">Natal aspects</div>';
-  relevant.forEach(function(a) {
-    var other = a.p1 === planet ? a.p2 : a.p1;
-    var desc = getAspectDesc(a.p1, a.p2, a.type);
-    var col = PCOL[other] || '#888';
-    html += '<div style="margin-bottom:.75rem">'
-      + '<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.25rem">'
-      + '<span style="font-family:var(--serif);font-size:1rem;color:'+col+'">'+PSYM[other]+'</span>'
-      + '<span style="font-size:.65rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:'+col+'">'+other+'</span>'
-      + '<span style="font-size:.65rem;color:var(--ink-3)">'+a.sym+' '+a.type+'</span>'
-      + '<span style="font-size:.6rem;color:var(--ink-3);margin-left:auto">'+a.orb+'°</span>'
-      + '</div>'
-      + (desc ? '<div style="font-family:var(--serif);font-style:italic;font-size:.8rem;color:var(--ink-2);line-height:1.6">'+desc+'</div>' : '')
-      + '</div>';
-  });
-  return html;
 }
 
 function openCard(cityName,planet,ltype,_lat,_lng,powerZone){
@@ -2076,7 +1720,6 @@ function openCard(cityName,planet,ltype,_lat,_lng,powerZone){
       +'<div class="rc-slbl">What\'s activated</div><div class="rc-prose" id="rcActivated">'+((LINE_ACTIVATED[planet]&&LINE_ACTIVATED[planet][ltype])||LINE_DESC[ltype]||'')+' '+((SIGN_MODIFIERS[planet]&&SIGN_MODIFIERS[planet][pd.sign])||'')+'</div>'
       +'<div class="rc-slbl">Your chart here</div><div class="rc-prose">'+personText+'</div>'
       +'<div class="rc-irow"><div class="rc-ibox"><div class="rc-ilbl">Best for</div><div class="rc-itext">'+((BEST_FOR[planet]&&BEST_FOR[planet][ltype])||'')+'</div></div><div class="rc-ibox"><div class="rc-ilbl">Watch for</div><div class="rc-itext">'+((WATCH_FOR[planet]&&WATCH_FOR[planet][ltype])||'')+'</div></div></div>'
-      +buildAspectHTML(activeChart.aspects||[],planet)
       +_diveDeeperBtn(cityName,_lat,_lng);
   }
   document.getElementById('readingCard').classList.add('open');
