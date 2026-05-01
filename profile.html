@@ -140,10 +140,6 @@ canvas.chart-wheel{display:block;width:100%;max-width:340px;aspect-ratio:1/1;hei
     <div class="section-heading">Planet positions</div>
     <div class="planets-grid" id="planetsGrid"></div>
 
-    <!-- Aspects -->
-    <div class="section-heading">Natal aspects</div>
-    <div id="aspectsGrid" style="margin-bottom:2.5rem"></div>
-
     <!-- Places explored -->
     <div class="section-heading">Places explored</div>
     <div class="places-list" id="placesList"></div>
@@ -350,32 +346,6 @@ async function initProfile() {
         + '<span class="planet-pos">'+pd.deg+'°'+pd.sign+'</span>';
       grid.appendChild(div);
     });
-
-    // Aspects grid
-    var aspects = computeAspects(planets);
-    var aspectsGrid = document.getElementById('aspectsGrid');
-    if (aspects.length === 0) {
-      aspectsGrid.innerHTML = '<p style="font-family:var(--serif);font-style:italic;font-size:.85rem;color:var(--ink-3)">No major aspects within standard orbs.</p>';
-    } else {
-      aspects.forEach(function(a) {
-        var desc = getAspectDesc(a.p1, a.p2, a.type);
-        var col1 = PCOL[a.p1] || '#888';
-        var col2 = PCOL[a.p2] || '#888';
-        var div = document.createElement('div');
-        div.style.cssText = 'border:.5px solid var(--paper-3);border-radius:6px;padding:.9rem 1rem;margin-bottom:.75rem;background:var(--paper-2)';
-        div.innerHTML = '<div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.4rem">'
-          + '<span style="font-size:1.1rem;color:'+col1+'">'+PSYM[a.p1]+'</span>'
-          + '<span style="font-size:.65rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:'+col1+'">'+a.p1+'</span>'
-          + '<span style="font-size:.85rem;color:var(--ink-3)">'+a.sym+'</span>'
-          + '<span style="font-size:1.1rem;color:'+col2+'">'+PSYM[a.p2]+'</span>'
-          + '<span style="font-size:.65rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:'+col2+'">'+a.p2+'</span>'
-          + '<span style="font-size:.65rem;color:var(--ink-3);text-transform:capitalize;margin-left:.2rem">'+a.type+'</span>'
-          + '<span style="font-size:.6rem;color:var(--ink-3);margin-left:auto">'+a.orb+'° orb</span>'
-          + '</div>'
-          + (desc ? '<div style="font-family:var(--serif);font-style:italic;font-size:.85rem;color:var(--ink-2);line-height:1.7">'+desc+'</div>' : '');
-        aspectsGrid.appendChild(div);
-      });
-    }
 
     // Places explored
     var list = document.getElementById('placesList');
