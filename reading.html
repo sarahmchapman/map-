@@ -752,19 +752,6 @@ function drawChartWheel(canvasId, planets) {
     var py2 = cy + rPlanet * Math.sin(item.angle);
 
     // Line from planet position to zodiac ring if nudged
-    if (Math.abs(item.angle - item.origAngle) > 0.01) {
-      var origX = cx + (rHouse + 4) * Math.cos(item.origAngle);
-      var origY = cy + (rHouse + 4) * Math.sin(item.origAngle);
-      ctx.strokeStyle = col;
-      ctx.globalAlpha = 0.3;
-      ctx.lineWidth = 0.5;
-      ctx.beginPath();
-      ctx.moveTo(origX, origY);
-      ctx.lineTo(px2, py2);
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-    }
-
     // Planet symbol — colored to match description cards
     var symSize = Math.round(size * 0.075);
     ctx.font = '400 ' + symSize + 'px sans-serif';
