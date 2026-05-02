@@ -668,6 +668,56 @@ function drawChartWheel(canvasId, planets) {
     ctx.fillText(a.label, cx + lblR * Math.cos(ang), cy + lblR * Math.sin(ang));
   });
 
+  // ── Aspect lines (color-coded by type) ───────────────────────
+  // Major aspects only. Conjunctions skipped (planets sit on top of each other).
+  // Sextile = blue (harmonious), Square/Opposition = red (tension), Trine = green (flow)
+  var ASPECT_DEFS = [
+    { name: 'sextile',     angle: 60,  orb: 4, color: '#7a9fb8', dashed: true  },
+    { name: 'square',      angle: 90,  orb: 6, color: '#c47b6c', dashed: false },
+    { name: 'trine',       angle: 120, orb: 6, color: '#8ba888', dashed: false },
+    { name: 'opposition',  angle: 180, orb: 7, color: '#c47b6c', dashed: false }
+  ];
+  var ASPECT_PLANETS = ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto'];
+
+  for (var ai = 0; ai < ASPECT_PLANETS.length; ai++) {
+    for (var aj = ai + 1; aj < ASPECT_PLANETS.length; aj++) {
+      var pA = planets[ASPECT_PLANETS[ai]];
+      var pB = planets[ASPECT_PLANETS[aj]];
+      if (!pA || !pB || pA.totalDeg == null || pB.totalDeg == null) continue;
+
+      var diff = Math.abs(pA.totalDeg - pB.totalDeg);
+      var ang  = diff > 180 ? 360 - diff : diff;
+
+      for (var k = 0; k < ASPECT_DEFS.length; k++) {
+        var def = ASPECT_DEFS[k];
+        var orbActual = Math.abs(ang - def.angle);
+        if (orbActual > def.orb) continue;
+
+        // Tighter orb = more opaque, floor at 0.35
+        var alpha = Math.max(0.35, 1 - (orbActual / def.orb) * 0.65);
+
+        var angA = lonToAngle(pA.totalDeg);
+        var angB = lonToAngle(pB.totalDeg);
+        var ax = cx + rPlanet * Math.cos(angA);
+        var ay = cy + rPlanet * Math.sin(angA);
+        var bx = cx + rPlanet * Math.cos(angB);
+        var by = cy + rPlanet * Math.sin(angB);
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = def.color;
+        ctx.lineWidth = 0.9;
+        if (def.dashed) ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(ax, ay);
+        ctx.lineTo(bx, by);
+        ctx.stroke();
+        ctx.restore();
+        break; // only draw the tightest matching aspect for this pair
+      }
+    }
+  }
+
   // ── Planets ──────────────────────────────────────────────────
   var PORDER = ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode','SNode'];
 
