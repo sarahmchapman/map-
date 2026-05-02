@@ -1,4 +1,4 @@
-model: 'claude-sonnet-4-6',// api/report.js — Best Places Report generator for elsewhere
+// api/report.js — Best Places Report generator for elsewhere
 // Uses astrocartography lines + parans + relocated charts + Claude AI
 
 import Anthropic from '@anthropic-ai/sdk';
@@ -332,7 +332,7 @@ Write only the report content. No preamble, no "Here is your report". Start dire
 
     // Call Claude
     const response = await anthropic.messages.create({
-      model: 'claude-opus-4-6',
+      model: 'claude-sonnet-4-6',
       max_tokens: 2000,
       messages: [{ role: 'user', content: prompt }]
     });
