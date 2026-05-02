@@ -1,8 +1,9 @@
 {
-  "name": "elsewhere",
-  "version": "1.0.0",
-  "dependencies": {
-    "@anthropic-ai/sdk": "^0.24.0",
-    "@supabase/supabase-js": "^2.39.0"
-  }
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" }
+  ],
+  "routes": [
+    { "src": "/(.*\\.html)", "dest": "/$1.html" },
+    { "src": "/(.*)", "dest": "/$1" }
+  ]
 }
