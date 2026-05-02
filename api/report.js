@@ -11,11 +11,37 @@ const supabase = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
-// ── Category planet mappings ──────────────────────────────────
+// ── Category weighting ───────────────────────────────────────
+// Each category has weights for line types AND planets, biased toward
+// the lines/planets traditionally associated with that life area.
+//
+// LINE TYPES:
+//   MC  = career, public reputation, vocation
+//   IC  = home, foundation, inner life, ancestry
+//   ASC = self, identity, vitality, how you arrive
+//   DSC = partnerships, relationships, what you attract
+//
+// Higher number = more relevant to this category.
+const CATEGORY_WEIGHTS = {
+  Love: {
+    lineTypes: { MC: 0.4, IC: 0.7, ASC: 0.8, DSC: 1.5 },
+    planets:   { Venus: 1.5, Moon: 1.3, Neptune: 1.0, Jupiter: 0.9 }
+  },
+  Career: {
+    lineTypes: { MC: 1.5, IC: 0.6, ASC: 0.8, DSC: 0.3 },
+    planets:   { Jupiter: 1.5, Sun: 1.4, Mercury: 1.0, Mars: 0.9, Saturn: 0.7, Venus: 0.7 }
+  },
+  Healing: {
+    lineTypes: { MC: 0.5, IC: 1.5, ASC: 0.9, DSC: 0.6 },
+    planets:   { Chiron: 1.5, Moon: 1.3, Neptune: 1.0, Venus: 0.9 }
+  }
+};
+
+// Backwards-compat: the planet list per category (used by other code paths)
 const CATEGORY_PLANETS = {
-  Love:    ['Venus', 'Moon', 'Neptune', 'Jupiter'],
-  Career:  ['Saturn', 'Sun', 'Mars', 'Jupiter'],
-  Healing: ['Chiron', 'Moon', 'Neptune', 'Venus']
+  Love:    Object.keys(CATEGORY_WEIGHTS.Love.planets),
+  Career:  Object.keys(CATEGORY_WEIGHTS.Career.planets),
+  Healing: Object.keys(CATEGORY_WEIGHTS.Healing.planets)
 };
 
 // ── Math helpers ─────────────────────────────────────────────
@@ -102,14 +128,23 @@ function calculateParans(acgLines, planets) {
 }
 
 // ── Score a city for a given category ────────────────────────
-function scoreCity(city, acgLines, parans, categoryPlanets, planets) {
+function scoreCity(city, acgLines, parans, category, planets) {
   let score = 0;
   const activations = [];
 
-  // 1. Check line distances for category planets
+  const weights = CATEGORY_WEIGHTS[category];
+  if (!weights) return { score: 0, activations: [] };
+
+  const planetWeights = weights.planets;
+  const lineWeights = weights.lineTypes;
+  const categoryPlanets = Object.keys(planetWeights);
+
+  // 1. Check line distances for category planets, weighted by line type AND planet
   for (const planet of categoryPlanets) {
     const lines = acgLines[planet];
     if (!lines) continue;
+
+    const planetWeight = planetWeights[planet] || 0.5;
 
     for (const lt of ['MC', 'IC', 'ASC', 'DSC']) {
       const pts = lines[lt];
@@ -118,8 +153,17 @@ function scoreCity(city, acgLines, parans, categoryPlanets, planets) {
 
       if (dist < 2) {
         const strength = dist < 0.5 ? 'exact' : dist < 1 ? 'strong' : 'moderate';
-        score += (3 - dist) * 10;
-        activations.push({ planet, lineType: lt, dist, strength, type: 'line' });
+        const lineWeight = lineWeights[lt] || 0.5;
+        // Weighted score: closer distance + heavier line type + heavier planet = bigger bump
+        score += (3 - dist) * 10 * lineWeight * planetWeight;
+        activations.push({
+          planet,
+          lineType: lt,
+          dist,
+          strength,
+          type: 'line',
+          weight: lineWeight * planetWeight
+        });
       }
     }
   }
@@ -130,11 +174,13 @@ function scoreCity(city, acgLines, parans, categoryPlanets, planets) {
     if (latDiff < 3) {
       const p1 = paran.planet1;
       const p2 = paran.planet2;
-      // Check if either planet is a category planet
-      const relevant = categoryPlanets.includes(p1) || categoryPlanets.includes(p2);
-      if (relevant) {
-        // Stronger score for tighter orb
-        const paranScore = (3 - latDiff) * (1 - paran.orb) * 8;
+      // Average the planet weights of the two planets in the paran
+      const w1 = planetWeights[p1] || 0;
+      const w2 = planetWeights[p2] || 0;
+      const relevance = (w1 + w2) / 2;
+      if (relevance > 0) {
+        // Parans get a smaller multiplier than lines — they're supportive context
+        const paranScore = (3 - latDiff) * (1 - paran.orb) * 8 * relevance;
         score += paranScore;
         activations.push({
           planet1: p1,
@@ -145,7 +191,8 @@ function scoreCity(city, acgLines, parans, categoryPlanets, planets) {
           longitude: paran.longitude,
           latDiff,
           orb: paran.orb,
-          type: 'paran'
+          type: 'paran',
+          relevance
         });
       }
     }
@@ -196,7 +243,7 @@ export default async function handler(req, res) {
     const CITY_DB = getCityDB(); // defined below
     const scored = CITY_DB.map(city => {
       const { score, activations } = scoreCity(
-        city, acgLines, parans, categoryPlanets, planets
+        city, acgLines, parans, category, planets
       );
       return { city, score, activations };
     }).filter(c => c.score > 0 && c.activations.length > 0);
@@ -246,11 +293,25 @@ export default async function handler(req, res) {
         }
       }
 
-      // Format activations for readability
-      const lineActivations = activations
+      // Format activations for readability — sorted by weighted importance
+      // (strongest, most category-relevant lines first)
+      const sortedLineActivations = activations
         .filter(a => a.type === 'line')
+        .sort((a, b) => {
+          // Primary sort: weighted relevance (higher = more important for this category)
+          const wA = (a.weight || 1) * (3 - a.dist);
+          const wB = (b.weight || 1) * (3 - b.dist);
+          return wB - wA;
+        });
+
+      const lineActivations = sortedLineActivations
         .map(a => `${a.planet} ${a.lineType} line (${a.strength} — ${a.dist.toFixed(1)}°)`)
         .join(', ');
+
+      // Identify the single strongest activation for this city
+      const primaryActivation = sortedLineActivations[0]
+        ? `${sortedLineActivations[0].planet} ${sortedLineActivations[0].lineType}`
+        : null;
 
       const paranActivations = activations
         .filter(a => a.type === 'paran')
@@ -266,6 +327,7 @@ export default async function handler(req, res) {
         lat: city.lat,
         lng: city.lng,
         lineActivations,
+        primaryActivation,
         paranActivations,
         houseShifts: houseShiftText,
         activationCount: activations.length
@@ -290,6 +352,14 @@ export default async function handler(req, res) {
 
 TONE: Honest, grounded, poetic but specific. Acknowledge both the gifts and the challenges of each location. Never vague. Always tied to the specific planetary activations.
 
+ASTROCARTOGRAPHY LINE TYPES — use the correct meaning for each:
+- MC line = career, public reputation, vocation, recognition (the strongest career axis)
+- IC line = home, foundation, inner life, ancestry, deep restoration
+- ASC line = self, identity, vitality, how the user presents and arrives in a place
+- DSC line = partnerships, relationships, what the user attracts from others (the strongest love axis)
+
+Do not call a DSC line a "career line" or an MC line a "love line." Honour the actual axis.
+
 USER'S BIRTH DATA:
 - Name: ${name || 'the user'}
 - Birth: ${birthDate} at ${birthTime}
@@ -298,10 +368,12 @@ USER'S BIRTH DATA:
 - Relevant aspects: ${relevantAspects || 'none within orb'}
 
 TOP 3 CITIES FOR ${category.toUpperCase()}:
+The cities below are listed in order of strongest match for ${category.toLowerCase()}. For each city, the lines are listed STRONGEST FIRST — lead with the first line listed. The "Primary activation" is the most important line for this city; build the city section around it.
 
 ${cityContexts.map((ctx, i) => `
 ${i + 1}. ${ctx.cityName}
-   Lines activated: ${ctx.lineActivations || 'none'}
+   Primary activation: ${ctx.primaryActivation || 'none'}
+   All lines activated (strongest first): ${ctx.lineActivations || 'none'}
    Parans: ${ctx.paranActivations || 'none'}
    House shifts from natal: ${ctx.houseShifts || 'minimal'}
 `).join('')}
@@ -309,21 +381,20 @@ ${i + 1}. ${ctx.cityName}
 Write a ${category} report with this exact structure:
 
 ---INTRO---
-2-3 sentences introducing what ${category.toLowerCase()} looks like in this person's natal chart specifically. Reference their actual placements and aspects. What is the quality of their ${category.toLowerCase()} energy at their birthplace?
+2-3 sentences introducing what ${category.toLowerCase()} looks like in this person's natal chart specifically. Reference their actual placements. What is the quality of their ${category.toLowerCase()} energy at their birthplace?
 
 ---CITY 1: ${cityContexts[0]?.cityName}---
-A full, rich reading of what ${category.toLowerCase()} means for this specific person in this specific city. Minimum 150 words. Reference:
-- Which lines are active and what they mean
-- Any parans and what the combined planetary energy creates
-- How the house shifts change the expression of their ${category.toLowerCase()} energy
-- What life could actually feel like here for them
-- Be honest about challenges as well as gifts
+A full, rich reading of what ${category.toLowerCase()} means for this specific person in this specific city. Minimum 150 words.
+- LEAD with the primary activation listed above. Name the planet, the line type, and what that combination genuinely means for ${category.toLowerCase()} in this city.
+- Then weave in the other lines, parans, and house shifts as supporting layers — not as the headline.
+- Describe what life could actually feel like here for them in the ${category.toLowerCase()} domain.
+- Be honest about challenges as well as gifts.
 
 ---CITY 2: ${cityContexts[1]?.cityName}---
-Same depth as City 1. Minimum 150 words. Make it feel completely different from City 1.
+Same structure as City 1: lead with the primary activation, layer in the rest. Minimum 150 words. Make it feel completely different from City 1.
 
 ---CITY 3: ${cityContexts[2]?.cityName}---
-Same depth as City 1 and 2. Minimum 150 words. Make it feel completely different from the others.
+Same structure. Minimum 150 words. Make it feel completely different from the others.
 
 ---CLOSING---
 2-3 sentences reflecting on the overall pattern of where ${category.toLowerCase()} finds this person in the world. What does the map reveal about their ${category.toLowerCase()} story?
