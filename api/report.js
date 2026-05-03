@@ -262,6 +262,24 @@ export default async function handler(req, res) {
     scored.sort((a, b) => b.score - a.score);
     const top3 = scored.slice(0, 3);
 
+    // ── DEBUG: log top 10 city scores so we can verify weighting works ──
+    // (Remove this block once city ranking behaves as expected)
+    console.log('===== REPORT DEBUG =====');
+    console.log('Category:', category);
+    console.log('Build version: PARAN-CAP-v3');
+    console.log('Top 10 cities by score:');
+    scored.slice(0, 10).forEach((c, i) => {
+      const lineActs = c.activations
+        .filter(a => a.type === 'line')
+        .map(a => `${a.planet}-${a.lineType}@${a.dist.toFixed(2)}°(w=${a.weight?.toFixed(2)})`)
+        .join(', ');
+      const paranCount = c.activations.filter(a => a.type === 'paran').length;
+      console.log(
+        `${i+1}. ${c.city.n}, ${c.city.c} | score=${c.score.toFixed(2)} | lines: ${lineActs || 'none'} | parans: ${paranCount}`
+      );
+    });
+    console.log('===== END DEBUG =====');
+
     if (top3.length === 0) {
       return res.status(200).json({
         report: null,
