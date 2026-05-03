@@ -317,8 +317,7 @@ function renderReport(data) {
   document.getElementById('reportEyebrow').textContent = 'Your ' + _selectedCategory.toLowerCase() + ' report';
   document.getElementById('reportCatTitle').textContent = _selectedCategory.toLowerCase();
   document.getElementById('reportMeta').textContent =
-    (_chartData.name || 'You') + ' · ' + (_chartData.birthPlace || '') +
-    (data.paransFound ? ' · ' + data.paransFound + ' parans found' : '');
+    (_chartData.name || 'You') + ' · ' + (_chartData.birthPlace || '');
 
   // City markers
   var markersEl = document.getElementById('cityMarkers');
