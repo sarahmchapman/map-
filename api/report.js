@@ -183,7 +183,10 @@ function scoreCity(city, acgLines, parans, category, planets) {
       const w2 = planetWeights[p2] || 0;
       const relevance = (w1 + w2) / 2;
       if (relevance > 0) {
-        const ps = (3 - latDiff) * (1 - paran.orb) * 8 * relevance;
+        // Orb tightness — clamped to [0, 1] so wide orbs contribute less,
+        // never negatively. (Previous formula went negative for orbs > 1.)
+        const orbTightness = Math.max(0, 1 - (paran.orb || 0) / 2);
+        const ps = (3 - latDiff) * orbTightness * 8 * relevance;
         paranScore += ps;
         activations.push({
           planet1: p1,
@@ -201,10 +204,11 @@ function scoreCity(city, acgLines, parans, category, planets) {
     }
   }
 
-  // Cap paran contribution at 50% of line score. This ensures lines drive
-  // city ranking and parans add supporting texture, not the other way around.
-  // A city with zero line activations gets zero score regardless of parans.
-  const cappedParanScore = Math.min(paranScore, lineScore * 0.5);
+  // Cap paran contribution at 100% of line score. Parans can match but not
+  // exceed the line score's contribution — so a city with a tight MC line
+  // plus rich paran activation can outrank a city with a weaker line alone.
+  // A city with zero line activations still gets zero score regardless of parans.
+  const cappedParanScore = Math.min(paranScore, lineScore);
   const score = lineScore + cappedParanScore;
 
   return { score, activations };
@@ -265,7 +269,7 @@ export default async function handler(req, res) {
     // ── DEBUG: log top 10 city scores so we can verify weighting works ──
     // (Single JSON.stringify call so Vercel captures it as one log entry)
     const debugPayload = {
-      buildVersion: 'PARAN-CAP-v4',
+      buildVersion: 'PARAN-FIX-v5',
       category,
       top10: scored.slice(0, 10).map((c, i) => {
         const lineActs = c.activations
