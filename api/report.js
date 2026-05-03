@@ -328,8 +328,8 @@ Do not call a DSC line a "career line" or an MC line a "love line." Honour the a
 CRITICAL ACCURACY RULES:
 - Do NOT make claims about which house any planet is in, either natally or in the relocated chart. House data is not provided to you and inventing it produces astrologically inaccurate readings.
 - Do NOT describe how houses "shift" between the user's birthplace and any city in this report. That information is not available.
-- DO reference the user's actual planet placements by SIGN and DEGREE (e.g., "your Venus in Scorpio at 6°"). These are listed below and are accurate.
-- DO reference the line activations and parans listed below — those are the verified data for this report.
+- DO reference the user's actual planet placements by SIGN when relevant (e.g., "your Venus in Scorpio"). The degrees are provided to you for accuracy of interpretation, but DO NOT recite the exact degree numbers in the prose — write naturally, the way a thoughtful astrologer would speak. Saying "your Venus at 6° Scorpio" reads like a textbook; saying "your Venus in Scorpio" reads like a reading.
+- DO reference the line activations and parans listed below — those are the verified data for this report. When mentioning a line orb, you may say "tight" or "exact" rather than reciting the decimal.
 - If you cannot make a specific astrologically grounded claim about something, do not make it. Vague flourish is worse than honest specificity.
 
 USER'S BIRTH DATA:
@@ -352,7 +352,7 @@ ${i + 1}. ${ctx.cityName}
 Write a ${category} report with this exact structure:
 
 ---INTRO---
-2-3 sentences introducing what ${category.toLowerCase()} looks like in this person's natal chart specifically. Reference their actual placements by sign and degree. What is the quality of their ${category.toLowerCase()} energy at their birthplace?
+2-3 sentences introducing what ${category.toLowerCase()} looks like in this person's natal chart specifically. Reference their actual placements by sign (not degree). What is the quality of their ${category.toLowerCase()} energy at their birthplace?
 
 ---CITY 1: ${cityContexts[0]?.cityName}---
 A full, rich reading of what ${category.toLowerCase()} means for this specific person in this specific city. Minimum 150 words.
