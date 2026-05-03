@@ -129,7 +129,6 @@ function calculateParans(acgLines, planets) {
 
 // ── Score a city for a given category ────────────────────────
 function scoreCity(city, acgLines, parans, category, planets) {
-  let score = 0;
   const activations = [];
 
   const weights = CATEGORY_WEIGHTS[category];
@@ -138,6 +137,9 @@ function scoreCity(city, acgLines, parans, category, planets) {
   const planetWeights = weights.planets;
   const lineWeights = weights.lineTypes;
   const categoryPlanets = Object.keys(planetWeights);
+
+  let lineScore = 0;
+  let paranScore = 0;
 
   // 1. Check line distances for category planets, weighted by line type AND planet
   for (const planet of categoryPlanets) {
@@ -155,7 +157,7 @@ function scoreCity(city, acgLines, parans, category, planets) {
         const strength = dist < 0.5 ? 'exact' : dist < 1 ? 'strong' : 'moderate';
         const lineWeight = lineWeights[lt] || 0.5;
         // Weighted score: closer distance + heavier line type + heavier planet = bigger bump
-        score += (3 - dist) * 10 * lineWeight * planetWeight;
+        lineScore += (3 - dist) * 10 * lineWeight * planetWeight;
         activations.push({
           planet,
           lineType: lt,
@@ -169,6 +171,8 @@ function scoreCity(city, acgLines, parans, category, planets) {
   }
 
   // 2. Check parans at this latitude (using accurate server-calculated parans)
+  // Parans are SUPPORTING signals — they add texture but cannot drive city selection
+  // on their own. A city with no relevant lines should not qualify from parans alone.
   for (const paran of parans) {
     const latDiff = Math.abs(city.lat - paran.latitude);
     if (latDiff < 3) {
@@ -179,9 +183,8 @@ function scoreCity(city, acgLines, parans, category, planets) {
       const w2 = planetWeights[p2] || 0;
       const relevance = (w1 + w2) / 2;
       if (relevance > 0) {
-        // Parans get a smaller multiplier than lines — they're supportive context
-        const paranScore = (3 - latDiff) * (1 - paran.orb) * 8 * relevance;
-        score += paranScore;
+        const ps = (3 - latDiff) * (1 - paran.orb) * 8 * relevance;
+        paranScore += ps;
         activations.push({
           planet1: p1,
           planet2: p2,
@@ -197,6 +200,12 @@ function scoreCity(city, acgLines, parans, category, planets) {
       }
     }
   }
+
+  // Cap paran contribution at 50% of line score. This ensures lines drive
+  // city ranking and parans add supporting texture, not the other way around.
+  // A city with zero line activations gets zero score regardless of parans.
+  const cappedParanScore = Math.min(paranScore, lineScore * 0.5);
+  const score = lineScore + cappedParanScore;
 
   return { score, activations };
 }
@@ -352,7 +361,7 @@ ${i + 1}. ${ctx.cityName}
 Write a ${category} report with this exact structure:
 
 ---INTRO---
-2-3 sentences introducing what ${category.toLowerCase()} looks like in this person's natal chart specifically. Reference their actual placements by sign (not degree). What is the quality of their ${category.toLowerCase()} energy at their birthplace?
+2-3 sentences introducing what ${category.toLowerCase()} looks like in this person's natal chart specifically. Reference the planets most relevant to ${category.toLowerCase()} by sign (not degree). For Career, this means anchoring in their Sun, Jupiter, Mercury, and Mars placements — the planets that define vocational drive and visibility. For Love, anchor in Venus, Moon, Mars, and Neptune. For Healing, anchor in Chiron, Moon, Neptune, and Saturn. What is the quality of their ${category.toLowerCase()} energy at their birthplace?
 
 ---CITY 1: ${cityContexts[0]?.cityName}---
 A full, rich reading of what ${category.toLowerCase()} means for this specific person in this specific city. Minimum 150 words.
