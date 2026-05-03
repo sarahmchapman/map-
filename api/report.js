@@ -201,11 +201,12 @@ function scoreCity(city, acgLines, parans, category, planets) {
   return { score, activations };
 }
 
-// ── Compute house number from longitude ───────────────────────
-function getHouse(planetLon, ascLon) {
-  const rel = ((planetLon - ascLon) % 360 + 360) % 360;
-  return Math.floor(rel / 30) + 1;
-}
+// ── Houses ────────────────────────────────────────────────────
+// House calculation is intentionally not present at this layer.
+// Computing accurate relocated houses requires sidereal time math
+// (ideally Placidus or Whole Sign cusps via pyswisseph) and will be
+// added by extending astro.py to return relocated charts. Until then,
+// the report intentionally avoids any claim about house placement.
 
 // ── Main handler ─────────────────────────────────────────────
 export default async function handler(req, res) {
@@ -259,46 +260,16 @@ export default async function handler(req, res) {
       });
     }
 
-    // Build relocated chart context for each city
-    // We pass the natal planets + house shifts as context for Claude
+    // Build context for each city — line activations + parans only.
+    // House shift calculations have been removed pending proper relocated-chart
+    // computation via astro.py (planned). Equal-house approximations from the
+    // front-end Ascendant were producing inaccurate house assignments.
     const cityContexts = top3.map(({ city, activations }) => {
-      // Compute approximate house shifts using ASC longitude change
-      const natalAscLon = planets.Ascendant?.totalDeg || 0;
-      // Estimate new ASC from the MC line longitude if available
-      let relocAscApprox = natalAscLon;
-      const mcLine = acgLines['Sun']?.MC;
-      if (mcLine && mcLine.length > 0) {
-        // Find point closest to city latitude
-        let closest = mcLine[0];
-        let minDist = 999;
-        for (const pt of mcLine) {
-          const d = Math.abs(pt[0] - city.lat);
-          if (d < minDist) { minDist = d; closest = pt; }
-        }
-        // Approximate ASC shift based on city longitude difference from birth
-        const lngDiff = city.lng - birthLng;
-        relocAscApprox = n360(natalAscLon + lngDiff);
-      }
-
-      // Calculate house shifts for key planets
-      const houseShifts = {};
-      const keyPlanets = [...new Set([...categoryPlanets, 'Sun', 'Moon'])];
-      for (const p of keyPlanets) {
-        const pd = planets[p];
-        if (!pd || pd.totalDeg == null) continue;
-        const natalHouse = getHouse(pd.totalDeg, natalAscLon);
-        const relocHouse = getHouse(pd.totalDeg, relocAscApprox);
-        if (natalHouse !== relocHouse) {
-          houseShifts[p] = { from: natalHouse, to: relocHouse };
-        }
-      }
-
       // Format activations for readability — sorted by weighted importance
       // (strongest, most category-relevant lines first)
       const sortedLineActivations = activations
         .filter(a => a.type === 'line')
         .sort((a, b) => {
-          // Primary sort: weighted relevance (higher = more important for this category)
           const wA = (a.weight || 1) * (3 - a.dist);
           const wB = (b.weight || 1) * (3 - b.dist);
           return wB - wA;
@@ -308,7 +279,6 @@ export default async function handler(req, res) {
         .map(a => `${a.planet} ${a.lineType} line (${a.strength} — ${a.dist.toFixed(1)}°)`)
         .join(', ');
 
-      // Identify the single strongest activation for this city
       const primaryActivation = sortedLineActivations[0]
         ? `${sortedLineActivations[0].planet} ${sortedLineActivations[0].lineType}`
         : null;
@@ -318,10 +288,6 @@ export default async function handler(req, res) {
         .map(a => `${a.planet1}/${a.planet2} paran at ${a.latitude.toFixed(1)}°N/S latitude`)
         .join(', ');
 
-      const houseShiftText = Object.entries(houseShifts)
-        .map(([p, s]) => `${p}: ${s.from}th → ${s.to}th house`)
-        .join(', ');
-
       return {
         cityName: `${city.n}, ${city.c}`,
         lat: city.lat,
@@ -329,7 +295,6 @@ export default async function handler(req, res) {
         lineActivations,
         primaryActivation,
         paranActivations,
-        houseShifts: houseShiftText,
         activationCount: activations.length
       };
     });
@@ -360,11 +325,18 @@ ASTROCARTOGRAPHY LINE TYPES — use the correct meaning for each:
 
 Do not call a DSC line a "career line" or an MC line a "love line." Honour the actual axis.
 
+CRITICAL ACCURACY RULES:
+- Do NOT make claims about which house any planet is in, either natally or in the relocated chart. House data is not provided to you and inventing it produces astrologically inaccurate readings.
+- Do NOT describe how houses "shift" between the user's birthplace and any city in this report. That information is not available.
+- DO reference the user's actual planet placements by SIGN and DEGREE (e.g., "your Venus in Scorpio at 6°"). These are listed below and are accurate.
+- DO reference the line activations and parans listed below — those are the verified data for this report.
+- If you cannot make a specific astrologically grounded claim about something, do not make it. Vague flourish is worse than honest specificity.
+
 USER'S BIRTH DATA:
 - Name: ${name || 'the user'}
 - Birth: ${birthDate} at ${birthTime}
 - Birthplace: ${birthPlace}
-- Natal chart: ${natalContext}
+- Natal placements (sign and degree): ${natalContext}
 - Relevant aspects: ${relevantAspects || 'none within orb'}
 
 TOP 3 CITIES FOR ${category.toUpperCase()}:
@@ -375,20 +347,20 @@ ${i + 1}. ${ctx.cityName}
    Primary activation: ${ctx.primaryActivation || 'none'}
    All lines activated (strongest first): ${ctx.lineActivations || 'none'}
    Parans: ${ctx.paranActivations || 'none'}
-   House shifts from natal: ${ctx.houseShifts || 'minimal'}
 `).join('')}
 
 Write a ${category} report with this exact structure:
 
 ---INTRO---
-2-3 sentences introducing what ${category.toLowerCase()} looks like in this person's natal chart specifically. Reference their actual placements. What is the quality of their ${category.toLowerCase()} energy at their birthplace?
+2-3 sentences introducing what ${category.toLowerCase()} looks like in this person's natal chart specifically. Reference their actual placements by sign and degree. What is the quality of their ${category.toLowerCase()} energy at their birthplace?
 
 ---CITY 1: ${cityContexts[0]?.cityName}---
 A full, rich reading of what ${category.toLowerCase()} means for this specific person in this specific city. Minimum 150 words.
 - LEAD with the primary activation listed above. Name the planet, the line type, and what that combination genuinely means for ${category.toLowerCase()} in this city.
-- Then weave in the other lines, parans, and house shifts as supporting layers — not as the headline.
+- Then weave in the other lines and parans as supporting layers — not as the headline.
 - Describe what life could actually feel like here for them in the ${category.toLowerCase()} domain.
 - Be honest about challenges as well as gifts.
+- Do NOT invent house placements or house shifts.
 
 ---CITY 2: ${cityContexts[1]?.cityName}---
 Same structure as City 1: lead with the primary activation, layer in the rest. Minimum 150 words. Make it feel completely different from City 1.
