@@ -3,6 +3,8 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
+import fs from 'fs';
+import path from 'path';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(
@@ -10,6 +12,22 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY,
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
+
+// ── City database ────────────────────────────────────────────
+// Loaded once at module scope (cold start) — Vercel keeps the function warm
+// between invocations, so this 2.6MB JSON is read from disk a single time
+// and held in memory for subsequent requests. The list comes from the
+// GeoNames cities5000 dump filtered to population ≥ 10,000 (~44,500 places),
+// covering every meaningful astrocartography destination worldwide
+// including smaller spiritually/culturally significant towns like Sedona.
+let CITY_DB_CACHE = null;
+function loadCityDB() {
+  if (CITY_DB_CACHE) return CITY_DB_CACHE;
+  const filePath = path.join(process.cwd(), 'api', 'cities.json');
+  const raw = fs.readFileSync(filePath, 'utf-8');
+  CITY_DB_CACHE = JSON.parse(raw);
+  return CITY_DB_CACHE;
+}
 
 // ── Category weighting ───────────────────────────────────────
 // Each category has weights for line types AND planets, biased toward
@@ -254,7 +272,7 @@ export default async function handler(req, res) {
       : calculateParans(acgLines, planets);
 
     // Score every city in the database
-    const CITY_DB = getCityDB(); // defined below
+    const CITY_DB = loadCityDB();
     const scored = CITY_DB.map(city => {
       const { score, activations } = scoreCity(
         city, acgLines, parans, category, planets
@@ -446,107 +464,3 @@ Write only the report content. No preamble, no "Here is your report". Start dire
   }
 }
 
-// ── City database (abbreviated — use full CITY_DB from app.js) ──
-function getCityDB() {
-  return [
-    {n:'New York',c:'United States',lat:40.7128,lng:-74.0060},
-    {n:'Los Angeles',c:'United States',lat:34.0522,lng:-118.2437},
-    {n:'Chicago',c:'United States',lat:41.8781,lng:-87.6298},
-    {n:'Houston',c:'United States',lat:29.7604,lng:-95.3698},
-    {n:'Phoenix',c:'United States',lat:33.4484,lng:-112.074},
-    {n:'Philadelphia',c:'United States',lat:39.9526,lng:-75.1652},
-    {n:'San Antonio',c:'United States',lat:29.4241,lng:-98.4936},
-    {n:'San Diego',c:'United States',lat:32.7157,lng:-117.1611},
-    {n:'Dallas',c:'United States',lat:32.7767,lng:-96.797},
-    {n:'San Francisco',c:'United States',lat:37.7749,lng:-122.4194},
-    {n:'Seattle',c:'United States',lat:47.6062,lng:-122.3321},
-    {n:'Denver',c:'United States',lat:39.7392,lng:-104.9903},
-    {n:'Boston',c:'United States',lat:42.3601,lng:-71.0589},
-    {n:'Atlanta',c:'United States',lat:33.749,lng:-84.388},
-    {n:'Miami',c:'United States',lat:25.7617,lng:-80.1918},
-    {n:'Austin',c:'United States',lat:30.2672,lng:-97.7431},
-    {n:'Nashville',c:'United States',lat:36.1627,lng:-86.7816},
-    {n:'Portland',c:'United States',lat:45.5051,lng:-122.675},
-    {n:'New Orleans',c:'United States',lat:29.9511,lng:-90.0715},
-    {n:'Honolulu',c:'United States',lat:21.3069,lng:-157.8583},
-    {n:'Toronto',c:'Canada',lat:43.6532,lng:-79.3832},
-    {n:'Montreal',c:'Canada',lat:45.5017,lng:-73.5673},
-    {n:'Vancouver',c:'Canada',lat:49.2827,lng:-123.1207},
-    {n:'London',c:'United Kingdom',lat:51.5074,lng:-0.1278},
-    {n:'Edinburgh',c:'United Kingdom',lat:55.9533,lng:-3.1883},
-    {n:'Paris',c:'France',lat:48.8566,lng:2.3522},
-    {n:'Nice',c:'France',lat:43.7102,lng:7.262},
-    {n:'Berlin',c:'Germany',lat:52.52,lng:13.405},
-    {n:'Munich',c:'Germany',lat:48.1351,lng:11.582},
-    {n:'Hamburg',c:'Germany',lat:53.5753,lng:10.0153},
-    {n:'Madrid',c:'Spain',lat:40.4168,lng:-3.7038},
-    {n:'Barcelona',c:'Spain',lat:41.3851,lng:2.1734},
-    {n:'Seville',c:'Spain',lat:37.3891,lng:-5.9845},
-    {n:'Rome',c:'Italy',lat:41.9028,lng:12.4964},
-    {n:'Milan',c:'Italy',lat:45.4654,lng:9.1859},
-    {n:'Florence',c:'Italy',lat:43.7696,lng:11.2558},
-    {n:'Venice',c:'Italy',lat:45.4408,lng:12.3155},
-    {n:'Amsterdam',c:'Netherlands',lat:52.3676,lng:4.9041},
-    {n:'Brussels',c:'Belgium',lat:50.8503,lng:4.3517},
-    {n:'Zurich',c:'Switzerland',lat:47.3769,lng:8.5417},
-    {n:'Vienna',c:'Austria',lat:48.2082,lng:16.3738},
-    {n:'Prague',c:'Czech Republic',lat:50.0755,lng:14.4378},
-    {n:'Budapest',c:'Hungary',lat:47.4979,lng:19.0402},
-    {n:'Warsaw',c:'Poland',lat:52.2297,lng:21.0122},
-    {n:'Athens',c:'Greece',lat:37.9838,lng:23.7275},
-    {n:'Lisbon',c:'Portugal',lat:38.7223,lng:-9.1393},
-    {n:'Porto',c:'Portugal',lat:41.1579,lng:-8.6291},
-    {n:'Stockholm',c:'Sweden',lat:59.3293,lng:18.0686},
-    {n:'Oslo',c:'Norway',lat:59.9139,lng:10.7522},
-    {n:'Copenhagen',c:'Denmark',lat:55.6761,lng:12.5683},
-    {n:'Helsinki',c:'Finland',lat:60.1699,lng:24.9384},
-    {n:'Dublin',c:'Ireland',lat:53.3498,lng:-6.2603},
-    {n:'Istanbul',c:'Turkey',lat:41.0082,lng:28.9784},
-    {n:'Moscow',c:'Russia',lat:55.7558,lng:37.6173},
-    {n:'Cairo',c:'Egypt',lat:30.0444,lng:31.2357},
-    {n:'Dubai',c:'UAE',lat:25.2048,lng:55.2708},
-    {n:'Tel Aviv',c:'Israel',lat:32.0853,lng:34.7818},
-    {n:'Mumbai',c:'India',lat:19.076,lng:72.8777},
-    {n:'Delhi',c:'India',lat:28.7041,lng:77.1025},
-    {n:'Bangalore',c:'India',lat:12.9716,lng:77.5946},
-    {n:'Bangkok',c:'Thailand',lat:13.7563,lng:100.5018},
-    {n:'Singapore',c:'Singapore',lat:1.3521,lng:103.8198},
-    {n:'Kuala Lumpur',c:'Malaysia',lat:3.139,lng:101.6869},
-    {n:'Jakarta',c:'Indonesia',lat:-6.2088,lng:106.8456},
-    {n:'Bali',c:'Indonesia',lat:-8.4095,lng:115.1889},
-    {n:'Tokyo',c:'Japan',lat:35.6762,lng:139.6503},
-    {n:'Osaka',c:'Japan',lat:34.6937,lng:135.5023},
-    {n:'Kyoto',c:'Japan',lat:35.0116,lng:135.7681},
-    {n:'Seoul',c:'South Korea',lat:37.5665,lng:126.978},
-    {n:'Shanghai',c:'China',lat:31.2304,lng:121.4737},
-    {n:'Beijing',c:'China',lat:39.9042,lng:116.4074},
-    {n:'Hong Kong',c:'China',lat:22.3193,lng:114.1694},
-    {n:'Sydney',c:'Australia',lat:-33.8688,lng:151.2093},
-    {n:'Melbourne',c:'Australia',lat:-37.8136,lng:144.9631},
-    {n:'Auckland',c:'New Zealand',lat:-36.8509,lng:174.7645},
-    {n:'São Paulo',c:'Brazil',lat:-23.5505,lng:-46.6333},
-    {n:'Rio de Janeiro',c:'Brazil',lat:-22.9068,lng:-43.1729},
-    {n:'Buenos Aires',c:'Argentina',lat:-34.6037,lng:-58.3816},
-    {n:'Santiago',c:'Chile',lat:-33.4489,lng:-70.6693},
-    {n:'Lima',c:'Peru',lat:-12.0464,lng:-77.0428},
-    {n:'Bogotá',c:'Colombia',lat:4.711,lng:-74.0721},
-    {n:'Mexico City',c:'Mexico',lat:19.4326,lng:-99.1332},
-    {n:'Nairobi',c:'Kenya',lat:-1.2921,lng:36.8219},
-    {n:'Cape Town',c:'South Africa',lat:-33.9249,lng:18.4241},
-    {n:'Johannesburg',c:'South Africa',lat:-26.2041,lng:28.0473},
-    {n:'Lagos',c:'Nigeria',lat:6.5244,lng:3.3792},
-    {n:'Marrakesh',c:'Morocco',lat:31.6295,lng:-7.9811},
-    {n:'Reykjavik',c:'Iceland',lat:64.1265,lng:-21.8174},
-    {n:'Chiang Mai',c:'Thailand',lat:18.7883,lng:98.9853},
-    {n:'Ubud',c:'Indonesia',lat:-8.5069,lng:115.2625},
-    {n:'Medellín',c:'Colombia',lat:6.2518,lng:-75.5636},
-    {n:'Tbilisi',c:'Georgia',lat:41.6938,lng:44.8015},
-    {n:'Sarajevo',c:'Bosnia',lat:43.8476,lng:18.3564},
-    {n:'Kotor',c:'Montenegro',lat:42.4247,lng:18.7712},
-    {n:'Dubrovnik',c:'Croatia',lat:42.6507,lng:18.0944},
-    {n:'Split',c:'Croatia',lat:43.5081,lng:16.4402},
-    {n:'Valletta',c:'Malta',lat:35.8997,lng:14.5147},
-    {n:'Beirut',c:'Lebanon',lat:33.8938,lng:35.5018},
-    {n:'Casablanca',c:'Morocco',lat:33.5731,lng:-7.5898}
-  ];
-}
