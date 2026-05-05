@@ -71,21 +71,6 @@ canvas.chart-wheel{display:block;width:100%;max-width:420px;aspect-ratio:1/1;hei
 .summary-text{font-family:var(--serif);font-size:1.05rem;font-style:italic;color:var(--ink-2);line-height:1.6}
 .summary-count{color:var(--gold)}
 
-/* ── Lines active here panel ── */
-.lines-panel{border:.5px solid var(--paper-3);border-radius:6px;overflow:hidden;margin-bottom:2rem}
-.lp-header{padding:.7rem 1rem;background:var(--paper-2);border-bottom:.5px solid var(--paper-3);display:flex;align-items:center;justify-content:space-between;gap:.6rem}
-.lp-eyebrow{font-size:9px;font-weight:500;letter-spacing:.25em;text-transform:uppercase;color:var(--gold)}
-.lp-count{font-size:8px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3)}
-.lp-body{padding:1rem}
-.lp-row{display:flex;align-items:center;gap:.6rem;padding:.4rem 0;border-bottom:.5px solid var(--paper-3)}
-.lp-row:last-child{border-bottom:0}
-.lp-glyph{font-family:var(--serif);font-size:1.3rem;line-height:1;flex-shrink:0;width:1.5rem;text-align:center}
-.lp-name{font-size:.7rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;flex:1}
-.lp-orb{font-size:.65rem;color:var(--ink-3);letter-spacing:.06em;flex-shrink:0}
-.lp-rule{height:.5px;background:var(--paper-3);margin:1rem 0 .85rem}
-.lp-synth-label{font-size:7px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.4rem}
-.lp-synth{font-family:var(--serif);font-size:.92rem;font-style:italic;color:var(--ink-2);line-height:1.7}
-
 /* ── Section heading ── */
 .section-heading{font-size:10px;font-weight:500;letter-spacing:.25em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem;display:flex;align-items:center;gap:.6rem}
 .section-heading::after{content:'';flex:1;height:.5px;background:var(--paper-3)}
@@ -148,15 +133,6 @@ canvas.chart-wheel{display:block;width:100%;max-width:420px;aspect-ratio:1/1;hei
       <p class="city-eyebrow">Your chart elsewhere</p>
       <h1 class="city-title">You in <em id="headingCity">—</em></h1>
       <p class="city-subtitle" id="headingSubtitle">—</p>
-    </div>
-
-    <!-- Lines active here (Power Zone continuity) -->
-    <div class="lines-panel" id="linesPanel" style="display:none">
-      <div class="lp-header">
-        <span class="lp-eyebrow" id="lpEyebrow">Lines active here</span>
-        <span class="lp-count" id="lpCount"></span>
-      </div>
-      <div class="lp-body" id="lpBody"></div>
     </div>
 
     <!-- Chart wheels -->
@@ -809,147 +785,6 @@ function ordinal(n) {
   return n + (s[(v-20)%10]||s[v]||s[0]);
 }
 
-// ─── Lines-active-here panel (Power Zone continuity) ──────────
-// Mirrors what the user just saw on the map's reading card so the dive-deeper
-// experience feels continuous. Uses the same _pzCombos / _pzClosings lookups
-// as app.js so the synthesis text matches exactly.
-var _LP_PNAMES = {NNode:'North Node', SNode:'South Node'};
-var _LP_PCOMBOS = {
-  'Venus-Moon':'Love and emotional depth arrive together here — you can be both magnetic and genuinely open at the same time. Connection here tends to feel real.',
-  'Venus-Jupiter':'This is one of the most celebrated combinations — beauty, warmth, and genuine good fortune converge. Love and abundance tend to arrive together in this place.',
-  'Venus-Neptune':'Romance and spirituality blur into each other here. Connections made in this place tend to feel transcendent — though be careful what you idealise.',
-  'Venus-Pluto':'Love here is rarely surface-level — intense, transformative, all-or-nothing. This place draws deep connections that change you.',
-  'Venus-Mars':'Passion and affection meet here without friction — desire and genuine care point in the same direction.',
-  'Moon-Jupiter':'Emotional generosity and abundance overlap here — you can feel both nourished and expansive at the same time.',
-  'Moon-Neptune':'Feeling and dreaming blur here. This place is deeply intuitive and emotionally porous — beautiful and requiring some grounding.',
-  'Moon-Pluto':'Emotional intensity runs deep here — transformation through feeling, connections that reach into what you usually keep hidden.',
-  'Moon-Venus':'Warmth and belonging arrive together — this place can feel both beautiful and like home at the same time.',
-  'Sun-Jupiter':'Confidence and opportunity align here — one of the strongest combinations for visibility, recognition, and professional growth.',
-  'Sun-Mars':'Drive and identity are both on the surface here — you act boldly and people notice. A powerful place for ambition.',
-  'Sun-Saturn':'Discipline and purpose converge here — recognition comes slowly but what you build in this place tends to last.',
-  'Mars-Jupiter':'Ambition and optimism fuel each other here — you act big and tend to back yourself, which often makes things happen.',
-  'Mars-Saturn':'Drive meets discipline here — relentless, focused, capable of building something genuinely enduring.',
-  'Mercury-Jupiter':'Vision and communication combine here — your ideas run big and people want to hear them.',
-  'Mercury-Sun':'Mind and identity are aligned here — how you think and how you show up are the same thing, making this a powerful place to be heard.',
-  'Chiron-Neptune':'Healing and spiritual depth meet here — a place for genuine restoration, especially from wounds that feel hard to name.',
-  'Chiron-Pluto':'Deep transformation is available here — not comfortable, but the kind of change that actually sticks.',
-  'Chiron-Moon':'Emotional healing and a sense of belonging arrive together — this place can hold both your tenderness and your wholeness.',
-  'Pluto-Saturn':'Power and discipline intersect here — this place asks something real of you, and what you build here carries real weight.',
-  'Pluto-Neptune':'Transformation and spiritual depth meet here — this place can dissolve old structures and reveal something more essential underneath.',
-  'NNode-Venus':'Your soul\'s direction and your capacity for love and beauty converge here — a place where growth feels genuinely pleasurable.',
-  'NNode-Jupiter':'Destiny and abundance align — this place supports stepping into who you are becoming with real optimism and opportunity.',
-  'NNode-Sun':'Your karmic path and your core identity point in the same direction here — a place where being yourself is exactly what is needed.',
-  'NNode-Moon':'Soul direction and emotional belonging arrive together — this place can feel both destined and like home.',
-  'SNode-Saturn':'Natural gifts meet discipline here — what you have mastered over lifetimes finds real-world structure and authority.',
-  'SNode-Sun':'Your natural gifts and your core identity align — you arrive in this place as someone who already knows how to be here.'
-};
-var _LP_PCLOSINGS = {
-  'MC-MC':'Both touch your public life and career — this is one of the most professionally charged locations on your map.',
-  'IC-IC':'Both touch your home and private world — this is a deeply personal location, worth sitting with.',
-  'ASC-ASC':'Both shape how you show up here — the way people experience you in this place is unusually concentrated.',
-  'DSC-DSC':'Both activate your relationship life — this is a place where love and connection arrive with unusual force.',
-  'MC-IC':'One touches your public life, the other your private world — this place holds both your outer ambition and your inner belonging.',
-  'IC-MC':'One touches your private world, the other your public life — this place holds both your inner belonging and your outer ambition.',
-  'MC-ASC':'One shapes how you are seen professionally, the other how you arrive personally — visibility comes from multiple directions here.',
-  'ASC-MC':'One shapes how you arrive personally, the other how you are seen professionally — visibility comes from multiple directions here.',
-  'MC-DSC':'One touches your career, the other your relationships — both tend to activate in this place at the same time.',
-  'DSC-MC':'One touches your relationships, the other your career — both tend to activate in this place at the same time.',
-  'IC-ASC':'One touches your private world, the other how you come across — this place can feel like both homecoming and fresh start.',
-  'ASC-IC':'One touches how you come across, the other your private world — this place can feel like both fresh start and homecoming.',
-  'IC-DSC':'One touches home and belonging, the other love and relationship — your deepest needs and closest connections converge here.',
-  'DSC-IC':'One touches love and relationship, the other home and belonging — your closest connections and deepest needs converge here.',
-  'ASC-DSC':'One shapes how you arrive, the other who arrives to meet you — the personal and relational are both activated here.',
-  'DSC-ASC':'One shapes who arrives to meet you, the other how you arrive — the relational and personal are both activated here.'
-};
-
-function _lpDistToLine(cityLat, cityLng, pts) {
-  if (!pts || pts.length === 0) return 999;
-  var minD = 999;
-  for (var i = 0; i < pts.length; i++) {
-    var dlat = pts[i][0] - cityLat;
-    var dlng = pts[i][1] - cityLng;
-    if (dlng > 180) dlng -= 360;
-    if (dlng < -180) dlng += 360;
-    var d = Math.sqrt(dlat * dlat + dlng * dlng);
-    if (d < minD) minD = d;
-  }
-  return minD;
-}
-
-function renderLinesPanel(cityLat, cityLng, lineData, planets) {
-  var panel = document.getElementById('linesPanel');
-  if (!panel || !lineData) return;
-
-  // Find all lines within 2° of the city — same threshold the map uses for power zones.
-  // SNode excluded to match app.js PALL_PZ.
-  var planetList = ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode'];
-  var lineTypes = ['MC','IC','ASC','DSC'];
-  var hits = [];
-  planetList.forEach(function(p) {
-    if (!lineData[p]) return;
-    lineTypes.forEach(function(lt) {
-      var d = _lpDistToLine(cityLat, cityLng, lineData[p][lt]);
-      if (d < 2) hits.push({ p: p, lt: lt, d: d });
-    });
-  });
-  hits.sort(function(a, b) { return a.d - b.d; });
-
-  if (hits.length === 0) return; // No active lines — leave panel hidden
-
-  var top = hits.slice(0, 5);
-
-  // Header label
-  var eyebrow = top.length >= 2 ? 'Power zone — lines active here' : 'Line active here';
-  document.getElementById('lpEyebrow').textContent = eyebrow;
-  document.getElementById('lpCount').textContent =
-    top.length + ' line' + (top.length > 1 ? 's' : '') + ' within 2°';
-
-  // Build the row list — glyph + planet name + sign + angle abbreviation
-  var rowsHtml = top.map(function(x) {
-    var col = PCOL_R[x.p] || '#888';
-    var sym = PSYM_R[x.p] || x.p;
-    var name = (_LP_PNAMES[x.p] || x.p);
-    var pd = planets && planets[x.p];
-    var sign = pd && pd.sign ? ' in ' + pd.sign : '';
-    var angle = x.lt === 'ASC' ? 'AC' : x.lt === 'DSC' ? 'DC' : x.lt;
-    var orbTxt = x.d.toFixed(1) + '°';
-    return '<div class="lp-row">'
-      + '<span class="lp-glyph" style="color:' + col + '">' + sym + '</span>'
-      + '<span class="lp-name" style="color:' + col + '">' + name + sign + ' · ' + angle + '</span>'
-      + '<span class="lp-orb">' + orbTxt + '</span>'
-      + '</div>';
-  }).join('');
-
-  // Synthesis (only when 2+ lines, matching the Power Zone card on the map)
-  var synthHtml = '';
-  if (top.length >= 2) {
-    var p1 = top[0].p, p2 = top[1].p;
-    var combo = _LP_PCOMBOS[p1 + '-' + p2] || _LP_PCOMBOS[p2 + '-' + p1] || '';
-    if (!combo && top.length >= 3) {
-      for (var i = 0; i < top.length && !combo; i++) {
-        for (var j = i + 1; j < top.length && !combo; j++) {
-          combo = _LP_PCOMBOS[top[i].p + '-' + top[j].p]
-               || _LP_PCOMBOS[top[j].p + '-' + top[i].p] || '';
-        }
-      }
-    }
-    var closingKey = top[0].lt + '-' + top[1].lt;
-    var angleCtx = _LP_PCLOSINGS[closingKey] || '';
-    var body = combo
-      ? (combo + (angleCtx ? ' ' + angleCtx : ''))
-      : (angleCtx || 'Multiple planetary lines converge near here — this location carries concentrated influence.');
-    if (top.length > 2) {
-      body += ' With ' + top.length + ' lines active here, this is one of the more significant locations on your map.';
-    }
-    synthHtml = '<div class="lp-rule"></div>'
-      + '<div class="lp-synth-label">The energies together</div>'
-      + '<div class="lp-synth">' + body + '</div>';
-  }
-
-  document.getElementById('lpBody').innerHTML = rowsHtml + synthHtml;
-  panel.style.display = 'block';
-}
-
 // ─── Main init ────────────────────────────────────────────────
 function initPage() {
   var raw = localStorage.getItem('elsewhere_reading');
@@ -996,9 +831,6 @@ function initPage() {
   document.getElementById('labelRelocated').innerHTML = 'In <em style="font-style:italic;color:var(--gold)">' + cleanCity + '</em>';
   document.getElementById('labelNatal').textContent = 'Born in ' + birthPlace;
 
-  // Lines active here panel — surfaces the same line info the user just saw
-  // on the map's reading card, so the dive-deeper transition feels continuous.
-  renderLinesPanel(cityLat, cityLng, data.lineData, data.planets);
 
   // Draw wheels — wait for Noto Sans Symbols 2 to load for crisp glyphs
   function drawBoth() {
