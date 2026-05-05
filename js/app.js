@@ -1,4 +1,3 @@
-
 // elsewhere — astrocartography
 // Pre-generated reading descriptions
 // ═══════════════════════════════════════════════════════════
@@ -1710,7 +1709,7 @@ function openCard(cityName,planet,ltype,_lat,_lng,powerZone){
       +'<div class="rc-rule"></div>'
       +'<div class="rc-slbl">The energies together</div>'
       +'<div class="rc-prose">'+pzData.body+'</div>'
-      +'<div class="rc-rule"></div>';
+      +_diveDeeperBtn(cityName,_lat,_lng);
   } else {
     document.getElementById('rcBody').innerHTML=
       '<div class="rc-planet-row"><span class="rc-glyph" style="color:'+col+'">'+PSYM[planet]+'</span><div><div class="rc-pname" style="color:'+col+'">'+displayName+' in '+pd.sign+' '+pd.deg+'°'+pad(pd.min)+"'"+'</div><div class="rc-ltype">'+{MC:'MC — Midheaven',IC:'IC — Imum Coeli',ASC:'AC — Ascendant',DSC:'DC — Descendant'}[ltype]+' line</div></div></div>'
