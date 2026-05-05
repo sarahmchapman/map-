@@ -69,6 +69,35 @@ const CATEGORY_WEIGHTS = {
 // of these is dropped entirely, even if the OTHER planet is category-relevant).
 const EXCLUDED_PLANETS = new Set(['Saturn', 'Pluto']);
 
+// ── Preferred planet pools for "one of each" top-3 selection ─────
+// For each category, top 3 cities are selected by walking this preference
+// list in order, skipping afflicted planets, and picking the best city
+// for each remaining planet. This produces three structurally different
+// recommendations (different planets, different stories) instead of three
+// cities clustered along the same line.
+//
+// Stays close to the traditional benefics + luminaries (Sun, Moon, Venus,
+// Jupiter) — the planets that deliver flourishing energy when they aren't
+// afflicted. Chiron is the lead Healing planet and exempt from the
+// affliction filter (the wounded healer "afflicts" itself by nature).
+const PREFERRED_PLANETS_BY_CATEGORY = {
+  Career:  ['Sun', 'Jupiter', 'Venus', 'Moon'],
+  Love:    ['Venus', 'Moon', 'Jupiter', 'Sun'],
+  Healing: ['Chiron', 'Moon', 'Venus', 'Jupiter', 'Sun']
+};
+
+// Planets exempt from the affliction check (always considered usable).
+// Chiron is the wounded healer — it represents the healing of difficulty
+// itself, so a "natally afflicted Chiron" is its normal state, not a
+// reason to skip its line.
+const AFFLICTION_EXEMPT = new Set(['Chiron']);
+
+// Tuning knobs for top-3 selection.
+const MIN_DISTANCE_KM = 800;        // min distance between top-3 picks
+const MIN_ACTIVATION_ORB = 1.5;     // featured planet's line must be within this
+const MAX_AFFLICTION_ORB_HARD = 5;  // square/opposition orb tightness
+const MAX_AFFLICTION_ORB_CONJ = 6;  // conjunction orb tightness
+
 // Backwards-compat: the planet list per category (used by other code paths)
 const CATEGORY_PLANETS = {
   Love:    Object.keys(CATEGORY_WEIGHTS.Love.planets),
@@ -94,6 +123,154 @@ function distToLine(cityLat, cityLng, linePoints) {
     if (d < minDist) minDist = d;
   }
   return minDist;
+}
+
+// ── Great-circle distance between two cities, in km ──────────
+// Used to enforce geographic spread between the top 3 picks so we don't
+// return three near-identical cities riding the same planetary line.
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const E = 6371; // Earth radius in km
+  const toRad = d => d * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+            Math.sin(dLng / 2) ** 2;
+  return E * 2 * Math.asin(Math.sqrt(a));
+}
+
+// ── Detect natally afflicted planets from aspect data ────────
+// A planet is "afflicted" when a malefic (Saturn/Mars/Pluto) sits in
+// hard aspect to it within tight orb. Recommending, say, a Venus line
+// to someone whose Venus is squared by Saturn would deliver Saturnian
+// sorrow in love, not Venusian ease — so we filter such lines out.
+//
+// Returns a Set of planet names that should be skipped for "best places".
+// Mars/Saturn/Pluto themselves are not added (they're already in
+// EXCLUDED_PLANETS globally). Chiron is removed from the result if
+// present (see AFFLICTION_EXEMPT).
+function getAfflictedPlanets(aspects) {
+  const afflicted = new Set();
+  if (!aspects || aspects.length === 0) return afflicted;
+
+  const malefics = new Set(['Saturn', 'Mars', 'Pluto']);
+
+  for (const aspect of aspects) {
+    const orb = Math.abs(aspect.orb || 0);
+    const type = aspect.type;
+    const p1 = aspect.p1;
+    const p2 = aspect.p2;
+    if (!p1 || !p2 || !type) continue;
+
+    // Affliction signal: hard aspect from a malefic, within tight orb.
+    let isAfflicting = false;
+    if ((type === 'square' || type === 'opposition') && orb <= MAX_AFFLICTION_ORB_HARD) {
+      isAfflicting = true;
+    } else if (type === 'conjunction' && orb <= MAX_AFFLICTION_ORB_CONJ) {
+      isAfflicting = true;
+    }
+    if (!isAfflicting) continue;
+
+    const p1Malefic = malefics.has(p1);
+    const p2Malefic = malefics.has(p2);
+
+    // If exactly one party is a malefic, the other party is afflicted by it.
+    // (Both malefic → already excluded globally; both benefic → not afflicting.)
+    if (p1Malefic && !p2Malefic) afflicted.add(p2);
+    if (p2Malefic && !p1Malefic) afflicted.add(p1);
+  }
+
+  // Remove exempt planets (Chiron) from the afflicted set
+  for (const exempt of AFFLICTION_EXEMPT) afflicted.delete(exempt);
+  return afflicted;
+}
+
+// ── Pick top-3 cities using "one of each preferred planet" ─────
+// Walks the category's preferred planet list in order, skipping any
+// afflicted ones, and finds the best city for each remaining planet
+// (where "best" means: tightest line activation for that specific
+// planet that also clears MIN_ACTIVATION_ORB and is at least
+// MIN_DISTANCE_KM from already-picked cities).
+//
+// This replaces the older "sort all by score, take top 3" approach,
+// which produced 3 near-identical cities along a single tight line.
+//
+// Falls back to highest-score remaining cities if the preferred-planet
+// path doesn't fill 3 slots (e.g. heavily afflicted chart).
+function pickTopByPreferredPlanets(scored, category, afflictedPlanets) {
+  const targetCount = 3;
+  const preferred = PREFERRED_PLANETS_BY_CATEGORY[category] || [];
+  const picks = [];
+  const usedPlanets = new Set();
+  const usedCityKeys = new Set();
+  const cityKey = c => `${c.n}|${c.c}|${c.lat}|${c.lng}`;
+
+  // Sum the line score contributed by a specific planet at a city,
+  // used to rank candidates within a preferred-planet bucket.
+  const planetScoreAtCity = (s, planet) =>
+    s.activations
+      .filter(a => a.type === 'line' && a.planet === planet)
+      .reduce((sum, a) => sum + (a.weight || 0) * (3 - a.dist) * 10, 0);
+
+  // 1) Walk the preferred-planet list, picking the best city for each.
+  for (const planet of preferred) {
+    if (picks.length >= targetCount) break;
+    if (usedPlanets.has(planet)) continue;
+    if (afflictedPlanets.has(planet) && !AFFLICTION_EXEMPT.has(planet)) continue;
+
+    const candidates = scored.filter(s => {
+      if (usedCityKeys.has(cityKey(s.city))) return false;
+
+      // Must have a line activation from THIS planet within the orb threshold.
+      const hasFeaturedLine = s.activations.some(a =>
+        a.type === 'line' && a.planet === planet && a.dist <= MIN_ACTIVATION_ORB
+      );
+      if (!hasFeaturedLine) return false;
+
+      // Must be far enough from already-picked cities.
+      for (const pick of picks) {
+        const km = haversineKm(s.city.lat, s.city.lng, pick.city.lat, pick.city.lng);
+        if (km < MIN_DISTANCE_KM) return false;
+      }
+      return true;
+    });
+
+    if (candidates.length === 0) continue;
+
+    // Among candidates, pick the one where THIS planet contributes most.
+    candidates.sort((a, b) => planetScoreAtCity(b, planet) - planetScoreAtCity(a, planet));
+    const winner = candidates[0];
+    picks.push({ ...winner, featuredPlanet: planet });
+    usedPlanets.add(planet);
+    usedCityKeys.add(cityKey(winner.city));
+  }
+
+  // 2) Fallback: if we couldn't fill targetCount via preferred planets
+  // (e.g. heavily afflicted chart, or no preferred planet had any city
+  // within the orb threshold), fill remaining slots from highest-scoring
+  // cities, still applying geographic dedupe.
+  if (picks.length < targetCount) {
+    const byScore = [...scored].sort((a, b) => b.score - a.score);
+    for (const candidate of byScore) {
+      if (picks.length >= targetCount) break;
+      if (usedCityKeys.has(cityKey(candidate.city))) continue;
+      const tooClose = picks.some(p =>
+        haversineKm(candidate.city.lat, candidate.city.lng, p.city.lat, p.city.lng) < MIN_DISTANCE_KM
+      );
+      if (tooClose) continue;
+      // Featured planet for fallback picks: the strongest line activation.
+      const strongestLine = [...candidate.activations]
+        .filter(a => a.type === 'line')
+        .sort((a, b) => (b.weight || 0) * (3 - b.dist) - (a.weight || 0) * (3 - a.dist))[0];
+      picks.push({
+        ...candidate,
+        featuredPlanet: strongestLine ? strongestLine.planet : null
+      });
+      usedCityKeys.add(cityKey(candidate.city));
+    }
+  }
+
+  return picks;
 }
 
 // ── Calculate parans ─────────────────────────────────────────
@@ -160,7 +337,10 @@ function calculateParans(acgLines, planets) {
 }
 
 // ── Score a city for a given category ────────────────────────
-function scoreCity(city, acgLines, parans, category, planets) {
+// `afflictedPlanets` is a Set of planet names whose lines/parans should
+// be skipped for THIS user (computed from natal aspects via
+// getAfflictedPlanets). Defaults to empty so existing callers still work.
+function scoreCity(city, acgLines, parans, category, planets, afflictedPlanets = new Set()) {
   const activations = [];
 
   const weights = CATEGORY_WEIGHTS[category];
@@ -170,12 +350,18 @@ function scoreCity(city, acgLines, parans, category, planets) {
   const lineWeights = weights.lineTypes;
   const categoryPlanets = Object.keys(planetWeights);
 
+  // A planet is "skipped" if globally excluded OR afflicted for this user.
+  // Chiron is exempt from the affliction filter (see AFFLICTION_EXEMPT).
+  const isSkipped = planet =>
+    EXCLUDED_PLANETS.has(planet) ||
+    (afflictedPlanets.has(planet) && !AFFLICTION_EXEMPT.has(planet));
+
   let lineScore = 0;
   let paranScore = 0;
 
   // 1. Check line distances for category planets, weighted by line type AND planet
   for (const planet of categoryPlanets) {
-    if (EXCLUDED_PLANETS.has(planet)) continue;  // never let Saturn/Pluto drive scoring
+    if (isSkipped(planet)) continue;
     const lines = acgLines[planet];
     if (!lines) continue;
 
@@ -207,12 +393,12 @@ function scoreCity(city, acgLines, parans, category, planets) {
   // Parans are SUPPORTING signals — they add texture but cannot drive city selection
   // on their own. A city with no relevant lines should not qualify from parans alone.
   for (const paran of parans) {
-    // Drop parans involving Saturn or Pluto entirely. Even if the OTHER planet
-    // in the paran is category-relevant (e.g. Sun/Saturn), the Saturnian/Plutonian
-    // contamination is enough to exclude. This also ensures these parans never
-    // appear in the activations list passed to Claude — keeping the narrative
-    // focused on positive, opportunity-rich planetary contacts.
-    if (EXCLUDED_PLANETS.has(paran.planet1) || EXCLUDED_PLANETS.has(paran.planet2)) continue;
+    // Drop parans involving any skipped planet (globally excluded OR
+    // afflicted for this user). Even if the OTHER planet is category-relevant
+    // (e.g. Sun/Saturn for someone with afflicted Sun), the contamination is
+    // enough to exclude — keeps the narrative focused on positive, unimpeded
+    // planetary contacts.
+    if (isSkipped(paran.planet1) || isSkipped(paran.planet2)) continue;
     const latDiff = Math.abs(city.lat - paran.latitude);
     if (latDiff < 3) {
       const p1 = paran.planet1;
@@ -292,25 +478,44 @@ export default async function handler(req, res) {
       ? chartData_parans
       : calculateParans(acgLines, planets);
 
+    // ── Detect afflicted planets from natal aspect data ──
+    // Planets in hard aspect (square/opposition/conjunction) to a malefic
+    // (Saturn/Mars/Pluto) within tight orb. Their lines won't deliver the
+    // pure planetary energy promised by the report, so we filter them.
+    const afflictedPlanets = getAfflictedPlanets(aspects);
+
     // Score every city in the database
     const CITY_DB = loadCityDB();
     const scored = CITY_DB.map(city => {
       const { score, activations } = scoreCity(
-        city, acgLines, parans, category, planets
+        city, acgLines, parans, category, planets, afflictedPlanets
       );
       return { city, score, activations };
     }).filter(c => c.score > 0 && c.activations.length > 0);
 
-    // Sort by score, take top 3
-    scored.sort((a, b) => b.score - a.score);
-    const top3 = scored.slice(0, 3);
+    // ── Pick top 3 via "one of each preferred planet" ──
+    // Walks the category's preferred planets (Sun/Moon/Venus/Jupiter, plus
+    // Chiron for Healing) in priority order, skipping afflicted ones, and
+    // selects the best city for each remaining planet. Geographic dedupe
+    // ensures the three picks are at least MIN_DISTANCE_KM apart.
+    // Falls back to highest-score remaining cities if the preferred path
+    // doesn't fill 3 slots.
+    const top3 = pickTopByPreferredPlanets(scored, category, afflictedPlanets);
 
-    // ── DEBUG: log top 10 city scores so we can verify weighting works ──
+    // ── DEBUG: log top 10 raw scores AND the picks we actually returned ──
     // (Single JSON.stringify call so Vercel captures it as one log entry)
+    const byScoreForDebug = [...scored].sort((a, b) => b.score - a.score);
     const debugPayload = {
-      buildVersion: 'PARAN-FIX-v5',
+      buildVersion: 'DIVERSIFIED-v6',
       category,
-      top10: scored.slice(0, 10).map((c, i) => {
+      afflictedPlanets: [...afflictedPlanets],
+      picks: top3.map((c, i) => ({
+        rank: i + 1,
+        city: `${c.city.n}, ${c.city.c}`,
+        featuredPlanet: c.featuredPlanet || null,
+        score: Number(c.score.toFixed(2))
+      })),
+      top10ByRawScore: byScoreForDebug.slice(0, 10).map((c, i) => {
         const lineActs = c.activations
           .filter(a => a.type === 'line')
           .map(a => ({
@@ -342,23 +547,34 @@ export default async function handler(req, res) {
     // House shift calculations have been removed pending proper relocated-chart
     // computation via astro.py (planned). Equal-house approximations from the
     // front-end Ascendant were producing inaccurate house assignments.
-    const cityContexts = top3.map(({ city, activations }) => {
-      // Format activations for readability — sorted by weighted importance
-      // (strongest, most category-relevant lines first)
-      const sortedLineActivations = activations
-        .filter(a => a.type === 'line')
+    const cityContexts = top3.map(({ city, activations, featuredPlanet }) => {
+      const allLines = activations.filter(a => a.type === 'line');
+
+      // Within the featured planet's lines at this city, take the tightest one
+      // — that's what we'll lead the city write-up with. The rest of the
+      // activations are sorted by weight × tightness for supporting context.
+      const featuredLines = allLines
+        .filter(a => featuredPlanet && a.planet === featuredPlanet)
+        .sort((a, b) => a.dist - b.dist);
+      const featuredLine = featuredLines[0] || null;
+
+      const otherLines = allLines
+        .filter(a => a !== featuredLine)
         .sort((a, b) => {
           const wA = (a.weight || 1) * (3 - a.dist);
           const wB = (b.weight || 1) * (3 - b.dist);
           return wB - wA;
         });
 
-      const lineActivations = sortedLineActivations
+      // Featured line first, then everything else by importance.
+      const orderedLines = featuredLine ? [featuredLine, ...otherLines] : otherLines;
+
+      const lineActivations = orderedLines
         .map(a => `${a.planet} ${a.lineType} line (${a.strength} — ${a.dist.toFixed(1)}°)`)
         .join(', ');
 
-      const primaryActivation = sortedLineActivations[0]
-        ? `${sortedLineActivations[0].planet} ${sortedLineActivations[0].lineType}`
+      const primaryActivation = orderedLines[0]
+        ? `${orderedLines[0].planet} ${orderedLines[0].lineType}`
         : null;
 
       const paranActivations = activations
@@ -370,6 +586,7 @@ export default async function handler(req, res) {
         cityName: `${city.n}, ${city.c}`,
         lat: city.lat,
         lng: city.lng,
+        featuredPlanet: featuredPlanet || null,
         lineActivations,
         primaryActivation,
         paranActivations,
@@ -418,7 +635,7 @@ USER'S BIRTH DATA:
 - Relevant aspects: ${relevantAspects || 'none within orb'}
 
 TOP 3 CITIES FOR ${category.toUpperCase()}:
-The cities below are listed in order of strongest match for ${category.toLowerCase()}. For each city, the lines are listed STRONGEST FIRST — lead with the first line listed. The "Primary activation" is the most important line for this city; build the city section around it.
+Each city below has been selected for a DIFFERENT featured planet, so the three cities tell three structurally distinct stories rather than three variations on the same line. For each city, the "Primary activation" is the planet/line that defines that location's character — build the entire city section around it. The other lines and parans listed are SUPPORTING layers, woven in only after the featured planet's story is established. Do not lead with a supporting line.
 
 ${cityContexts.map((ctx, i) => `
 ${i + 1}. ${ctx.cityName}
