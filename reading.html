@@ -862,18 +862,36 @@ var _LP_PCLOSINGS = {
   'DSC-ASC':'One shapes who arrives to meet you, the other how you arrive — the relational and personal are both activated here.'
 };
 
-function _lpDistToLine(cityLat, cityLng, pts) {
-  if (!pts || pts.length === 0) return 999;
-  var minD = 999;
-  for (var i = 0; i < pts.length; i++) {
-    var dlat = pts[i][0] - cityLat;
-    var dlng = pts[i][1] - cityLng;
-    if (dlng > 180) dlng -= 360;
-    if (dlng < -180) dlng += 360;
-    var d = Math.sqrt(dlat * dlat + dlng * dlng);
-    if (d < minD) minD = d;
+function _lpAnalyticalDist(cityLat, cityLng, lineType, planetData) {
+  // Compute distance from (cityLat, cityLng) to a planet's line analytically,
+  // using mcLon / ra / dec which app.js sends correctly.
+  // This avoids dependence on the (possibly truncated) point arrays in lineData.
+  if (!planetData || planetData.mcLon == null) return 999;
+  var DEG = Math.PI / 180;
+  var mcLon = planetData.mcLon;
+  var lineLon;
+
+  if (lineType === 'MC') {
+    lineLon = mcLon;
+  } else if (lineType === 'IC') {
+    lineLon = mcLon + 180;
+    if (lineLon > 180) lineLon -= 360;
+  } else {
+    // ASC / DSC need ra and dec to find hour angle at city's latitude
+    if (planetData.ra == null || planetData.dec == null) return 999;
+    var dec = planetData.dec;
+    var cos_H = -Math.tan(cityLat * DEG) * Math.tan(dec * DEG);
+    if (cos_H < -1 || cos_H > 1) return 999; // planet doesn't rise/set at this lat (circumpolar)
+    var H = Math.acos(cos_H) * 180 / Math.PI;
+    lineLon = (lineType === 'ASC') ? (mcLon - H) : (mcLon + H);
+    if (lineLon > 180) lineLon -= 360;
+    if (lineLon < -180) lineLon += 360;
   }
-  return minD;
+
+  var dlng = cityLng - lineLon;
+  if (dlng > 180) dlng -= 360;
+  if (dlng < -180) dlng += 360;
+  return Math.abs(dlng);
 }
 
 function renderLinesPanel(cityLat, cityLng, lineData, planets) {
@@ -888,7 +906,7 @@ function renderLinesPanel(cityLat, cityLng, lineData, planets) {
   planetList.forEach(function(p) {
     if (!lineData[p]) return;
     lineTypes.forEach(function(lt) {
-      var d = _lpDistToLine(cityLat, cityLng, lineData[p][lt]);
+      var d = _lpAnalyticalDist(cityLat, cityLng, lt, lineData[p]);
       if (d < 2) hits.push({ p: p, lt: lt, d: d });
     });
   });
