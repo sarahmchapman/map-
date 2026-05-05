@@ -40,20 +40,34 @@ function loadCityDB() {
 //   DSC = partnerships, relationships, what you attract
 //
 // Higher number = more relevant to this category.
+//
+// "Best places" framing: these reports surface locations where the user's
+// chart sings — opportunity, joy, expansion, restoration. Saturn and Pluto
+// are real and meaningful astrological forces, but they signal challenge,
+// restriction, and transformation-through-difficulty rather than the
+// flourishing energy this product promises. They are filtered out via
+// EXCLUDED_PLANETS below, in BOTH line scoring and paran involvement.
 const CATEGORY_WEIGHTS = {
   Love: {
-    lineTypes: { MC: 0.4, IC: 0.7, ASC: 0.8, DSC: 1.5 },
-    planets:   { Venus: 1.5, Moon: 1.3, Neptune: 1.0, Jupiter: 0.9 }
+    lineTypes: { MC: 0.3, IC: 0.7, ASC: 0.9, DSC: 1.5 },
+    planets:   { Venus: 1.5, Moon: 1.2, Jupiter: 1.0, Neptune: 0.9, Mars: 0.7, Sun: 0.6 }
   },
   Career: {
-    lineTypes: { MC: 1.5, IC: 0.6, ASC: 0.8, DSC: 0.3 },
-    planets:   { Jupiter: 1.5, Sun: 1.4, Mercury: 1.0, Mars: 0.9, Saturn: 0.7, Venus: 0.7 }
+    lineTypes: { MC: 1.5, IC: 0.3, ASC: 1.0, DSC: 0.3 },
+    planets:   { Jupiter: 1.5, Sun: 1.3, Mercury: 1.0, Venus: 0.9, Mars: 0.8 }
   },
   Healing: {
-    lineTypes: { MC: 0.5, IC: 1.5, ASC: 0.9, DSC: 0.6 },
-    planets:   { Chiron: 1.5, Moon: 1.3, Neptune: 1.0, Venus: 0.9 }
+    lineTypes: { MC: 0.4, IC: 1.5, ASC: 1.0, DSC: 0.5 },
+    planets:   { Chiron: 1.5, Moon: 1.3, Neptune: 1.1, Venus: 0.9, Jupiter: 0.8, Sun: 0.6 }
   }
 };
+
+// Planets excluded from "best places" reports across all categories.
+// Saturn carries restriction/discipline; Pluto carries upheaval/transformation
+// through breakdown. Both are astrologically valid but not "best places" energy.
+// Filtered from line scoring AND paran involvement (a paran involving either
+// of these is dropped entirely, even if the OTHER planet is category-relevant).
+const EXCLUDED_PLANETS = new Set(['Saturn', 'Pluto']);
 
 // Backwards-compat: the planet list per category (used by other code paths)
 const CATEGORY_PLANETS = {
@@ -161,6 +175,7 @@ function scoreCity(city, acgLines, parans, category, planets) {
 
   // 1. Check line distances for category planets, weighted by line type AND planet
   for (const planet of categoryPlanets) {
+    if (EXCLUDED_PLANETS.has(planet)) continue;  // never let Saturn/Pluto drive scoring
     const lines = acgLines[planet];
     if (!lines) continue;
 
@@ -192,6 +207,12 @@ function scoreCity(city, acgLines, parans, category, planets) {
   // Parans are SUPPORTING signals — they add texture but cannot drive city selection
   // on their own. A city with no relevant lines should not qualify from parans alone.
   for (const paran of parans) {
+    // Drop parans involving Saturn or Pluto entirely. Even if the OTHER planet
+    // in the paran is category-relevant (e.g. Sun/Saturn), the Saturnian/Plutonian
+    // contamination is enough to exclude. This also ensures these parans never
+    // appear in the activations list passed to Claude — keeping the narrative
+    // focused on positive, opportunity-rich planetary contacts.
+    if (EXCLUDED_PLANETS.has(paran.planet1) || EXCLUDED_PLANETS.has(paran.planet2)) continue;
     const latDiff = Math.abs(city.lat - paran.latitude);
     if (latDiff < 3) {
       const p1 = paran.planet1;
@@ -409,7 +430,11 @@ ${i + 1}. ${ctx.cityName}
 Write a ${category} report with this exact structure:
 
 ---INTRO---
-2-3 sentences introducing what ${category.toLowerCase()} looks like in this person's natal chart specifically. Reference the planets most relevant to ${category.toLowerCase()} by sign (not degree). For Career, this means anchoring in their Sun, Jupiter, Mercury, and Mars placements — the planets that define vocational drive and visibility. For Love, anchor in Venus, Moon, Mars, and Neptune. For Healing, anchor in Chiron, Moon, Neptune, and Saturn. What is the quality of their ${category.toLowerCase()} energy at their birthplace?
+2-3 sentences introducing what ${category.toLowerCase()} looks like in this person's natal chart specifically. Reference the planets most relevant to ${category.toLowerCase()} by sign (not degree), and ALSO reference the relevant angle sign if it appears in the natal placements above:
+- For Career, anchor in their Sun, Jupiter, Mercury, and Mars placements, AND their MC sign if available — the MC sign reveals the public face their career energy seeks.
+- For Love, anchor in their Venus, Moon, Mars, and Neptune placements, AND their DSC sign if available — the DSC sign reveals the kind of partner they're built to attract.
+- For Healing, anchor in their Chiron, Moon, Neptune, and Venus placements, AND their IC sign if available — the IC sign reveals where their deepest restoration takes root.
+If the relevant angle sign is not provided in the natal placements, do not reference it — never invent or assume one. What is the quality of their ${category.toLowerCase()} energy at their birthplace?
 
 ---CITY 1: ${cityContexts[0]?.cityName}---
 A full, rich reading of what ${category.toLowerCase()} means for this specific person in this specific city. Minimum 150 words.
