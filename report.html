@@ -3,18 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>elsewhere — your report</title>
+<title>elsewhere — reading your lines</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --ink:#1a1714;--ink-2:#2e2b28;--ink-3:#4a4540;
-  --paper:#faf8f4;--paper-2:#f2ede5;--paper-3:#e8e0d2;
-  --gold:#b8955a;--serif:'Cormorant Garamond',Georgia,serif;--sans:'Jost',sans-serif;
+  --ink:#1a1714; --ink-2:#2e2b28; --ink-3:#4a4540;
+  --paper:#faf8f4; --paper-2:#f2ede5; --paper-3:#e8e0d2;
+  --gold:#b8955a;
+  --serif:'Cormorant Garamond',Georgia,serif;
+  --sans:'Jost',sans-serif;
+
+  --harm:#5c8a5c;    /* moss green — harmonious */
+  --dyn:#b8955a;     /* gold — dynamic */
+  --chal:#9b6555;    /* terracotta — challenging */
 }
-html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margin:0}
+html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margin:0;line-height:1.55}
 
 /* ── Header ── */
 .site-header{width:100%;padding:.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;border-bottom:.5px solid var(--paper-3);background:var(--paper);position:sticky;top:0;z-index:20}
@@ -23,376 +29,258 @@ html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margi
 .nav-btn:hover{border-color:var(--gold);color:var(--gold)}
 
 /* ── Page ── */
-.page{max-width:680px;margin:0 auto;padding:3rem 1.5rem 5rem}
+.page{max-width:720px;margin:0 auto;padding:3rem 1.5rem 5rem}
 
-/* ── Category selector ── */
-.category-screen{text-align:center}
-.cat-eyebrow{font-size:9px;font-weight:500;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem}
-.cat-title{font-family:var(--serif);font-size:clamp(1.8rem,5vw,2.8rem);font-weight:300;line-height:1.2;margin-bottom:.6rem}
-.cat-title em{font-style:italic;color:var(--gold)}
-.cat-subtitle{font-family:var(--serif);font-style:italic;font-size:.9rem;color:var(--ink-3);line-height:1.7;margin-bottom:2.5rem;max-width:460px;margin-left:auto;margin-right:auto}
-.cat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;max-width:500px;margin:0 auto 1.5rem}
-.cat-card{background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:8px;padding:1.5rem 1rem;cursor:pointer;transition:all .2s;text-align:center}
-.cat-card:hover{border-color:var(--gold);background:var(--paper)}
-.cat-card.selected{border-color:var(--gold);background:var(--gold-faint,rgba(184,149,90,.08))}
-.cat-icon{font-size:1.6rem;margin-bottom:.6rem}
-.cat-name{font-family:var(--serif);font-size:1.1rem;font-weight:300;color:var(--ink);margin-bottom:.3rem}
-.cat-desc{font-family:var(--serif);font-style:italic;font-size:.75rem;color:var(--ink-3);line-height:1.5}
-.cat-price{font-size:.7rem;font-weight:500;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-top:.5rem}
-.generate-btn{font-size:10px;font-weight:500;letter-spacing:.25em;text-transform:uppercase;color:var(--paper);background:var(--ink);border:none;padding:.9rem 2.5rem;cursor:pointer;transition:background .2s;display:inline-block;margin-top:.5rem}
-.generate-btn:hover{background:var(--gold)}
-.generate-btn:disabled{opacity:.5;cursor:not-allowed}
+/* ── Intro ── */
+.eyebrow{font-size:9px;font-weight:500;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem;text-align:center}
+.title{font-family:var(--serif);font-size:clamp(2rem,5vw,2.8rem);font-weight:300;line-height:1.2;text-align:center;margin-bottom:1rem}
+.title em{font-style:italic;color:var(--gold)}
+.subtitle{font-family:var(--serif);font-style:italic;font-size:1rem;color:var(--ink-3);line-height:1.7;text-align:center;max-width:520px;margin:0 auto 2.5rem}
 
-/* ── Loading ── */
-.loading-screen{text-align:center;padding:4rem 1.5rem;display:none}
-.loading-star{font-size:2rem;color:var(--gold);animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.loading-text{font-family:var(--serif);font-style:italic;font-size:1rem;color:var(--ink-3);margin-top:1rem;line-height:1.7}
+.chart-tag{display:block;text-align:center;font-size:.78rem;color:var(--ink-3);margin-bottom:2.5rem;letter-spacing:.04em}
+.chart-tag strong{color:var(--ink);font-weight:500}
 
-/* ── Report ── */
-.report-screen{display:none}
-.report-header{text-align:center;margin-bottom:3rem;padding-bottom:2rem;border-bottom:.5px solid var(--paper-3)}
-.report-eyebrow{font-size:9px;font-weight:500;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:.6rem}
-.report-title{font-family:var(--serif);font-size:clamp(1.8rem,5vw,2.6rem);font-weight:300;line-height:1.1;margin-bottom:.5rem}
-.report-title em{font-style:italic;color:var(--gold)}
-.report-meta{font-family:var(--serif);font-style:italic;font-size:.85rem;color:var(--ink-3)}
+/* ── How to read intro section ── */
+.intro-card{background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:10px;padding:1.75rem 1.6rem;margin-bottom:2.5rem}
+.intro-card h3{font-family:var(--serif);font-size:1.3rem;font-weight:400;color:var(--ink);margin-bottom:.8rem}
+.intro-card p{font-family:var(--serif);font-size:.98rem;color:var(--ink-2);line-height:1.7;margin-bottom:.7rem}
+.intro-card p:last-child{margin-bottom:0}
 
-/* City markers */
-.city-markers{display:flex;justify-content:center;gap:1.5rem;margin:2rem 0;flex-wrap:wrap}
-.city-marker{text-align:center}
-.city-num{width:28px;height:28px;border-radius:50%;background:var(--gold);color:var(--paper);font-size:.7rem;font-weight:500;display:flex;align-items:center;justify-content:center;margin:0 auto .4rem}
-.city-marker-name{font-family:var(--serif);font-size:.82rem;color:var(--ink-2);max-width:120px}
+/* ── Category sections ── */
+.cat-section{margin-bottom:3rem}
+.cat-header{border-bottom:.5px solid var(--paper-3);padding-bottom:.6rem;margin-bottom:1.5rem}
+.cat-label{font-family:var(--serif);font-size:1.6rem;font-weight:300;letter-spacing:.02em}
+.cat-label.harm{color:var(--harm)}
+.cat-label.dyn{color:var(--dyn)}
+.cat-label.chal{color:var(--chal)}
+.cat-blurb{font-family:var(--serif);font-style:italic;font-size:.92rem;color:var(--ink-3);line-height:1.7;margin-top:.5rem}
 
-/* Report prose */
-.report-prose{font-family:var(--serif);font-size:1rem;line-height:1.85;color:var(--ink-2)}
-.report-prose p{margin-bottom:1.2rem}
+/* ── Planet cards ── */
+.planet-card{padding:1.25rem 0 1.5rem;border-bottom:.5px dashed var(--paper-3)}
+.planet-card:last-child{border-bottom:none}
+.planet-head{display:flex;align-items:flex-start;gap:.85rem;margin-bottom:.6rem}
+.planet-glyph{font-family:var(--serif);font-size:1.6rem;line-height:1;flex-shrink:0;margin-top:.1rem}
+.planet-name{font-family:var(--serif);font-size:1.15rem;font-weight:500;letter-spacing:.04em}
+.planet-summary{font-size:.82rem;color:var(--ink-3);margin-top:.15rem;line-height:1.55}
+.planet-themes{font-family:var(--serif);font-size:.98rem;color:var(--ink-2);line-height:1.7;margin-top:.7rem;padding-left:2.45rem}
+.planet-themes em{color:var(--ink);font-style:italic}
 
-/* Section dividers */
-.city-section{margin:2.5rem 0;padding:2rem;background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:8px}
-.city-section-num{font-size:9px;font-weight:500;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:.4rem}
-.city-section-name{font-family:var(--serif);font-size:1.4rem;font-weight:300;color:var(--ink);margin-bottom:1.2rem;padding-bottom:.8rem;border-bottom:.5px solid var(--paper-3)}
-.city-section-name em{font-style:italic;color:var(--gold)}
-
-.report-intro{margin-bottom:2rem;padding:.1rem 0}
-.report-closing{margin-top:2rem;padding:1.5rem;border-top:.5px solid var(--paper-3);font-family:var(--serif);font-style:italic;font-size:.92rem;color:var(--ink-3);line-height:1.8}
-
-/* Actions */
-.report-actions{text-align:center;margin-top:2.5rem;display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
-.action-btn{font-size:9px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;padding:.65rem 1.5rem;cursor:pointer;transition:all .2s;border-radius:20px;text-decoration:none;display:inline-flex;align-items:center;gap:.4rem}
-.action-btn.primary{color:var(--paper);background:var(--ink);border:.5px solid var(--ink)}
-.action-btn.primary:hover{background:var(--gold);border-color:var(--gold)}
-.action-btn.secondary{color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3)}
-.action-btn.secondary:hover{border-color:var(--gold);color:var(--gold)}
-
-/* No auth */
+/* ── States ── */
+.empty-bucket{font-family:var(--serif);font-style:italic;font-size:.92rem;color:var(--ink-3);padding:.5rem 0}
 .no-auth{text-align:center;padding:4rem 1.5rem}
+.no-auth h2{font-family:var(--serif);font-size:1.6rem;font-weight:300;margin-bottom:1rem}
+.no-auth p{font-family:var(--serif);font-size:1rem;color:var(--ink-3);line-height:1.7;margin-bottom:2rem;max-width:420px;margin-left:auto;margin-right:auto}
+.no-auth a{display:inline-block;font-size:10px;font-weight:500;letter-spacing:.25em;text-transform:uppercase;color:var(--paper);background:var(--ink);padding:.9rem 2rem;text-decoration:none}
+.no-auth a:hover{background:var(--gold)}
 
-/* Footer */
-.page-footer{text-align:center;padding:1.5rem 0 1rem;border-top:.5px solid var(--paper-3);margin-top:3rem}
+/* ── Debug bar at bottom (helps test) ── */
+.debug-bar{margin-top:3rem;padding:1.25rem;background:var(--paper-2);border-radius:8px;font-size:.75rem;color:var(--ink-3);line-height:1.7}
+.debug-bar code{font-family:'SF Mono',Menlo,Consolas,monospace;font-size:.72rem;background:var(--paper);padding:.1rem .3rem;border-radius:3px}
+.debug-toggle{cursor:pointer;color:var(--gold);font-size:.78rem;text-align:center;display:block;margin-top:1.5rem}
 </style>
 </head>
 <body>
 
 <header class="site-header">
-  <a href="/" class="site-wordmark">elsewhere</a>
-  <div style="display:flex;gap:.75rem;align-items:center">
-    <a href="/profile.html" class="nav-btn">Profile</a>
-    <a href="/?fromprofile=1" class="nav-btn">← Map</a>
-  </div>
+  <a class="site-wordmark" href="/">elsewhere</a>
+  <a class="nav-btn" href="/">← back to map</a>
 </header>
 
-<div class="page">
+<main class="page">
 
-  <!-- No auth state -->
-  <div class="no-auth" id="noAuthState" style="display:none">
-    <p style="font-family:var(--serif);font-style:italic;color:var(--ink-3);margin-bottom:1.5rem">You need to cast your chart first to generate a report.</p>
-    <a href="/" class="nav-btn" style="display:inline-flex">Cast your chart</a>
+  <!-- No-auth state -->
+  <div id="noAuthState" class="no-auth" style="display:none">
+    <h2>No chart loaded</h2>
+    <p>To read your lines, first go to the map and submit your birth details (or sign in to an existing account).</p>
+    <a href="/">Go to the map</a>
   </div>
 
-  <!-- Category selector -->
-  <div class="category-screen" id="categoryScreen">
-    <p class="cat-eyebrow">Astrocartography report</p>
-    <h1 class="cat-title">Your best places for <em id="catTitleWord">—</em></h1>
-    <p class="cat-subtitle">A personalised reading of the top three cities in the world where your chart comes most alive — based on your planetary lines, parans, and relocated chart.</p>
+  <!-- Report content -->
+  <div id="reportContent" style="display:none">
+    <div class="eyebrow">a guide to your map</div>
+    <h1 class="title">How to read your <em>astrocartography lines</em></h1>
+    <p class="subtitle">Not every line on your map carries the same weight. Here is how the planets in your chart shape what each line offers — places where things flow, places where things shift, and places where the work runs deep.</p>
 
-    <div class="cat-grid">
-      <div class="cat-card" onclick="selectCategory('Love')" id="cat-Love">
-        <div class="cat-icon">♀</div>
-        <div class="cat-name">Love</div>
-        <div class="cat-desc">Where your heart opens and connection flows</div>
-        <div class="cat-price">$0.99</div>
+    <div class="chart-tag" id="chartTag"></div>
+
+    <!-- Intro explanation -->
+    <div class="intro-card">
+      <h3>How this works</h3>
+      <p>Your birth chart is the same wherever you go — but at every spot on Earth, different planets sit in different positions overhead. The lines on your map mark where each planet sits directly above the horizon, below it, or rising and setting on the eastern and western edges. Stand near a line, and that planet's themes get louder.</p>
+      <p>But how those themes <em>feel</em> when they get louder depends on how that planet is doing in your chart to begin with. A planet that is comfortable, supported, and in its element will amplify in a way that feels generative. A planet that is uncomfortable or under pressure will amplify those same conditions. The categories below sort your planets by the kind of amplification their lines are likely to bring.</p>
+    </div>
+
+    <!-- Harmonious -->
+    <section class="cat-section">
+      <div class="cat-header">
+        <div class="cat-label harm">Harmonious lines</div>
+        <p class="cat-blurb">Being near a line of these planets is strongly in your favour. The planet becomes amplified in a positive way — these are places where the themes that planet rules tend to flow.</p>
       </div>
-      <div class="cat-card" onclick="selectCategory('Career')" id="cat-Career">
-        <div class="cat-icon">♄</div>
-        <div class="cat-name">Career</div>
-        <div class="cat-desc">Where your ambition activates and doors open</div>
-        <div class="cat-price">$0.99</div>
+      <div id="bucket-harmonious"></div>
+    </section>
+
+    <!-- Dynamic -->
+    <section class="cat-section">
+      <div class="cat-header">
+        <div class="cat-label dyn">Dynamic lines</div>
+        <p class="cat-blurb">The planets behind these lines have some things working in their favour and some working against. What gets amplified is a mix — some themes come through cleanly, others bring friction.</p>
       </div>
-      <div class="cat-card" onclick="selectCategory('Healing')" id="cat-Healing">
-        <div class="cat-icon">⚷</div>
-        <div class="cat-name">Healing</div>
-        <div class="cat-desc">Where your deepest restoration becomes possible</div>
-        <div class="cat-price">$0.99</div>
+      <div id="bucket-dynamic"></div>
+    </section>
+
+    <!-- Challenging -->
+    <section class="cat-section">
+      <div class="cat-header">
+        <div class="cat-label chal">Challenging lines</div>
+        <p class="cat-blurb">These lines show areas of high friction. The planet is amplified, but because it lacks support in your natal chart, you will experience the more difficult or demanding side of its themes. These are also where the deepest growth tends to happen.</p>
       </div>
-    </div>
+      <div id="bucket-challenging"></div>
+    </section>
 
-    <button class="generate-btn" id="generateBtn" onclick="generateReport()" disabled>
-      Generate my report — $0.99
-    </button>
-    <p style="font-family:var(--serif);font-style:italic;font-size:.75rem;color:var(--ink-3);margin-top:.75rem">Payment coming soon — generating free during beta</p>
+    <span class="debug-toggle" id="debugToggle">show raw engine output</span>
+    <pre class="debug-bar" id="debugPanel" style="display:none;white-space:pre-wrap;overflow-x:auto"></pre>
   </div>
 
-  <!-- Loading -->
-  <div class="loading-screen" id="loadingScreen">
-    <div class="loading-star">✦</div>
-    <p class="loading-text" id="loadingText">Reading your planetary lines…</p>
-  </div>
+</main>
 
-  <!-- Report -->
-  <div class="report-screen" id="reportScreen">
-    <div class="report-header">
-      <p class="report-eyebrow" id="reportEyebrow">Your love report</p>
-      <h1 class="report-title">Best places for <em id="reportCatTitle">—</em></h1>
-      <p class="report-meta" id="reportMeta">—</p>
-    </div>
+<!-- The engine -->
+<script src="/js/engine.js?v=2"></script>
 
-    <div class="city-markers" id="cityMarkers"></div>
-
-    <div id="reportContent"></div>
-
-    <div class="report-actions">
-      <button class="action-btn secondary" onclick="showCategoryScreen()">← Generate another</button>
-      <a href="/?fromprofile=1" class="action-btn primary">Back to map</a>
-    </div>
-
-    <div class="page-footer">
-      <a href="mailto:elsewhereastro@gmail.com" style="font-family:var(--serif);font-size:.78rem;color:var(--ink-3);text-decoration:none;border-bottom:1px solid var(--paper-3)">share feedback</a>
-      <span style="color:var(--paper-3);margin:0 .8rem">·</span>
-      <span style="font-family:var(--serif);font-size:.78rem;color:var(--ink-3)">© 2025 elsewhere</span>
-    </div>
-  </div>
-
-</div>
-
-<script src="/descriptions.js?v=5"></script>
-<script src="/js/app.js?v=2"></script>
 <script>
-var SUPABASE_URL = 'https://wdulylmxhvlxhjfmfivu.supabase.co';
-var SUPABASE_KEY = 'sb_publishable_pBoHzlLsZiLAr7EYF824DA_R6pw5sdR';
-var _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// ── Planet glyphs & colors (match the rest of the site) ────────
+var PSYM = {Sun:'☉',Moon:'☽',Mercury:'☿',Venus:'♀',Mars:'♂',Jupiter:'♃',Saturn:'♄'};
+var PCOL = {Sun:'#c9973f',Moon:'#5a7aa8',Mercury:'#4a8a6a',Venus:'#c0607a',Mars:'#9b3535',Jupiter:'#7a5a30',Saturn:'#6a6055'};
 
-var _selectedCategory = null;
-var _chartData = null;
-var _userId = null;
+var SIGNS = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
 
-// ── Load chart data ───────────────────────────────────────────
-async function initReport() {
-  // Check auth
-  var { data: sessionData } = await _sb.auth.getSession();
-  if (sessionData && sessionData.session) {
-    _userId = sessionData.session.user.id;
+function ordinal(n){
+  var s=['th','st','nd','rd'], v=n%100;
+  var suffix = (v>=11 && v<=13) ? 'th' : (s[n%10] || 'th');
+  return n + suffix;
+}
+
+// ── Ascendant fallback ──────────────────────────────────────────
+// app.js currently doesn't save Ascendant into elsewhere_reading. If
+// it's missing we can't run the engine. This is a temporary safety net
+// until app.js is updated to include it.
+function ensureAscendant(planets) {
+  if (planets && planets.Ascendant && planets.Ascendant.totalDeg != null) return true;
+  return false;
+}
+
+// ── Theme paragraph writer ──────────────────────────────────────
+// Takes the engine's structured output for one planet and writes a
+// short paragraph in the voice of the Neutrino-style reports.
+function writeThemesParagraph(p) {
+  var planet = p.planet;
+  if (!p.rulerships || !p.rulerships.houses.length) {
+    return '<em>' + planet + '</em> does not have a strong rulership signal in your chart.';
   }
+  var houses = p.rulerships.houses;
+  var themes = p.rulerships.themes;
+  if (houses.length === 1) {
+    return '<em>' + planet + '</em> rules your ' + ordinal(houses[0]) + ' house, so your '
+      + planet + ' lines carry the themes of ' + themes[0] + '.';
+  }
+  // two-house version (most traditional planets rule two signs)
+  return '<em>' + planet + '</em> rules your ' + ordinal(houses[0]) + ' and ' + ordinal(houses[1])
+    + ' houses, so your ' + planet + ' lines carry two layers of meaning: '
+    + themes[0] + '; and ' + themes[1] + '.';
+}
 
-  // Get chart data from localStorage
+// ── Render a planet card ────────────────────────────────────────
+function renderPlanetCard(p) {
+  var glyph = PSYM[p.planet] || '•';
+  var color = PCOL[p.planet] || '#333';
+  return ''
+    + '<div class="planet-card">'
+    +   '<div class="planet-head">'
+    +     '<span class="planet-glyph" style="color:'+color+'">'+glyph+'</span>'
+    +     '<div>'
+    +       '<div class="planet-name" style="color:'+color+'">'+p.planet+' lines</div>'
+    +       '<div class="planet-summary">'+p.summary+'</div>'
+    +     '</div>'
+    +   '</div>'
+    +   '<div class="planet-themes">'+writeThemesParagraph(p)+'</div>'
+    + '</div>';
+}
+
+// ── Render a category bucket ────────────────────────────────────
+function renderBucket(elId, planetsList) {
+  var el = document.getElementById(elId);
+  if (!planetsList.length) {
+    el.innerHTML = '<p class="empty-bucket">No planets fall into this category in your chart.</p>';
+    return;
+  }
+  el.innerHTML = planetsList.map(renderPlanetCard).join('');
+}
+
+// ── Main ────────────────────────────────────────────────────────
+function init() {
   var raw = localStorage.getItem('elsewhere_reading');
   if (!raw) {
-    // Try to get from profile
-    var profile = localStorage.getItem('elsewhere_profile');
-    if (!profile) {
-      document.getElementById('noAuthState').style.display = 'block';
-      document.getElementById('categoryScreen').style.display = 'none';
-      return;
-    }
+    document.getElementById('noAuthState').style.display = 'block';
+    return;
+  }
+  var data;
+  try { data = JSON.parse(raw); }
+  catch(e) {
+    document.getElementById('noAuthState').style.display = 'block';
+    return;
   }
 
-  // Chart data should be in elsewhere_reading from last dive deeper
-  if (raw) {
-    try {
-      var data = JSON.parse(raw);
-      _chartData = data;
-
-      // Update title word based on URL param
-      var urlParams = new URLSearchParams(window.location.search);
-      var cat = urlParams.get('category');
-      if (cat && ['Love', 'Career', 'Healing'].includes(cat)) {
-        selectCategory(cat);
-      } else {
-        updateTitleWord('love');
-      }
-    } catch(e) {
-      document.getElementById('noAuthState').style.display = 'block';
-      document.getElementById('categoryScreen').style.display = 'none';
-    }
-  }
-}
-
-function updateTitleWord(word) {
-  document.getElementById('catTitleWord').textContent = word;
-}
-
-function selectCategory(cat) {
-  _selectedCategory = cat;
-
-  // Update cards
-  ['Love', 'Career', 'Healing'].forEach(function(c) {
-    document.getElementById('cat-' + c).classList.toggle('selected', c === cat);
-  });
-
-  // Update title
-  updateTitleWord(cat.toLowerCase());
-
-  // Enable button
-  var btn = document.getElementById('generateBtn');
-  btn.disabled = false;
-}
-
-// ── Generate report ───────────────────────────────────────────
-async function generateReport() {
-  if (!_selectedCategory || !_chartData) return;
-
-  // Show loading
-  document.getElementById('categoryScreen').style.display = 'none';
-  document.getElementById('loadingScreen').style.display = 'block';
-
-  var loadingMessages = [
-    'Reading your planetary lines…',
-    'Calculating parans and intersections…',
-    'Computing relocated charts…',
-    'Writing your personalised reading…'
-  ];
-  var msgEl = document.getElementById('loadingText');
-  var msgIdx = 0;
-  var msgInterval = setInterval(function() {
-    msgIdx = (msgIdx + 1) % loadingMessages.length;
-    msgEl.textContent = loadingMessages[msgIdx];
-  }, 2500);
-
-  try {
-    var response = await fetch('/api/report', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        category: _selectedCategory,
-        chartData: {
-          jd: _chartData.jd,
-          birthLat: _chartData.birthLat,
-          birthLng: _chartData.birthLng,
-          birthPlace: _chartData.birthPlace,
-          birthDate: _chartData.birthDate,
-          birthTime: _chartData.birthTime || '',
-          name: _chartData.name || 'You',
-          planets: _chartData.planets || {},
-          aspects: _chartData.aspects || [],
-          acgLines: _chartData.lineData || {}
-        },
-        userId: _userId
-      })
-    });
-
-    clearInterval(msgInterval);
-    var data = await response.json();
-
-    if (data.error) {
-      alert('Error generating report: ' + data.error);
-      showCategoryScreen();
-      return;
-    }
-
-    renderReport(data);
-
-  } catch(err) {
-    clearInterval(msgInterval);
-    console.error('Report error:', err);
-    alert('Something went wrong. Please try again.');
-    showCategoryScreen();
-  }
-}
-
-// ── Render report ─────────────────────────────────────────────
-function renderReport(data) {
-  var report = data.report;
-  var cities = data.cities || [];
-
-  // Update header
-  document.getElementById('reportEyebrow').textContent = 'Your ' + _selectedCategory.toLowerCase() + ' report';
-  document.getElementById('reportCatTitle').textContent = _selectedCategory.toLowerCase();
-  document.getElementById('reportMeta').textContent =
-    (_chartData.name || 'You') + ' · ' + (_chartData.birthPlace || '');
-
-  // City markers
-  var markersEl = document.getElementById('cityMarkers');
-  markersEl.innerHTML = cities.map(function(city, i) {
-    return '<div class="city-marker">'
-      + '<div class="city-num">' + (i + 1) + '</div>'
-      + '<div class="city-marker-name">' + city + '</div>'
-      + '</div>';
-  }).join('');
-
-  // Parse and render report sections
-  var content = document.getElementById('reportContent');
-  content.innerHTML = parseReport(report, cities);
-
-  // Hide loading, show report
-  document.getElementById('loadingScreen').style.display = 'none';
-  document.getElementById('reportScreen').style.display = 'block';
-  window.scrollTo(0, 0);
-}
-
-// ── Parse report text into HTML sections ─────────────────────
-function parseReport(text, cities) {
-  // Split by city sections
-  var parts = text.split(/---([^-]+)---/);
-  var html = '';
-
-  for (var i = 0; i < parts.length; i++) {
-    var part = parts[i].trim();
-    if (!part) continue;
-
-    if (part === 'INTRO') {
-      var content = (parts[i + 1] || '').trim();
-      html += '<div class="report-intro">'
-        + '<div class="report-prose">' + formatProse(content) + '</div>'
-        + '</div>';
-      i++;
-    } else if (part.startsWith('CITY 1:') || part.startsWith('CITY 2:') || part.startsWith('CITY 3:')) {
-      var num = parseInt(part.charAt(5));
-      var cityName = part.replace(/CITY \d+: /, '');
-      var content = (parts[i + 1] || '').trim();
-      html += '<div class="city-section">'
-        + '<div class="city-section-num">City ' + num + '</div>'
-        + '<div class="city-section-name"><em>' + cityName + '</em></div>'
-        + '<div class="report-prose">' + formatProse(content) + '</div>'
-        + '</div>';
-      i++;
-    } else if (part === 'CLOSING') {
-      var content = (parts[i + 1] || '').trim();
-      html += '<div class="report-closing">' + formatProse(content) + '</div>';
-      i++;
-    } else if (part && !part.match(/^(INTRO|CLOSING|CITY \d+:)/)) {
-      // Untagged content — treat as prose
-      html += '<div class="report-prose">' + formatProse(part) + '</div>';
-    }
+  var planets = data.planets;
+  if (!planets) {
+    document.getElementById('noAuthState').style.display = 'block';
+    return;
   }
 
-  return html;
+  // If Ascendant is missing (app.js doesn't save it yet), we can't run
+  // the engine. Bail out clearly rather than silently producing nothing.
+  if (!ensureAscendant(planets)) {
+    document.getElementById('noAuthState').style.display = 'block';
+    document.querySelector('#noAuthState h2').textContent = 'Chart is missing your Ascendant';
+    document.querySelector('#noAuthState p').textContent =
+      'Go back to the map and click any location once. That refreshes the saved chart with the full data the report needs.';
+    return;
+  }
+
+  // Tag with chart name + birth info if available
+  var tag = [];
+  if (data.name) tag.push('<strong>' + data.name + '</strong>');
+  if (data.birthDate) tag.push(data.birthDate);
+  if (data.birthPlace) tag.push('born in ' + data.birthPlace);
+  if (tag.length) document.getElementById('chartTag').innerHTML = tag.join(' · ');
+
+  // Run the engine
+  var grouped = window.elsewhereEngine.categorizeAllLines(planets);
+
+  renderBucket('bucket-harmonious',  grouped.harmonious);
+  renderBucket('bucket-dynamic',     grouped.dynamic);
+  renderBucket('bucket-challenging', grouped.challenging);
+
+  // Stash debug output
+  document.getElementById('debugPanel').textContent =
+    JSON.stringify(grouped, null, 2);
+
+  document.getElementById('reportContent').style.display = 'block';
 }
 
-function formatProse(text) {
-  if (!text) return '';
-  return text.split('\n\n')
-    .filter(function(p) { return p.trim(); })
-    .map(function(p) { return '<p>' + p.trim() + '</p>'; })
-    .join('');
-}
+// Debug toggle
+document.getElementById('debugToggle').addEventListener('click', function() {
+  var p = document.getElementById('debugPanel');
+  var t = document.getElementById('debugToggle');
+  if (p.style.display === 'none') {
+    p.style.display = 'block';
+    t.textContent = 'hide raw engine output';
+  } else {
+    p.style.display = 'none';
+    t.textContent = 'show raw engine output';
+  }
+});
 
-function showCategoryScreen() {
-  document.getElementById('reportScreen').style.display = 'none';
-  document.getElementById('categoryScreen').style.display = 'block';
-  window.scrollTo(0, 0);
-}
-
-// ── Boot ─────────────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', initReport);
+init();
 </script>
+
 </body>
 </html>
