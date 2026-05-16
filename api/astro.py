@@ -1,489 +1,363 @@
-// js/engine.js — chart condition engine for elsewhere
-//
-// Pure-function module that derives traditional astrological factors
-// from natal chart data. No DOM, no globals, no dependencies on app.js
-// state. Callers pass in a planets object (the same shape that
-// computePlanets() in app.js produces) and get back a structured
-// description of the chart's condition.
-//
-// Exposed as window.elsewhereEngine. Add this to any page that needs
-// chart-condition synthesis with:
-//   <script src="/js/engine.js?v=2"></script>
-//
-// Phase 1 (done): sect determination — getSect()
-// Phase 2 (this file): essential dignity, whole-sign house, combustion,
-//                      house rulership, and line categorization.
-// Phase 3 (later): aspects synthesis using app.js computeAspects().
+from http.server import BaseHTTPRequestHandler
+from urllib.parse import urlparse, parse_qs
+import json, math, traceback
 
-(function (global) {
-  'use strict';
+try:
+    import swisseph as swe
+    HAS_SWE = True
+except ImportError:
+    HAS_SWE = False
 
-  // ─── Constants ──────────────────────────────────────────────
-  var SIGNS = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo',
-               'Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
+OBL=23.4365; DEG=math.pi/180
+def R(d): return d*DEG
+def n360(x): return ((x%360)+360)%360
+def n180(x): return ((x+540)%360)-180
 
-  // Traditional seven planets — these are the only planets that have
-  // dignity, rulership, sect, and combustion in Hellenistic astrology.
-  // Outer planets (Uranus, Neptune, Pluto) and points (Chiron, Nodes)
-  // don't get categorized at the line level in this engine.
-  var TRADITIONAL = ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn'];
+def gmst(jd):
+    T=(jd-2451545.0)/36525.0
+    return n360(280.46061837+360.98564736629*(jd-2451545)+0.000387933*T*T-T*T*T/38710000.0)
 
-  // ─── Sect determination ─────────────────────────────────────
-  // In traditional/Hellenistic astrology, a chart is either "diurnal"
-  // (Sun above the horizon at birth) or "nocturnal" (Sun below the
-  // horizon). Sect determines which benefic and malefic are "of sect"
-  // (operating in their preferred polarity, generally stronger and more
-  // beneficial in their action) versus "out of sect" (harder to access
-  // for the benefic, more challenging in expression for the malefic).
-  //
-  // Geometric test: a planet is above the horizon when its ecliptic
-  // longitude falls between the Descendant and Ascendant going through
-  // the Midheaven — i.e. houses 7 through 12, measured forward in the
-  // zodiac from the Ascendant. The simplest equivalent: the angular
-  // distance from ASC to Sun, taken forward in zodiacal order, falls
-  // between 180° and 360°.
-  //
-  // Input:  planets — object from computePlanets(); needs .Sun.totalDeg
-  //                   and .Ascendant.totalDeg
-  // Output: { type, luminary, benefic, malefic, offSectBenefic,
-  //           offSectMalefic, sunDiff } — or null if inputs missing
-  function getSect(planets) {
-    if (!planets || !planets.Sun || !planets.Ascendant) return null;
+def lon_to_ra_dec(lon,obl=OBL):
+    l=R(lon); e=R(obl)
+    ra=n360(math.atan2(math.sin(l)*math.cos(e),math.cos(l))*180/math.pi)
+    dec=math.asin(math.sin(e)*math.sin(l))*180/math.pi
+    return ra,dec
 
-    var sunLon = planets.Sun.totalDeg;
-    var ascLon = planets.Ascendant.totalDeg;
-    var diff = ((sunLon - ascLon) % 360 + 360) % 360;
-    var sunAboveHorizon = diff >= 180;
+def make_lines(ra,dec,G):
+    dr=R(dec); mc_lon=n180(ra-G); ic_lon=n180(mc_lon+180)
+    mc,ic,asc,dsc=[],[],[],[]
+    # Extended latitude range with finer steps near poles
+    lats = list(range(-89,90)) + [-89.5, -89.9, 89.5, 89.9]
+    lats.sort()
+    for lat in lats: mc.append([lat,mc_lon]); ic.append([lat,ic_lon])
+    for lat in lats:
+        ch=-math.tan(R(lat))*math.tan(dr)
+        if abs(ch)>1: continue
+        H=math.acos(max(-1,min(1,ch)))*180/math.pi
+        asc.append([lat,n180(ra-H-G)]); dsc.append([lat,n180(ra+H-G)])
+    return {'MC':mc,'IC':ic,'ASC':asc,'DSC':dsc,'mcLon':mc_lon,'ra':ra,'dec':dec}
 
-    if (sunAboveHorizon) {
-      return {
-        type: 'day',
-        luminary: 'Sun',
-        benefic: 'Jupiter',        // of-sect benefic — most reliably helpful
-        malefic: 'Saturn',         // of-sect malefic — challenging but workable
-        offSectBenefic: 'Venus',   // out-of-sect benefic — helpful but less reliable
-        offSectMalefic: 'Mars',    // out-of-sect malefic — hardest planet for this chart
-        sunDiff: diff              // exposed for debugging / verification
-      };
-    } else {
-      return {
-        type: 'night',
-        luminary: 'Moon',
-        benefic: 'Venus',
-        malefic: 'Mars',
-        offSectBenefic: 'Jupiter',
-        offSectMalefic: 'Saturn',
-        sunDiff: diff
-      };
-    }
-  }
+def calc_parans(planet_data, jd):
+    """
+    Calculate parans for all planet pairs.
+    
+    A paran occurs when two planets are simultaneously on angles
+    at the same Local Sidereal Time for a given latitude.
+    
+    For each latitude band (-89 to 89), we check:
+    - When planet A crosses MC/IC: LST = RA_A (MC) or RA_A + 180 (IC)
+    - When planet A crosses ASC/DSC: depends on RA, Dec, and latitude
+    - Same for planet B
+    - If any pair of crossing times match (same LST), that's a paran
+    
+    Returns list of parans: {planet1, planet2, line1, line2, latitude, longitude}
+    """
+    G = gmst(jd)
+    parans = []
+    planet_names = list(planet_data.keys())
+    
+    # For each latitude, calculate the LST at which each planet crosses each angle
+    # MC crossing: LST = RA (planet culminates when LST = RA)
+    # IC crossing: LST = RA + 180
+    # ASC crossing: LST = RA - H where H = hour angle at rising
+    # DSC crossing: LST = RA + H where H = hour angle at setting
+    
+    for lat in range(-78, 79, 2):  # Check every 2 degrees latitude for performance
+        lat_r = R(lat)
+        
+        # Calculate LST values for each planet on each angle at this latitude
+        planet_lsts = {}
+        
+        for name, data in planet_data.items():
+            ra = data['ra']
+            dec = data['dec']
+            dec_r = R(dec)
+            
+            lsts = {}
+            
+            # MC: LST = RA
+            lsts['MC'] = n360(ra)
+            
+            # IC: LST = RA + 180
+            lsts['IC'] = n360(ra + 180)
+            
+            # ASC/DSC: need to find hour angle
+            cos_H = -math.tan(lat_r) * math.tan(dec_r)
+            if abs(cos_H) <= 1.0:
+                H = math.acos(max(-1, min(1, cos_H))) * 180 / math.pi
+                # ASC: LST = RA - H (planet rises)
+                lsts['ASC'] = n360(ra - H)
+                # DSC: LST = RA + H (planet sets)
+                lsts['DSC'] = n360(ra + H)
+            
+            planet_lsts[name] = lsts
+        
+        # Now check all planet pairs for matching LST values at this latitude
+        for i in range(len(planet_names)):
+            for j in range(i + 1, len(planet_names)):
+                p1 = planet_names[i]
+                p2 = planet_names[j]
+                
+                lsts1 = planet_lsts.get(p1, {})
+                lsts2 = planet_lsts.get(p2, {})
+                
+                if not lsts1 or not lsts2:
+                    continue
+                
+                # Check every combination of angle types
+                for lt1, lst1 in lsts1.items():
+                    for lt2, lst2 in lsts2.items():
+                        # Calculate angular difference between LST values
+                        diff = abs(lst1 - lst2)
+                        if diff > 180:
+                            diff = 360 - diff
+                        
+                        # Within 1 degree = paran (tight orb for accuracy)
+                        if diff <= 1.0:
+                            # Calculate approximate longitude for this paran
+                            # The longitude where this paran is exact
+                            # LST = GMST + longitude, so longitude = LST - GMST
+                            avg_lst = (lst1 + lst2) / 2
+                            paran_lng = n180(avg_lst - G)
+                            
+                            parans.append({
+                                'planet1': p1,
+                                'planet2': p2,
+                                'line1': lt1,
+                                'line2': lt2,
+                                'latitude': lat,
+                                'longitude': paran_lng,
+                                'orb': round(diff, 2)
+                            })
+    
+    # Deduplicate: remove parans too close to existing ones
+    deduped = []
+    for p in parans:
+        # Check if similar paran already exists within 4 degrees latitude
+        is_dup = any(
+            d['planet1'] == p['planet1'] and 
+            d['planet2'] == p['planet2'] and
+            d['line1'] == p['line1'] and
+            d['line2'] == p['line2'] and
+            abs(d['latitude'] - p['latitude']) <= 4
+            for d in deduped
+        )
+        if not is_dup:
+            deduped.append(p)
+    
+    return deduped
 
-  // ─── Essential dignity ──────────────────────────────────────
-  // "Essential dignity" describes how comfortable a planet is in the
-  // sign it occupies. A planet in its own sign (domicile) operates at
-  // full strength. In its exaltation it's honored. In detriment or fall
-  // it struggles. The classical scoring scheme (Lilly):
-  //   domicile    +5   the planet rules this sign
-  //   exaltation  +4   the planet is exalted here
-  //   triplicity  +3   sect-dependent — see TRIPLICITY below
-  //   detriment   -5   opposite of domicile
-  //   fall        -4   opposite of exaltation
-  //   peregrine    0   none of the above
-  //
-  // (We skip bounds and decans in this pass — they're traditionally
-  // weighted lower and don't change a line's category by themselves.)
-  //
-  // DOMICILE: which sign each planet rules.
-  var DOMICILE = {
-    Sun:    ['Leo'],
-    Moon:   ['Cancer'],
-    Mercury:['Gemini','Virgo'],
-    Venus:  ['Taurus','Libra'],
-    Mars:   ['Aries','Scorpio'],
-    Jupiter:['Sagittarius','Pisces'],
-    Saturn: ['Capricorn','Aquarius']
-  };
 
-  // EXALTATION: the sign where a planet is honored/elevated.
-  var EXALTATION = {
-    Sun:'Aries', Moon:'Taurus', Mercury:'Virgo', Venus:'Pisces',
-    Mars:'Capricorn', Jupiter:'Cancer', Saturn:'Libra'
-  };
 
-  // DETRIMENT: opposite of domicile — planet is out of place.
-  var DETRIMENT = {
-    Sun:    ['Aquarius'],
-    Moon:   ['Capricorn'],
-    Mercury:['Sagittarius','Pisces'],
-    Venus:  ['Aries','Scorpio'],
-    Mars:   ['Taurus','Libra'],
-    Jupiter:['Gemini','Virgo'],
-    Saturn: ['Cancer','Leo']
-  };
-
-  // FALL: opposite of exaltation — planet is weakened.
-  var FALL = {
-    Sun:'Libra', Moon:'Scorpio', Mercury:'Pisces', Venus:'Virgo',
-    Mars:'Cancer', Jupiter:'Capricorn', Saturn:'Aries'
-  };
-
-  // TRIPLICITY: Dorothean scheme. Each of the four elemental triplicities
-  // (fire/earth/air/water) has a day ruler and a night ruler. The triplicity
-  // ruler for the chart's sect gets +3.
-  var TRIPLICITY = {
-    fire:  { signs:['Aries','Leo','Sagittarius'],     day:'Sun',     night:'Jupiter' },
-    earth: { signs:['Taurus','Virgo','Capricorn'],    day:'Venus',   night:'Moon' },
-    air:   { signs:['Gemini','Libra','Aquarius'],     day:'Saturn',  night:'Mercury' },
-    water: { signs:['Cancer','Scorpio','Pisces'],     day:'Venus',   night:'Mars' }
-  };
-
-  // getEssentialDignity returns the planet's dignity status in its sign.
-  // Input:  planetName — string, e.g. 'Mars'
-  //         planets    — full planets object
-  //         sect       — output of getSect() (only needed for triplicity)
-  // Output: { status: 'domicile'|'exaltation'|'triplicity'|'peregrine'|'detriment'|'fall',
-  //           score: number,
-  //           label: string }  // short human-readable phrase
-  //         or null if planet not found / not a traditional planet
-  function getEssentialDignity(planetName, planets, sect) {
-    if (TRADITIONAL.indexOf(planetName) === -1) return null;
-    if (!planets || !planets[planetName]) return null;
-    var sign = planets[planetName].sign;
-    if (!sign) return null;
-
-    if (DOMICILE[planetName].indexOf(sign) !== -1) {
-      return { status:'domicile', score:5, label:'in own sign ('+sign+')' };
-    }
-    if (EXALTATION[planetName] === sign) {
-      return { status:'exaltation', score:4, label:'exalted in '+sign };
-    }
-    // triplicity check — needs sect
-    if (sect) {
-      for (var element in TRIPLICITY) {
-        var t = TRIPLICITY[element];
-        if (t.signs.indexOf(sign) !== -1) {
-          var ruler = (sect.type === 'day') ? t.day : t.night;
-          if (ruler === planetName) {
-            return { status:'triplicity', score:3, label:'in own triplicity ('+sign+')' };
-          }
-          break;
+def build_acg_swe(jd):
+    G=gmst(jd)
+    PLANETS={'Sun':swe.SUN,'Moon':swe.MOON,'Mercury':swe.MERCURY,
+             'Venus':swe.VENUS,'Mars':swe.MARS,'Jupiter':swe.JUPITER,
+             'Saturn':swe.SATURN,'Uranus':swe.URANUS,'Neptune':swe.NEPTUNE,'Pluto':swe.PLUTO,
+             'Chiron':15,'NNode':11}
+    # Use Moshier ephemeris (built-in, no data files needed) + equatorial coords
+    # SEFLG_MOSEPH=4, SEFLG_SPEED=256, SEFLG_EQUATORIAL=2048
+    IFLAG = 4 | 256 | 2048
+    lines={}
+    for name,pid in PLANETS.items():
+        try:
+            # Chiron needs MOSEPH flag — no data files available on Vercel
+            flag = (4|256|2048) if name == 'Chiron' else IFLAG
+            r,_=swe.calc_ut(jd,pid,flag)
+            ra=r[0]
+            dec=r[1]
+            lines[name]=make_lines(ra,dec,G)
+        except:
+            continue
+        # South Node = opposite of North Node
+    if 'NNode' in lines:
+        nn = lines['NNode']
+        lines['SNode'] = {
+            'MC':  [[pt[0], n180(pt[1]+180)] for pt in nn['MC']],
+            'IC':  [[pt[0], n180(pt[1]+180)] for pt in nn['IC']],
+            'ASC': [[pt[0], n180(pt[1]+180)] for pt in nn['ASC']],
+            'DSC': [[pt[0], n180(pt[1]+180)] for pt in nn['DSC']],
+            'mcLon': n180(nn['mcLon']+180), 'ra': nn['ra'], 'dec': nn['dec']
         }
-      }
-    }
-    if (DETRIMENT[planetName].indexOf(sign) !== -1) {
-      return { status:'detriment', score:-5, label:'in detriment ('+sign+')' };
-    }
-    if (FALL[planetName] === sign) {
-      return { status:'fall', score:-4, label:'in fall ('+sign+')' };
-    }
-    return { status:'peregrine', score:0, label:'peregrine in '+sign };
-  }
+    # Calculate parans
+    planet_ra_dec = {name: {'ra': data['ra'], 'dec': data['dec']} 
+                     for name, data in lines.items() if 'ra' in data}
+    parans = calc_parans(planet_ra_dec, jd)
+    return lines, parans
 
-  // ─── Whole-sign houses ──────────────────────────────────────
-  // Hellenistic astrology uses whole-sign houses: the sign rising on the
-  // eastern horizon IS the entire first house, the next sign IS the
-  // entire second house, and so on. This is different from the Placidus
-  // system used elsewhere on the site (reading.html), but it's the
-  // correct system for traditional dignity and rulership work.
-  //
-  // getWholeSignHouse returns which house (1–12) the planet occupies.
-  function getWholeSignHouse(planetName, planets) {
-    if (!planets || !planets[planetName] || !planets.Ascendant) return null;
-    var planetSignIdx = SIGNS.indexOf(planets[planetName].sign);
-    var ascSignIdx    = SIGNS.indexOf(planets.Ascendant.sign);
-    if (planetSignIdx === -1 || ascSignIdx === -1) return null;
-    // (planetSign - ascSign + 12) mod 12 gives 0-based offset;
-    // +1 makes it 1-based (house 1 = ASC sign).
-    return ((planetSignIdx - ascSignIdx + 12) % 12) + 1;
-  }
+S=1e-8
+def vs(t,tau): return sum(v[0]*math.cos(v[1]+v[2]*tau) for v in t)
+def helio(L0,L1,L2,B0,B1,R0,R1,tau):
+    L=vs(L0,tau)+vs(L1,tau)*tau+(vs(L2,tau)*tau*tau if L2 else 0)
+    B=vs(B0,tau)+(vs(B1,tau)*tau if B1 else 0); Rv=vs(R0,tau)+vs(R1,tau)*tau
+    return [Rv*math.cos(B)*math.cos(L),Rv*math.cos(B)*math.sin(L),Rv*math.sin(B)]
+def gL(p,e): return n360(math.atan2(p[1]-e[1],p[0]-e[0])*180/math.pi)
+def kepler(M,e):
+    E=M
+    for _ in range(10):
+        d=E-e*math.sin(E)-M; E-=d/(1-e*math.cos(E))
+        if abs(d)<1e-10: break
+    return E
+def kG(L0r,Lr,e0r,er,w0r,wr,i0r,ir,O0r,Or,ar,jd,ex,ey):
+    T=(jd-2451545)/36525; L=n360(L0r+Lr*T); e=e0r+er*T; w=n360(w0r+wr*T)
+    i=R(i0r+ir*T); O=R(O0r+Or*T); M=R(n360(L-w)); E=kepler(M,e)
+    nu=2*math.atan2(math.sqrt(1+e)*math.sin(E/2),math.sqrt(1-e)*math.cos(E/2))
+    r=ar*(1-e*math.cos(E)); sm=R(w)-O; u=nu+sm
+    x=r*(math.cos(O)*math.cos(u)-math.sin(O)*math.sin(u)*math.cos(i))
+    y=r*(math.sin(O)*math.cos(u)+math.cos(O)*math.sin(u)*math.cos(i))
+    return n360(math.atan2(y-ey,x-ex)*180/math.pi)
+def sL(jd):
+    T=(jd-2451545)/36525; L0=n360(280.46646+36000.76983*T)
+    M=n360(357.52911+35999.05029*T-.0001537*T*T); Mr=R(M)
+    return n360(L0+(1.914602-.004817*T-.000014*T*T)*math.sin(Mr)+(0.019993-.000101*T)*math.sin(2*Mr)+.000289*math.sin(3*Mr))
+def mL(jd):
+    T=(jd-2451545)/36525; L0=n360(218.3165+481267.8813*T); M=n360(357.5291+35999.0503*T)
+    Mp=n360(134.9634+477198.8676*T); D=n360(297.8502+445267.1115*T); F=n360(93.2721+483202.0175*T)
+    return n360(L0+6.2888*math.sin(R(Mp))+1.274*math.sin(R(2*D-Mp))+.6583*math.sin(R(2*D))+.2136*math.sin(R(2*Mp))-.1851*math.sin(R(M))-.1143*math.sin(R(2*F))+.0588*math.sin(R(2*D-2*Mp))+.0572*math.sin(R(2*D-M-Mp))+.0533*math.sin(R(2*D+Mp)))
 
-  // ─── Accidental dignity (angularity) ────────────────────────
-  // Where a planet sits by house affects how strongly it expresses.
-  // Angular houses (1, 4, 7, 10) — most active and visible.
-  // Succedent houses (2, 5, 8, 11) — moderately active, supporting.
-  // Cadent houses (3, 6, 9, 12) — weaker, more internal.
-  //
-  // Traditional astrology also flags the 6th and 12th specifically as
-  // "averse" or "joy-less" houses where planets struggle more.
-  function getAngularity(planetName, planets) {
-    var house = getWholeSignHouse(planetName, planets);
-    if (!house) return null;
-    var angular   = [1,4,7,10];
-    var succedent = [2,5,8,11];
-    if (angular.indexOf(house) !== -1) {
-      return { house:house, type:'angular', score:4, label:'strong in '+ordinal(house)+' house' };
-    }
-    if (succedent.indexOf(house) !== -1) {
-      return { house:house, type:'succedent', score:1, label:'in '+ordinal(house)+' house' };
-    }
-    // cadent — 6th and 12th especially weak ("averse" houses)
-    if (house === 6 || house === 12) {
-      return { house:house, type:'cadent', score:-2, label:'weakened in '+ordinal(house)+' house' };
-    }
-    return { house:house, type:'cadent', score:-1, label:'in '+ordinal(house)+' house' };
-  }
+EL0=[[175347046*S,0,0],[3341656*S,4.6732156,6283.075850],[34894*S,4.62610,12566.15170],[3497*S,2.7441,5753.3849],[3418*S,2.8289,3.5231],[3136*S,3.6277,77713.7715],[2676*S,4.4181,7860.4194],[2343*S,6.1352,3930.2097],[1324*S,0.7425,11506.7698],[1273*S,2.0371,529.6910]]
+EL1=[[628331966747*S,0,0],[206059*S,2.678235,6283.075850],[4303*S,2.6351,12566.1517],[425*S,1.590,3.523],[119*S,5.796,26.298],[109*S,2.966,1577.344]]
+EL2=[[52919*S,0,0],[8720*S,1.0721,6283.0758],[309*S,0.867,12566.152]]
+EB0=[[280*S,3.199,84334.662],[102*S,5.422,5507.553],[80*S,3.88,5223.69]]
+ER0=[[100013989*S,0,0],[1670700*S,3.0984635,6283.075850],[13956*S,3.05525,12566.15170],[3084*S,5.1985,77713.7715],[1628*S,1.1739,5753.3849],[1576*S,2.8469,7860.4194]]
+ER1=[[103019*S,1.107490,6283.075850],[1721*S,1.0644,12566.1517]]
+VL0=[[317614667*S,0,0],[1353968*S,5.5931332,10213.2855462],[89892*S,5.30650,20426.57109],[5477*S,4.4163,7860.4194],[3456*S,2.6996,11790.6291],[2372*S,2.9938,3930.2097],[1664*S,4.2502,1577.3435],[1438*S,4.1575,9683.5946]]
+VL1=[[1021352943052*S,0,0],[95708*S,2.46424,10213.28555],[14445*S,0.51625,20426.57109]]
+VL2=[[54127*S,0,0],[3891*S,0.3451,10213.2855]]
+VB0=[[5923638*S,0.2670278,10213.2855462],[40108*S,1.14737,20426.57109],[32815*S,3.14159,0]]
+VB1=[[513348*S,1.803643,10213.285546],[199*S,0,0]]
+VR0=[[72333282*S,0,0],[489824*S,4.021518,10213.285546],[1658*S,4.9021,20426.5711]]
+VR1=[[34551*S,0.89199,10213.28555]]
+MaL0=[[620347712*S,0,0],[18656368*S,5.0503417,3340.6124267],[1108217*S,5.4009984,6681.2248534],[91798*S,5.7547,10021.8373],[27745*S,5.9705,2281.2305],[12316*S,0.8496,2810.9215],[10610*S,2.9396,2942.4634],[8927*S,4.1578,0.0173],[8716*S,6.1101,13362.4497]]
+MaL1=[[334085627154*S,0,0],[1458227*S,3.6042605,3340.6124267],[164901*S,3.9263,6681.2249],[19963*S,4.2660,10021.8373],[3452*S,4.7321,3337.0893]]
+MaL2=[[58016*S,2.0498,3340.6124],[54188*S,0,0],[13908*S,2.4574,6681.2248]]
+MaB0=[[3197135*S,3.7683204,3340.6124267],[298033*S,4.1061,6681.2249],[289105*S,3.14159,0],[31366*S,4.4465,10021.8373]]
+MaB1=[[350069*S,5.368478,3340.612427],[14116*S,3.14159,0],[9671*S,5.4788,6681.2249]]
+MaR0=[[153033488*S,0,0],[14184953*S,3.47971,3340.6124267],[660776*S,3.817834,6681.224853],[46179*S,4.15595,10021.83728],[8110*S,5.5596,2810.9215]]
+MaR1=[[1107433*S,2.03253,3340.6124267],[103176*S,2.37072,6681.224853],[12877*S,0,0]]
+JuL0=[[59954691*S,0,0],[9695899*S,5.0619179,529.6909651],[573610*S,1.44406,7.11355],[306389*S,5.41734,1059.38193],[97178*S,4.14265,632.78374],[72903*S,3.64042,522.57742],[64264*S,3.41145,103.09277]]
+JuL1=[[52993480757*S,0,0],[489741*S,4.22067,529.690965],[228919*S,6.02648,7.11355],[55733*S,0.24322,1059.38193]]
+JuL2=[[47234*S,4.32148,7.11355],[38966*S,0,0],[30629*S,2.93021,529.69097]]
+JuB0=[[2268616*S,3.5585261,529.6909651],[110090*S,0,0],[109972*S,3.908093,1059.381930]]
+JuB1=[[177352*S,5.701665,529.690965]]
+JuR0=[[520887429*S,0,0],[25209327*S,3.49108640,529.6909651],[610600*S,3.841154,1059.38193],[282029*S,2.574199,632.78374]]
+JuR1=[[1271802*S,2.649375,529.6909651],[61662*S,3.000992,1059.38193],[53444*S,3.890718,522.57742],[41390*S,0,0]]
+SaL0=[[87401354*S,0,0],[11107660*S,3.9620509,213.2990954],[1414151*S,4.5858152,7.1135470],[398379*S,0.52112,206.18555],[350769*S,3.30330,426.59819],[206816*S,0.24658,103.09277]]
+SaL1=[[21354295596*S,0,0],[1296855*S,1.82821,213.29910],[564348*S,2.88500,7.11355],[107679*S,2.27770,206.18555],[98323*S,1.08087,426.59819]]
+SaL2=[[116441*S,1.17988,7.11355],[91921*S,0.07325,213.29910],[90592*S,0,0],[15277*S,4.06492,206.18555]]
+SaB0=[[4330678*S,3.6028443,213.2990954],[240348*S,2.852385,426.598191],[84746*S,0,0]]
+SaB1=[[397555*S,5.332900,213.299095],[49479*S,3.14159,0]]
+SaR0=[[955758136*S,0,0],[52921382*S,2.39226220,213.2990954],[1873680*S,5.235496,206.18555],[1464664*S,1.647631,426.59819]]
+SaR1=[[6182981*S,0.2584352,213.2990954],[506578*S,0.711147,206.18555],[341394*S,5.796358,426.59819],[188491*S,0.472157,220.41264]]
+UrL0=[[548129294*S,0,0],[9260408*S,0.8910642,74.7815986],[1504248*S,3.6271490,1.4844727],[365982*S,1.899715,73.2971259],[272328*S,3.358255,149.5631971]]
+UrL1=[[7502543122*S,0,0],[154458*S,5.242017,74.781599],[24456*S,1.71256,1.48447]]
+UrL2=[[53033*S,0,0],[16983*S,3.16565,138.5175],[9987*S,5.9491,74.7816]]
+UrB0=[[1346278*S,2.6187781,74.7815986],[62341*S,5.08111,149.5632],[61601*S,3.14159,0]]
+UrB1=[[206366*S,4.12394,74.78160]]
+UrR0=[[1921264848*S,0,0],[88784984*S,5.60377527,74.7815986],[3440835*S,0.32836,73.2971259],[2055653*S,1.78295,149.5631971]]
+UrR1=[[1479896*S,3.6720571,74.7815986],[71212*S,6.22815,63.73590]]
+NeL0=[[531188633*S,0,0],[1798476*S,2.9010127,38.1330356],[1019728*S,0.4858092,1.4844727],[124532*S,4.830081,36.6485629]]
+NeL1=[[3837687717*S,0,0],[16604*S,4.86319,1.48447],[15807*S,2.27923,38.13304]]
+NeL2=[[53892*S,0,0],[296*S,1.855,1.48447]]
+NeB0=[[3088623*S,1.4410437,38.1330356],[27701*S,5.909627,76.2660712],[27237*S,3.14159,0]]
+NeB1=[[227279*S,3.807931,38.133035],[2721*S,3.14159,0]]
+NeR0=[[3007013206*S,0,0],[27062259*S,1.32999459,38.1330356],[1691764*S,3.2518614,36.6485629]]
+NeR1=[[236339*S,0.70498,38.133035]]
 
-  // Helper to write "1st", "2nd", "3rd", "4th" etc.
-  function ordinal(n) {
-    var s = ['th','st','nd','rd'];
-    var v = n % 100;
-    var suffix = (v >= 11 && v <= 13) ? 'th' : (s[n % 10] || 'th');
-    return n + suffix;
-  }
+def build_acg_vsop87(jd):
+    G=gmst(jd); tau=(jd-2451545)/365250
+    E=helio(EL0,EL1,EL2,EB0,None,ER0,ER1,tau)
+    lons={'Sun':sL(jd),'Moon':mL(jd),
+        'Mercury':kG(252.250906,149472.6746358,0.20563175,-0.000020407,77.45779628,0.15940013,7.00498625,-0.00594749,48.33076593,-0.12534081,0.387098310,jd,E[0],E[1]),
+        'Venus':gL(helio(VL0,VL1,VL2,VB0,VB1,VR0,VR1,tau),E),
+        'Mars':gL(helio(MaL0,MaL1,MaL2,MaB0,MaB1,MaR0,MaR1,tau),E),
+        'Jupiter':gL(helio(JuL0,JuL1,JuL2,JuB0,JuB1,JuR0,JuR1,tau),E),
+        'Saturn':gL(helio(SaL0,SaL1,SaL2,SaB0,SaB1,SaR0,SaR1,tau),E),
+        'Uranus':gL(helio(UrL0,UrL1,UrL2,UrB0,UrB1,UrR0,UrR1,tau),E),
+        'Neptune':gL(helio(NeL0,NeL1,NeL2,NeB0,NeB1,NeR0,NeR1,tau),E),
+        'Pluto':kG(238.929038,145.2078051,0.24880766,0,224.068916,0,17.1410426,0,110.3034700,0,39.48211675,jd,E[0],E[1])}
+    lines={}
+    for name,lon in lons.items():
+        ra,dec=lon_to_ra_dec(lon); lines[name]=make_lines(ra,dec,G)
+    # Calculate parans
+    planet_ra_dec = {name: {'ra': data['ra'], 'dec': data['dec']} 
+                     for name, data in lines.items() if 'ra' in data}
+    parans = calc_parans(planet_ra_dec, jd)
+    return lines, parans
 
-  // ─── House rulership ────────────────────────────────────────
-  // Each traditional planet rules one or two signs. Those signs occupy
-  // particular houses in this chart (under whole-sign), and that's how
-  // we know which life themes a planet's lines activate. Mercury rules
-  // Gemini & Virgo — if Gemini is the 2nd house and Virgo is the 11th
-  // for this chart, then Mercury lines activate 2nd-house themes
-  // (money, values) AND 11th-house themes (friends, networks).
-  //
-  // HOUSE_THEMES is a short list of keywords per house. The copy layer
-  // (separate file) uses these to write the descriptive paragraphs.
-  var HOUSE_THEMES = {
-    1:  'self, identity, appearance, how people see you',
-    2:  'money, possessions, personal values, self-worth',
-    3:  'siblings, neighbors, short trips, daily communication',
-    4:  'home, family, ancestry, roots, private life',
-    5:  'romance, creativity, children, play, self-expression',
-    6:  'work routines, health, daily habits, service',
-    7:  'partnerships, marriage, open enemies, contracts',
-    8:  'shared resources, intimacy, inheritance, transformation, the occult',
-    9:  'travel, higher learning, philosophy, religion, foreign cultures',
-    10: 'career, reputation, public standing, authority',
-    11: 'friends, groups, networks, hopes and wishes',
-    12: 'solitude, spirituality, hidden things, self-undoing'
-  };
+def placidus_houses(jd, lat, lng):
+    """
+    Compute the 12 Placidus house cusps using Swiss Ephemeris's built-in
+    house engine. This is the same method astro.com and Neutrino use, so
+    the results match them exactly.
 
-  // getRulerships returns the houses that planet rules in this chart.
-  // Output: { houses: [2, 11], themes: ['money, ...', 'friends, ...'] }
-  function getRulerships(planetName, planets) {
-    if (TRADITIONAL.indexOf(planetName) === -1) return null;
-    if (!planets || !planets.Ascendant) return null;
-    var ascSignIdx = SIGNS.indexOf(planets.Ascendant.sign);
-    if (ascSignIdx === -1) return null;
+    swe.houses() returns:
+      cusps: tuple of 13 values; cusps[1]..cusps[12] are house cusp
+             ecliptic longitudes (cusps[0] is unused / 0).
+      ascmc: Ascendant, MC, and other points.
 
-    var ruledSigns = DOMICILE[planetName] || [];
-    var houses = [];
-    var themes = [];
-    ruledSigns.forEach(function (sign) {
-      var signIdx = SIGNS.indexOf(sign);
-      if (signIdx === -1) return;
-      var house = ((signIdx - ascSignIdx + 12) % 12) + 1;
-      houses.push(house);
-      themes.push(HOUSE_THEMES[house]);
-    });
-    return { houses: houses, themes: themes };
-  }
+    Placidus fails mathematically above ~66 deg latitude. In that case
+    Swiss Ephemeris itself falls back internally, but to be safe and
+    explicit we catch errors and signal that houses are unavailable so
+    the engine can fall back to whole-sign.
 
-  // ─── Combustion ─────────────────────────────────────────────
-  // When a planet sits too close to the Sun, traditional astrology says
-  // its light is overwhelmed and its function impaired.
-  //   cazimi      within 17' (0.283°) of Sun — exceptionally empowered
-  //   combust     within 8°30'           — severely weakened
-  //   under beams within 15°             — diminished, less reliable
-  //
-  // Sun itself and non-planets don't get combustion checks.
-  function getCombustion(planetName, planets) {
-    if (planetName === 'Sun') return null;
-    if (TRADITIONAL.indexOf(planetName) === -1) return null;
-    if (!planets || !planets[planetName] || !planets.Sun) return null;
+    Returns a dict: { '1': lon, '2': lon, ... '12': lon, 'system': 'placidus' }
+    or None if it cannot be computed.
+    """
+    if not HAS_SWE:
+        return None
+    try:
+        # b'P' selects the Placidus system.
+        cusps, ascmc = swe.houses(jd, lat, lng, b'P')
+        # Guard against the polar-failure case where Placidus collapses.
+        if abs(lat) > 66.0:
+            # Swiss Ephemeris returns degenerate cusps here; signal fallback.
+            return None
+        houses = {}
+        for h in range(1, 13):
+            houses[str(h)] = round(n360(cusps[h]), 6)
+        houses['system'] = 'placidus'
+        houses['asc'] = round(n360(ascmc[0]), 6)
+        houses['mc']  = round(n360(ascmc[1]), 6)
+        return houses
+    except Exception:
+        return None
 
-    var diff = Math.abs(planets[planetName].totalDeg - planets.Sun.totalDeg);
-    if (diff > 180) diff = 360 - diff;
 
-    if (diff <= 0.2833) {  // 17 arc-minutes
-      return { status:'cazimi', score:6, label:'cazimi (heart of the Sun)' };
-    }
-    if (diff <= 8.5) {
-      return { status:'combust', score:-4, label:'combust' };
-    }
-    if (diff <= 15) {
-      return { status:'under_beams', score:-2, label:'under the beams' };
-    }
-    return { status:'free', score:0, label:null };
-  }
+class handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        parsed=urlparse(self.path); params=parse_qs(parsed.query)
+        self.send_response(200)
+        self.send_header('Content-Type','application/json')
+        self.send_header('Access-Control-Allow-Origin','*')
+        self.end_headers()
+        try:
+            if 'jd' not in params:
+                self.wfile.write(json.dumps({'error':'jd required'}).encode()); return
+            jd=float(params['jd'][0])
+            if HAS_SWE:
+                lines,parans=build_acg_swe(jd); source='swisseph'
+            else:
+                lines,parans=build_acg_vsop87(jd); source='vsop87'
 
-  // ─── Sect status (per-planet) ───────────────────────────────
-  // Given the chart's sect, what role does this planet play?
-  function getSectStatus(planetName, sect) {
-    if (!sect) return null;
-    var label = sect.type === 'day' ? 'day chart' : 'night chart';
-    if (planetName === sect.benefic) {
-      return { role:'sect_benefic',     score:3,  label:'sect benefic ('+label+')' };
-    }
-    if (planetName === sect.offSectBenefic) {
-      return { role:'off_sect_benefic', score:1,  label:'out-of-sect benefic ('+label+')' };
-    }
-    if (planetName === sect.malefic) {
-      return { role:'sect_malefic',     score:-2, label:'of-sect malefic ('+label+')' };
-    }
-    if (planetName === sect.offSectMalefic) {
-      return { role:'off_sect_malefic', score:-4, label:'out-of-sect malefic ('+label+')' };
-    }
-    if (planetName === sect.luminary) {
-      return { role:'luminary',         score:2,  label:'luminary of the sect' };
-    }
-    // Sun on night charts / Moon on day charts — out of sect luminary
-    if (planetName === 'Sun' || planetName === 'Moon') {
-      return { role:'off_sect_luminary', score:0, label:'out-of-sect luminary' };
-    }
-    return null;
-  }
+            # Placidus house cusps — only when birth lat/lng are provided.
+            # app.js passes &lat=..&lng=.. ; older callers that omit them
+            # still work exactly as before (houses is simply null).
+            houses = None
+            if 'lat' in params and 'lng' in params:
+                try:
+                    blat = float(params['lat'][0])
+                    blng = float(params['lng'][0])
+                    houses = placidus_houses(jd, blat, blng)
+                except Exception:
+                    houses = None
 
-  // ─── Whole-planet condition ─────────────────────────────────
-  // For one planet, pull together every condition factor we measure.
-  function analyzePlanet(planetName, planets, sect) {
-    if (TRADITIONAL.indexOf(planetName) === -1) return null;
-    var dignity    = getEssentialDignity(planetName, planets, sect);
-    var angularity = getAngularity(planetName, planets);
-    var combustion = getCombustion(planetName, planets);
-    var rulerships = getRulerships(planetName, planets);
-    var sectStatus = getSectStatus(planetName, sect);
-
-    // Total score = sum of all factor scores. We'll use this to bin
-    // into harmonious/dynamic/challenging in categorizeLine().
-    var score = 0;
-    if (dignity)    score += dignity.score;
-    if (angularity) score += angularity.score;
-    if (combustion) score += combustion.score;
-    if (sectStatus) score += sectStatus.score;
-
-    return {
-      planet: planetName,
-      sign: planets[planetName].sign,
-      house: angularity ? angularity.house : null,
-      sect: sectStatus,
-      dignity: dignity,
-      angularity: angularity,
-      combustion: combustion,
-      rulerships: rulerships,
-      score: score
-    };
-  }
-
-  // ─── Full chart analysis ────────────────────────────────────
-  // Run analyzePlanet() for every traditional planet. Returns the full
-  // condition picture — this is what the report builder consumes.
-  function analyzeChart(planets) {
-    var sect = getSect(planets);
-    var result = { sect: sect, planets: {} };
-    TRADITIONAL.forEach(function (p) {
-      var analysis = analyzePlanet(p, planets, sect);
-      if (analysis) result.planets[p] = analysis;
-    });
-    return result;
-  }
-
-  // ─── Line categorization ────────────────────────────────────
-  // Given a planet's full analysis, decide whether its lines should be
-  // filed as harmonious, dynamic, or challenging, AND produce the
-  // one-line summary that explains why (in Neutrino's style:
-  // "Sect benefic, strong in 4th house, but in detriment").
-  //
-  // Approach: score-it-up. Sum the contributing factors, then apply
-  // bin thresholds. The summary lists the most important supporting
-  // factors first, then a "but ..." with the most important opposing
-  // factors. We don't list every factor — just the ones that meaningfully
-  // shaped the verdict, in the same hand-curated style Neutrino uses.
-  //
-  // (Aspects are not yet included — Phase 3 will fold them in.)
-  function categorizeLine(planetName, analysis) {
-    if (!analysis || !analysis.planets || !analysis.planets[planetName]) return null;
-    var a = analysis.planets[planetName];
-
-    // Collect supporting (positive) and opposing (negative) factors.
-    var positives = [];
-    var negatives = [];
-    function push(item) {
-      if (!item || !item.label) return;
-      if (item.score > 0) positives.push({ label:item.label, score:item.score });
-      else if (item.score < 0) negatives.push({ label:item.label, score:item.score });
-    }
-    push(a.sect);
-    push(a.dignity);
-    push(a.angularity);
-    push(a.combustion);
-
-    // Sort by absolute weight so we lead with the biggest factors.
-    positives.sort(function (x, y) { return y.score - x.score; });
-    negatives.sort(function (x, y) { return x.score - y.score; });
-
-    // Build the summary line, Neutrino-style.
-    var pLabels = positives.map(function (p) { return p.label; });
-    var nLabels = negatives.map(function (n) { return n.label; });
-    var summary;
-    if (pLabels.length && nLabels.length) {
-      summary = capitalize(pLabels.join(', ')) + ', but ' + nLabels.join(', ');
-    } else if (pLabels.length) {
-      summary = capitalize(pLabels.join(', '));
-    } else if (nLabels.length) {
-      summary = capitalize(nLabels.join(', '));
-    } else {
-      summary = 'No strong condition factors';
-    }
-
-    // Categorize by total score. Thresholds chosen so that:
-    //  - clearly positive (sect benefic + good dignity + angular) → harmonious
-    //  - clearly negative (out-of-sect malefic + detriment + combust) → challenging
-    //  - mixed signals → dynamic
-    // Tunable as we test on real charts.
-    var category;
-    if (a.score >= 5)       category = 'harmonious';
-    else if (a.score <= -3) category = 'challenging';
-    else                    category = 'dynamic';
-
-    // Cazimi is an override — even with other negatives, cazimi makes
-    // a planet exceptionally empowered.
-    if (a.combustion && a.combustion.status === 'cazimi') {
-      category = 'harmonious';
-    }
-
-    return {
-      planet: planetName,
-      category: category,
-      score: a.score,
-      summary: summary,
-      rulerships: a.rulerships,    // { houses, themes } — for the paragraph copy
-      sign: a.sign,
-      house: a.house
-    };
-  }
-
-  function capitalize(s) {
-    if (!s) return s;
-    return s.charAt(0).toUpperCase() + s.slice(1);
-  }
-
-  // ─── Convenience: categorize every traditional planet at once ───
-  // Returns an object grouped by category, the shape the report wants.
-  function categorizeAllLines(planets) {
-    var analysis = analyzeChart(planets);
-    var out = { harmonious: [], dynamic: [], challenging: [], sect: analysis.sect };
-    TRADITIONAL.forEach(function (p) {
-      var c = categorizeLine(p, analysis);
-      if (c) out[c.category].push(c);
-    });
-    // Sort each bucket by score (best-first for harmonious, worst-first for challenging).
-    out.harmonious.sort(function (x, y) { return y.score - x.score; });
-    out.challenging.sort(function (x, y) { return x.score - y.score; });
-    out.dynamic.sort(function (x, y) { return y.score - x.score; });
-    return out;
-  }
-
-  // ─── Public API ─────────────────────────────────────────────
-  global.elsewhereEngine = global.elsewhereEngine || {};
-  global.elsewhereEngine.getSect             = getSect;
-  global.elsewhereEngine.getEssentialDignity = getEssentialDignity;
-  global.elsewhereEngine.getWholeSignHouse   = getWholeSignHouse;
-  global.elsewhereEngine.getAngularity       = getAngularity;
-  global.elsewhereEngine.getCombustion       = getCombustion;
-  global.elsewhereEngine.getRulerships       = getRulerships;
-  global.elsewhereEngine.getSectStatus       = getSectStatus;
-  global.elsewhereEngine.analyzePlanet       = analyzePlanet;
-  global.elsewhereEngine.analyzeChart        = analyzeChart;
-  global.elsewhereEngine.categorizeLine      = categorizeLine;
-  global.elsewhereEngine.categorizeAllLines  = categorizeAllLines;
-
-})(typeof window !== 'undefined' ? window : globalThis);
+            self.wfile.write(json.dumps({
+                'lines': lines,
+                'parans': parans,
+                'houses': houses,
+                'source': source
+            }).encode())
+        except Exception as ex:
+            self.wfile.write(json.dumps({'error':str(ex),'tb':traceback.format_exc(),'has_swe':HAS_SWE}).encode())
+    def log_message(self,format,*args): pass
