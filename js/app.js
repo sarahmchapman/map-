@@ -1417,7 +1417,7 @@ function _openReading(lat,lng){
     lineData:lineData,
     planets:(function(){
       var out={};
-      ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode','SNode'].forEach(function(p){
+      ['Ascendant','MC','Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode','SNode'].forEach(function(p){
         var pd=activeChart.planets[p];
         if(pd)out[p]={sign:pd.sign,deg:pd.deg,min:pd.min,totalDeg:pd.totalDeg};
       });
