@@ -287,61 +287,67 @@ def build_acg_vsop87(jd):
 
 def placidus_houses(jd, lat, lng):
     """
-    Compute the 12 Placidus house cusps using Swiss Ephemeris's built-in
-    house engine. This is the same method astro.com and Neutrino use, so
-    the results match them exactly.
+    Compute the 12 Placidus house cusps using Swiss Ephemeris's house engine.
+    Returns the same cusps astro.com produces.
 
-    Vercel does not ship Swiss Ephemeris data files, so we use Moshier's
-    analytic ephemeris just like build_acg_swe() does. swe.houses_ex()
-    accepts the flag we need; plain swe.houses() does not.
+    Vercel notes:
+      - swe.houses_ex() may not be present in the version Vercel ships;
+        we fall back to swe.houses() if so.
+      - pyswisseph wrappers vary on the cusp tuple's indexing convention:
+        some return 13 values where cusps[1]..cusps[12] are the cusps and
+        cusps[0] is unused (the original C convention); others return 12
+        values where cusps[0]..cusps[11] are the cusps. We detect which
+        convention applies based on tuple length so the code works on
+        either wrapper.
 
-    Returns a dict: { '1': lon, '2': lon, ... '12': lon, 'system': 'placidus',
-                      'asc': lon, 'mc': lon }
-    or a dict with 'error' explaining what went wrong (so we can see it
-    in the API response and debug instead of failing silently).
+    Returns either a houses dict (success) or an error dict (so the issue
+    is visible in the API response instead of swallowed silently).
     """
     if not HAS_SWE:
         return {'error': 'swisseph not available on this server'}
 
-    # Polar failure: Placidus is mathematically undefined past ~66 deg.
     if abs(lat) > 66.0:
         return {'error': 'Placidus undefined at this latitude',
                 'latitude': lat}
 
-    # Try the Moshier-compatible call first (houses_ex with the Moshier flag).
-    # Fall back to plain swe.houses() in case the running pyswisseph build
-    # exposes only that. Whichever works, return the result.
+    def normalize_cusps(cusps_obj):
+        """Return a list of exactly 12 cusps regardless of indexing convention."""
+        n = len(cusps_obj)
+        if n == 13:
+            # 1-indexed: cusps_obj[0] unused, real cusps at [1]..[12]
+            return list(cusps_obj[1:13])
+        if n == 12:
+            # 0-indexed: real cusps at [0]..[11]
+            return list(cusps_obj)
+        raise ValueError('cusps tuple has unexpected length {} (expected 12 or 13)'.format(n))
+
     last_err = None
     SEFLG_MOSEPH = 4
-    for attempt in ('houses_ex_moseph', 'houses_ex_default', 'houses_plain'):
-        try:
-            if attempt == 'houses_ex_moseph' and hasattr(swe, 'houses_ex'):
-                cusps, ascmc = swe.houses_ex(jd, SEFLG_MOSEPH, lat, lng, b'P')
-            elif attempt == 'houses_ex_default' and hasattr(swe, 'houses_ex'):
-                cusps, ascmc = swe.houses_ex(jd, 0, lat, lng, b'P')
-            elif attempt == 'houses_plain':
-                cusps, ascmc = swe.houses(jd, lat, lng, b'P')
-            else:
-                continue
+    attempts = []
+    if hasattr(swe, 'houses_ex'):
+        attempts.append(('houses_ex_moseph', lambda: swe.houses_ex(jd, SEFLG_MOSEPH, lat, lng, b'P')))
+        attempts.append(('houses_ex_default', lambda: swe.houses_ex(jd, 0, lat, lng, b'P')))
+    attempts.append(('houses_plain', lambda: swe.houses(jd, lat, lng, b'P')))
 
-            # Sanity check: cusps[1] through cusps[12] should be distinct
-            # and span the zodiac. If they collapse to ~zero or duplicate
-            # values, treat as failure and try the next attempt.
-            unique_cusps = set(round(c, 2) for c in cusps[1:13])
-            if len(unique_cusps) < 10:
-                last_err = '{}: degenerate cusps {}'.format(attempt, list(cusps[1:13]))
-                continue
+    for name, call in attempts:
+        try:
+            result = call()
+            # swe.houses_ex returns (cusps, ascmc) — sometimes with extra fields.
+            # swe.houses returns (cusps, ascmc). Either way, first two are what we want.
+            cusps_raw = result[0]
+            ascmc     = result[1]
+            cusps12   = normalize_cusps(cusps_raw)
 
             houses = {}
-            for h in range(1, 13):
-                houses[str(h)] = round(n360(cusps[h]), 6)
-            houses['system'] = 'placidus'
-            houses['asc'] = round(n360(ascmc[0]), 6)
-            houses['mc']  = round(n360(ascmc[1]), 6)
-            houses['_method'] = attempt
+            for i, lon in enumerate(cusps12):
+                houses[str(i + 1)] = round(n360(lon), 6)
+            houses['system']  = 'placidus'
+            houses['asc']     = round(n360(ascmc[0]), 6)
+            houses['mc']      = round(n360(ascmc[1]), 6)
+            houses['_method'] = name
             return houses
         except Exception as ex:
-            last_err = '{}: {}'.format(attempt, str(ex))
+            last_err = '{}: {}'.format(name, str(ex))
             continue
 
     return {'error': 'all house calculation attempts failed',
