@@ -182,9 +182,7 @@
   // ─── Whole-sign houses ──────────────────────────────────────
   // Hellenistic astrology uses whole-sign houses: the sign rising on the
   // eastern horizon IS the entire first house, the next sign IS the
-  // entire second house, and so on. This is different from the Placidus
-  // system used elsewhere on the site (reading.html), but it's the
-  // correct system for traditional dignity and rulership work.
+  // entire second house, and so on.
   //
   // getWholeSignHouse returns which house (1–12) the planet occupies.
   function getWholeSignHouse(planetName, planets) {
@@ -197,6 +195,52 @@
     return ((planetSignIdx - ascSignIdx + 12) % 12) + 1;
   }
 
+  // ─── Placidus houses ────────────────────────────────────────
+  // Placidus is the system astro.com and the Neutrino app use, so this
+  // is what makes our house numbers match those references. We do NOT
+  // calculate Placidus here — that math is done correctly by Swiss
+  // Ephemeris on the server (api/astro.py) and the 12 cusp longitudes
+  // are passed in on planets._houses, shaped like:
+  //   { "1": 144.39, "2": 173.45, ... "12": 116.35, system:'placidus' }
+  //
+  // getPlacidusHouse finds which pair of cusps a planet's longitude
+  // falls between. A planet is in house N if its longitude is at or
+  // after cusp N and before cusp N+1, measured forward through the
+  // zodiac (handling the 360°→0° wrap).
+  function getPlacidusHouse(planetName, planets) {
+    if (!planets || !planets[planetName]) return null;
+    var H = planets._houses;
+    if (!H) return null;
+    var lon = planets[planetName].totalDeg;
+    if (lon == null) return null;
+    for (var h = 1; h <= 12; h++) {
+      var a = H[String(h)];
+      var b = H[String(h === 12 ? 1 : h + 1)];
+      if (a == null || b == null) return null;
+      var span = ((b - a) % 360 + 360) % 360;
+      var pos  = ((lon - a) % 360 + 360) % 360;
+      if (pos < span) return h;
+    }
+    return null;
+  }
+
+  // ─── Unified house lookup ───────────────────────────────────
+  // Prefer Placidus (matches astro.com / Neutrino). Fall back to
+  // whole-sign only when Placidus cusps aren't available — e.g. an
+  // older saved chart from before the cusps were added, or a polar
+  // birth where Placidus is mathematically undefined.
+  function getHouse(planetName, planets) {
+    var p = getPlacidusHouse(planetName, planets);
+    if (p) return p;
+    return getWholeSignHouse(planetName, planets);
+  }
+
+  // Which house system is actually in use for this chart — useful for
+  // the report to footnote "houses: Placidus" vs the fallback.
+  function getHouseSystem(planets) {
+    return (planets && planets._houses) ? 'placidus' : 'whole-sign';
+  }
+
   // ─── Accidental dignity (angularity) ────────────────────────
   // Where a planet sits by house affects how strongly it expresses.
   // Angular houses (1, 4, 7, 10) — most active and visible.
@@ -206,7 +250,7 @@
   // Traditional astrology also flags the 6th and 12th specifically as
   // "averse" or "joy-less" houses where planets struggle more.
   function getAngularity(planetName, planets) {
-    var house = getWholeSignHouse(planetName, planets);
+    var house = getHouse(planetName, planets);
     if (!house) return null;
     var angular   = [1,4,7,10];
     var succedent = [2,5,8,11];
@@ -258,22 +302,44 @@
 
   // getRulerships returns the houses that planet rules in this chart.
   // Output: { houses: [2, 11], themes: ['money, ...', 'friends, ...'] }
+  //
+  // A planet rules a house if it rules the sign ON that house's cusp.
+  // With Placidus, a sign can stretch across more than one cusp, so we
+  // check each of the 12 cusps: whichever cusps fall in a sign this
+  // planet rules are the houses it governs. When Placidus cusps aren't
+  // available we fall back to whole-sign (sign = house).
   function getRulerships(planetName, planets) {
     if (TRADITIONAL.indexOf(planetName) === -1) return null;
     if (!planets || !planets.Ascendant) return null;
-    var ascSignIdx = SIGNS.indexOf(planets.Ascendant.sign);
-    if (ascSignIdx === -1) return null;
 
     var ruledSigns = DOMICILE[planetName] || [];
     var houses = [];
     var themes = [];
-    ruledSigns.forEach(function (sign) {
-      var signIdx = SIGNS.indexOf(sign);
-      if (signIdx === -1) return;
-      var house = ((signIdx - ascSignIdx + 12) % 12) + 1;
-      houses.push(house);
-      themes.push(HOUSE_THEMES[house]);
-    });
+    var H = planets._houses;
+
+    if (H) {
+      // Placidus: look at the sign on each house cusp.
+      for (var h = 1; h <= 12; h++) {
+        var cuspLon = H[String(h)];
+        if (cuspLon == null) continue;
+        var cuspSign = SIGNS[Math.floor(((cuspLon % 360) + 360) % 360 / 30)];
+        if (ruledSigns.indexOf(cuspSign) !== -1) {
+          houses.push(h);
+          themes.push(HOUSE_THEMES[h]);
+        }
+      }
+    } else {
+      // Whole-sign fallback: sign IS the house.
+      var ascSignIdx = SIGNS.indexOf(planets.Ascendant.sign);
+      if (ascSignIdx === -1) return null;
+      ruledSigns.forEach(function (sign) {
+        var signIdx = SIGNS.indexOf(sign);
+        if (signIdx === -1) return;
+        var house = ((signIdx - ascSignIdx + 12) % 12) + 1;
+        houses.push(house);
+        themes.push(HOUSE_THEMES[house]);
+      });
+    }
     return { houses: houses, themes: themes };
   }
 
@@ -477,6 +543,9 @@
   global.elsewhereEngine.getSect             = getSect;
   global.elsewhereEngine.getEssentialDignity = getEssentialDignity;
   global.elsewhereEngine.getWholeSignHouse   = getWholeSignHouse;
+  global.elsewhereEngine.getPlacidusHouse    = getPlacidusHouse;
+  global.elsewhereEngine.getHouse            = getHouse;
+  global.elsewhereEngine.getHouseSystem      = getHouseSystem;
   global.elsewhereEngine.getAngularity       = getAngularity;
   global.elsewhereEngine.getCombustion       = getCombustion;
   global.elsewhereEngine.getRulerships       = getRulerships;
