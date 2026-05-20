@@ -235,6 +235,14 @@ function init() {
     return;
   }
 
+  // Attach Placidus cusps onto the planets object so the engine can use
+  // them. The engine looks for them at planets._houses. If they aren't
+  // present (older saved chart or polar birth) the engine safely falls
+  // back to whole-sign houses.
+  if (data.houses && data.houses.system) {
+    planets._houses = data.houses;
+  }
+
   // If Ascendant is missing (app.js doesn't save it yet), we can't run
   // the engine. Bail out clearly rather than silently producing nothing.
   if (!ensureAscendant(planets)) {
@@ -284,4 +292,3 @@ init();
 
 </body>
 </html>
-
