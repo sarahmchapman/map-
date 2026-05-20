@@ -291,37 +291,61 @@ def placidus_houses(jd, lat, lng):
     house engine. This is the same method astro.com and Neutrino use, so
     the results match them exactly.
 
-    swe.houses() returns:
-      cusps: tuple of 13 values; cusps[1]..cusps[12] are house cusp
-             ecliptic longitudes (cusps[0] is unused / 0).
-      ascmc: Ascendant, MC, and other points.
+    Vercel does not ship Swiss Ephemeris data files, so we use Moshier's
+    analytic ephemeris just like build_acg_swe() does. swe.houses_ex()
+    accepts the flag we need; plain swe.houses() does not.
 
-    Placidus fails mathematically above ~66 deg latitude. In that case
-    Swiss Ephemeris itself falls back internally, but to be safe and
-    explicit we catch errors and signal that houses are unavailable so
-    the engine can fall back to whole-sign.
-
-    Returns a dict: { '1': lon, '2': lon, ... '12': lon, 'system': 'placidus' }
-    or None if it cannot be computed.
+    Returns a dict: { '1': lon, '2': lon, ... '12': lon, 'system': 'placidus',
+                      'asc': lon, 'mc': lon }
+    or a dict with 'error' explaining what went wrong (so we can see it
+    in the API response and debug instead of failing silently).
     """
     if not HAS_SWE:
-        return None
-    try:
-        # b'P' selects the Placidus system.
-        cusps, ascmc = swe.houses(jd, lat, lng, b'P')
-        # Guard against the polar-failure case where Placidus collapses.
-        if abs(lat) > 66.0:
-            # Swiss Ephemeris returns degenerate cusps here; signal fallback.
-            return None
-        houses = {}
-        for h in range(1, 13):
-            houses[str(h)] = round(n360(cusps[h]), 6)
-        houses['system'] = 'placidus'
-        houses['asc'] = round(n360(ascmc[0]), 6)
-        houses['mc']  = round(n360(ascmc[1]), 6)
-        return houses
-    except Exception:
-        return None
+        return {'error': 'swisseph not available on this server'}
+
+    # Polar failure: Placidus is mathematically undefined past ~66 deg.
+    if abs(lat) > 66.0:
+        return {'error': 'Placidus undefined at this latitude',
+                'latitude': lat}
+
+    # Try the Moshier-compatible call first (houses_ex with the Moshier flag).
+    # Fall back to plain swe.houses() in case the running pyswisseph build
+    # exposes only that. Whichever works, return the result.
+    last_err = None
+    SEFLG_MOSEPH = 4
+    for attempt in ('houses_ex_moseph', 'houses_ex_default', 'houses_plain'):
+        try:
+            if attempt == 'houses_ex_moseph' and hasattr(swe, 'houses_ex'):
+                cusps, ascmc = swe.houses_ex(jd, SEFLG_MOSEPH, lat, lng, b'P')
+            elif attempt == 'houses_ex_default' and hasattr(swe, 'houses_ex'):
+                cusps, ascmc = swe.houses_ex(jd, 0, lat, lng, b'P')
+            elif attempt == 'houses_plain':
+                cusps, ascmc = swe.houses(jd, lat, lng, b'P')
+            else:
+                continue
+
+            # Sanity check: cusps[1] through cusps[12] should be distinct
+            # and span the zodiac. If they collapse to ~zero or duplicate
+            # values, treat as failure and try the next attempt.
+            unique_cusps = set(round(c, 2) for c in cusps[1:13])
+            if len(unique_cusps) < 10:
+                last_err = '{}: degenerate cusps {}'.format(attempt, list(cusps[1:13]))
+                continue
+
+            houses = {}
+            for h in range(1, 13):
+                houses[str(h)] = round(n360(cusps[h]), 6)
+            houses['system'] = 'placidus'
+            houses['asc'] = round(n360(ascmc[0]), 6)
+            houses['mc']  = round(n360(ascmc[1]), 6)
+            houses['_method'] = attempt
+            return houses
+        except Exception as ex:
+            last_err = '{}: {}'.format(attempt, str(ex))
+            continue
+
+    return {'error': 'all house calculation attempts failed',
+            'detail': last_err}
 
 
 class handler(BaseHTTPRequestHandler):
