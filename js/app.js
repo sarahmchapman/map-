@@ -1219,11 +1219,17 @@ function _buildChart(day,month,year,hour,min,name,tz){
   ['MC','IC','ASC','DSC'].forEach(function(lt){var b=document.getElementById('lt-'+lt);if(b)b.classList.add('on');});
   renderChart();buildToggleBar();buildLegend();drawMap();
   // Fetch accurate ACG lines from server API
-  fetch('/api/astro?jd='+jd)
+  // lat/lng added so the server can also compute Placidus house cusps
+  fetch('/api/astro?jd='+jd+'&lat='+selectedGeo.lat+'&lng='+selectedGeo.lng)
     .then(function(r){return r.json();})
     .then(function(data){
       acgData=data.lines;
       acgData._parans=data.parans||[];
+      // Placidus house cusps from the server (Swiss Ephemeris).
+      // May be null for polar births — engine falls back to whole-sign.
+      if(activeChart&&data.houses){
+        activeChart.houses=data.houses;
+      }
       // Build Chiron lines client-side since API can\'t compute them
       if(activeChart&&activeChart.planets._chironRA!=null){
         var cRA=activeChart.planets._chironRA;
@@ -1423,7 +1429,8 @@ function _openReading(lat,lng){
       });
       return out;
     })(),
-    parans:parans
+    parans:parans,
+    houses:(activeChart&&activeChart.houses)?activeChart.houses:null
   }));
   // Save reading to account if signed in
   if (_currentUser) {
