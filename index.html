@@ -83,6 +83,19 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 .city-item:hover,.city-item.hi{background:var(--gold-faint)}
 .ci-name{display:block;font-size:.85rem;color:var(--ink);font-weight:400}
 .ci-sub{display:block;font-size:.72rem;color:var(--ink-3);margin-top:.08rem}
+
+/* Coordinate fallback — for users whose birth city isn't in the dropdown. */
+.coord-toggle{font-family:var(--serif);font-style:italic;font-size:.78rem;color:var(--ink-3);background:none;border:none;cursor:pointer;padding:0;margin:-.6rem 0 1.2rem;display:inline-block;border-bottom:.5px dotted var(--paper-3);transition:color .2s,border-color .2s}
+.coord-toggle:hover{color:var(--gold);border-bottom-color:var(--gold)}
+.coord-panel{display:none;background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:6px;padding:1rem 1.1rem 1.1rem;margin-bottom:1.6rem}
+.coord-panel.show{display:block}
+.coord-panel .coord-hint{font-family:var(--serif);font-style:italic;font-size:.78rem;color:var(--ink-3);line-height:1.55;margin-bottom:.9rem}
+.coord-panel .coord-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:.9rem}
+.coord-panel .fgroup{margin:0}
+.coord-panel input{background:var(--paper)}
+.coord-panel .err{margin:0 0 .4rem}
+.coord-applied{font-family:var(--serif);font-style:italic;font-size:.78rem;color:var(--gold);margin-top:.4rem;display:none}
+.coord-applied.show{display:block}
 .submit-area{text-align:center;padding-bottom:2rem;margin-top:1.8rem}
 .submit-btn{font-size:10.5px;font-weight:500;letter-spacing:.28em;text-transform:uppercase;color:var(--paper);background:var(--ink);border:none;border-radius:0;padding:1rem 3rem;cursor:pointer;transition:background .25s;width:100%;max-width:300px}
 .submit-btn:hover{background:var(--gold)}
@@ -194,6 +207,28 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
       <div id="citySuggestions"></div>
     </div>
     <div class="err" id="geoErr">Please select a city from the dropdown list.</div>
+
+    <button type="button" class="coord-toggle" id="coordToggle">Can't find your birth city? Enter coordinates instead</button>
+    <div class="coord-panel" id="coordPanel">
+      <p class="coord-hint">If your birth city isn't in the list, enter the coordinates of your birthplace below. You can find them by searching the place name on Google Maps, right-clicking the location, and copying the numbers that appear at the top of the menu.</p>
+      <div class="fgroup" style="margin-bottom:.9rem">
+        <label>Birth place name</label>
+        <input type="text" id="coordPlace" autocomplete="off" placeholder="e.g. Smallville, Kansas">
+      </div>
+      <div class="coord-row">
+        <div class="fgroup">
+          <label>Latitude</label>
+          <input type="text" id="coordLat" autocomplete="off" placeholder="e.g. 51.5172" inputmode="decimal">
+        </div>
+        <div class="fgroup">
+          <label>Longitude</label>
+          <input type="text" id="coordLng" autocomplete="off" placeholder="e.g. -0.1731" inputmode="decimal">
+        </div>
+      </div>
+      <div class="err" id="coordErr"></div>
+      <div class="coord-applied" id="coordApplied"></div>
+    </div>
+
     <div class="slabel" style="margin-top:.4rem">Your name <span class="opt">optional</span></div>
     <input type="text" id="inName" placeholder="What shall the chart call you?" style="margin-bottom:1.8rem">
     <div class="submit-area">
@@ -288,7 +323,127 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 </div>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="/descriptions.js?v=5"></script>
-<script src="/js/app.js?v=2"></script>
-<script src="/js/engine.js?v=1"></script>
+<script src="/js/app.js?v=3"></script>
+<script src="/js/engine.js?v=2"></script>
+
+<script>
+// ── Coordinate fallback ─────────────────────────────────────────
+// Lets a user enter raw latitude/longitude when their birth city
+// isn't in the dropdown. We build the same `selectedGeo` shape the
+// city picker does, so the rest of the app (timezone lookup, chart
+// calc, server API) just works without changes elsewhere.
+(function(){
+  var btn        = document.getElementById('coordToggle');
+  var panel      = document.getElementById('coordPanel');
+  var placeInp   = document.getElementById('coordPlace');
+  var latInp     = document.getElementById('coordLat');
+  var lngInp     = document.getElementById('coordLng');
+  var errBox     = document.getElementById('coordErr');
+  var applied    = document.getElementById('coordApplied');
+  var cityInput  = document.getElementById('cityInput');
+  var citySugg   = document.getElementById('citySuggestions');
+  var geoErr     = document.getElementById('geoErr');
+  if(!btn||!panel) return;
+
+  // Toggle the panel open/closed.
+  btn.addEventListener('click', function(){
+    var open = panel.classList.toggle('show');
+    btn.textContent = open
+      ? 'Hide coordinate entry'
+      : "Can't find your birth city? Enter coordinates instead";
+  });
+
+  // Validate a single decimal number with a min/max range.
+  function parseCoord(value, min, max){
+    if(value==null) return null;
+    var s = String(value).trim().replace(/[°\s]/g,'');
+    if(!s) return null;
+    var n = parseFloat(s);
+    if(isNaN(n)) return NaN;
+    if(n<min||n>max) return NaN;
+    return n;
+  }
+
+  // After any change to the manual inputs, try to build a selectedGeo.
+  // If all three are valid, set window.selectedGeo (the global the rest
+  // of the site reads) and clear the city dropdown — they're alternatives.
+  function applyCoords(){
+    var place = placeInp.value.trim();
+    var lat   = parseCoord(latInp.value, -90, 90);
+    var lng   = parseCoord(lngInp.value, -180, 180);
+
+    // Surface specific errors only when the user has actually typed
+    // something — don't yell at an empty panel.
+    var msg = '';
+    if(latInp.value.trim() && (isNaN(lat) || lat===null))
+      msg = 'Latitude must be a number between -90 and 90.';
+    else if(lngInp.value.trim() && (isNaN(lng) || lng===null))
+      msg = 'Longitude must be a number between -180 and 180.';
+    errBox.textContent = msg;
+    errBox.classList.toggle('on', !!msg);
+
+    // Only commit when ALL three fields are present and valid.
+    if(place && typeof lat==='number' && !isNaN(lat)
+            && typeof lng==='number' && !isNaN(lng)) {
+      // selectedGeo lives in app.js's scope as a `var`. From the
+      // <script> we can't set its local; but app.js exposes it on
+      // the global window object because it's declared at the top
+      // level. window.selectedGeo === selectedGeo for our purposes.
+      window.selectedGeo = {
+        lat: lat,
+        lng: lng,
+        display: place,
+        city: place,
+        country: '',
+        _fromCoords: true,
+        // tzFromLng is a helper in app.js (also global). The handleSubmit
+        // path will replace this with the GeoNames lookup anyway.
+        tz: (typeof tzFromLng==='function') ? tzFromLng(lng) : 0
+      };
+      applied.textContent = 'Using ' + place + ' at ' + lat.toFixed(4) + ', ' + lng.toFixed(4);
+      applied.classList.add('show');
+      // Clear the city dropdown so it doesn't look like both are active.
+      if(cityInput) cityInput.value = '';
+      if(citySugg) citySugg.classList.remove('show');
+      // Clear the city-required error if it was showing.
+      if(geoErr) geoErr.classList.remove('on');
+    } else {
+      applied.classList.remove('show');
+      // If the user partly filled the panel then went back to the city
+      // dropdown, don't keep the partial coord selection alive.
+      // We only clear selectedGeo here if it was previously set BY this
+      // panel — detected by absence of `country` (city picks have one).
+      if(window.selectedGeo && window.selectedGeo._fromCoords) {
+        window.selectedGeo = null;
+      }
+    }
+  }
+
+  // Re-apply on every change in any of the three inputs.
+  ['input','change','blur'].forEach(function(ev){
+    placeInp.addEventListener(ev, applyCoords);
+    latInp.addEventListener(ev, applyCoords);
+    lngInp.addEventListener(ev, applyCoords);
+  });
+
+  // If the user starts typing in the city dropdown, hide the coord-
+  // applied banner so it's clear which path is active.
+  if(cityInput){
+    cityInput.addEventListener('input', function(){
+      if(cityInput.value.trim()){
+        applied.classList.remove('show');
+      }
+    });
+  }
+
+  // When a city is picked from the dropdown, hide the coord-applied
+  // banner — the city pick has taken over.
+  if(citySugg){
+    citySugg.addEventListener('click', function(){
+      applied.classList.remove('show');
+    });
+  }
+})();
+</script>
 </body>
 </html>
