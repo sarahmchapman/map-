@@ -24,9 +24,56 @@
 
   // Traditional seven planets — these are the only planets that have
   // dignity, rulership, sect, and combustion in Hellenistic astrology.
-  // Outer planets (Uranus, Neptune, Pluto) and points (Chiron, Nodes)
-  // don't get categorized at the line level in this engine.
   var TRADITIONAL = ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn'];
+
+  // Modern planets and points that appear on the map and deserve a
+  // place in the report, but use a different (simpler) scoring path.
+  // Hellenistic astrology doesn't define dignity, sect, or combustion
+  // for these — they were unknown to it. We score them on angularity,
+  // inherent nature, and (for the three with modern rulerships) house
+  // rulership. South Node is intentionally omitted: it's the literal
+  // opposite of the North Node and reading both doubles the noise.
+  var MODERN = ['Uranus','Neptune','Pluto','Chiron','NNode'];
+
+  // Modern co-rulerships. Uranus rules Aquarius, Neptune rules Pisces,
+  // Pluto rules Scorpio. Chiron and the North Node have no rulerships.
+  // We keep these separate from the traditional DOMICILE table so the
+  // traditional logic (which uses DOMICILE) is untouched.
+  var MODERN_RULERSHIPS = {
+    Uranus:  ['Aquarius'],
+    Neptune: ['Pisces'],
+    Pluto:   ['Scorpio']
+  };
+
+  // Inherent nature of each outer planet and point. This is the modern
+  // counterpart to "sect" for outers — a baseline tilt their energy
+  // carries before any chart-specific factors. Values are intentionally
+  // small (compared to dignity scores up to ±5) since they're a tilt,
+  // not a verdict.
+  //   Pluto    -2  intensity, depth, transformation — generative but never easy
+  //   Saturn-like
+  //   Chiron   -2  the wound and the work of healing — formative but painful
+  //   Neptune  -1  dissolution, dreams, sensitivity — softening but unreliable
+  //   Uranus    0  mixed — disruption that opens as often as it breaks
+  //   NNode    +1  direction of growth — generally read as forward-moving
+  var MODERN_NATURE = {
+    Uranus:  { score:  0, label: 'mixed by nature — disruption and awakening' },
+    Neptune: { score: -1, label: 'dissolving by nature — dreams, sensitivity, escape' },
+    Pluto:   { score: -2, label: 'intense by nature — power, depth, transformation' },
+    Chiron:  { score: -2, label: 'tender by nature — wounding and the work of healing' },
+    NNode:   { score:  1, label: 'forward-pulling by nature — direction of growth' }
+  };
+
+  // Modern themes by planet — used in the rulership paragraph so each
+  // outer planet's line can be described in its own voice, even when
+  // the planet has no house rulership (Chiron, NNode).
+  var MODERN_PLANET_THEMES = {
+    Uranus:  'disruption, awakening, sudden change, freedom',
+    Neptune: 'dreams, dissolution, spiritual sensitivity, illusion',
+    Pluto:   'transformation, depth, power, what is hidden brought to light',
+    Chiron:  'the deepest wounds and the slow work of healing',
+    NNode:   'the direction your soul is being drawn toward'
+  };
 
   // ─── Sect determination ─────────────────────────────────────
   // In traditional/Hellenistic astrology, a chart is either "diurnal"
@@ -308,11 +355,23 @@
   // check each of the 12 cusps: whichever cusps fall in a sign this
   // planet rules are the houses it governs. When Placidus cusps aren't
   // available we fall back to whole-sign (sign = house).
+  //
+  // Traditional planets use DOMICILE; modern outers use
+  // MODERN_RULERSHIPS. Chiron and NNode have no rulerships and return
+  // an empty list — their lines are described by their own house
+  // placement only (see writeThemesParagraph in report.html).
   function getRulerships(planetName, planets) {
-    if (TRADITIONAL.indexOf(planetName) === -1) return null;
+    var ruledSigns = null;
+    if (TRADITIONAL.indexOf(planetName) !== -1) {
+      ruledSigns = DOMICILE[planetName] || [];
+    } else if (MODERN_RULERSHIPS[planetName]) {
+      ruledSigns = MODERN_RULERSHIPS[planetName];
+    } else {
+      // Chiron, NNode — no sign rulership in any standard scheme.
+      return { houses: [], themes: [] };
+    }
     if (!planets || !planets.Ascendant) return null;
 
-    var ruledSigns = DOMICILE[planetName] || [];
     var houses = [];
     var themes = [];
     var H = planets._houses;
@@ -425,19 +484,63 @@
       angularity: angularity,
       combustion: combustion,
       rulerships: rulerships,
-      score: score
+      score: score,
+      kind: 'traditional'
+    };
+  }
+
+  // ─── Outer-planet condition ─────────────────────────────────
+  // Modern planets (Uranus, Neptune, Pluto, Chiron, NNode) don't have
+  // sect, dignity, or combustion in any standard scheme. We score them
+  // on what does apply:
+  //   - angularity (same as traditionals)
+  //   - inherent nature (Pluto/Chiron tilt difficult; NNode tilts forward)
+  //   - rulership (the three modern rulers get house-ruler signal)
+  //
+  // The output shape matches analyzePlanet's so the rest of the engine
+  // doesn't need to special-case anything. Note: this categorization is
+  // intentionally thinner than the traditional one — until Phase 3
+  // (aspects) lands, outer placements will tend to cluster by house.
+  function analyzeOuterPlanet(planetName, planets) {
+    if (MODERN.indexOf(planetName) === -1) return null;
+    if (!planets || !planets[planetName]) return null;
+    var angularity = getAngularity(planetName, planets);
+    var rulerships = getRulerships(planetName, planets);
+    var nature     = MODERN_NATURE[planetName] || { score: 0, label: null };
+
+    var score = 0;
+    if (angularity) score += angularity.score;
+    score += nature.score;
+
+    return {
+      planet: planetName,
+      sign: planets[planetName].sign,
+      house: angularity ? angularity.house : null,
+      sect: null,
+      dignity: null,
+      angularity: angularity,
+      combustion: null,
+      rulerships: rulerships,
+      nature: nature,
+      score: score,
+      kind: 'modern'
     };
   }
 
   // ─── Full chart analysis ────────────────────────────────────
-  // Run analyzePlanet() for every traditional planet. Returns the full
-  // condition picture — this is what the report builder consumes.
+  // Run analyzePlanet() for every traditional planet and
+  // analyzeOuterPlanet() for each outer. Returns the unified condition
+  // picture — the report builder consumes this.
   function analyzeChart(planets) {
     var sect = getSect(planets);
     var result = { sect: sect, planets: {} };
     TRADITIONAL.forEach(function (p) {
-      var analysis = analyzePlanet(p, planets, sect);
-      if (analysis) result.planets[p] = analysis;
+      var a = analyzePlanet(p, planets, sect);
+      if (a) result.planets[p] = a;
+    });
+    MODERN.forEach(function (p) {
+      var a = analyzeOuterPlanet(p, planets);
+      if (a) result.planets[p] = a;
     });
     return result;
   }
@@ -471,6 +574,9 @@
     push(a.dignity);
     push(a.angularity);
     push(a.combustion);
+    // For outer planets only, include their inherent-nature factor.
+    // Traditional planets don't have `nature`; this is a no-op for them.
+    if (a.nature) push(a.nature);
 
     // Sort by absolute weight so we lead with the biggest factors.
     positives.sort(function (x, y) { return y.score - x.score; });
@@ -513,7 +619,8 @@
       summary: summary,
       rulerships: a.rulerships,    // { houses, themes } — for the paragraph copy
       sign: a.sign,
-      house: a.house
+      house: a.house,
+      kind: a.kind                 // 'traditional' or 'modern'
     };
   }
 
@@ -522,12 +629,17 @@
     return s.charAt(0).toUpperCase() + s.slice(1);
   }
 
-  // ─── Convenience: categorize every traditional planet at once ───
+  // ─── Convenience: categorize every planet at once ───────────
   // Returns an object grouped by category, the shape the report wants.
+  // Includes both traditional planets (rich scoring) and modern outers
+  // (thinner scoring on angularity + nature + rulership). Within each
+  // bucket they sort by score, so the strongest-supported planets
+  // appear first in harmonious and the most-challenged first in
+  // challenging — regardless of whether they're traditional or modern.
   function categorizeAllLines(planets) {
     var analysis = analyzeChart(planets);
     var out = { harmonious: [], dynamic: [], challenging: [], sect: analysis.sect };
-    TRADITIONAL.forEach(function (p) {
+    TRADITIONAL.concat(MODERN).forEach(function (p) {
       var c = categorizeLine(p, analysis);
       if (c) out[c.category].push(c);
     });
@@ -551,8 +663,12 @@
   global.elsewhereEngine.getRulerships       = getRulerships;
   global.elsewhereEngine.getSectStatus       = getSectStatus;
   global.elsewhereEngine.analyzePlanet       = analyzePlanet;
+  global.elsewhereEngine.analyzeOuterPlanet  = analyzeOuterPlanet;
   global.elsewhereEngine.analyzeChart        = analyzeChart;
   global.elsewhereEngine.categorizeLine      = categorizeLine;
   global.elsewhereEngine.categorizeAllLines  = categorizeAllLines;
+  // Themes table exposed so report.html can describe a modern planet
+  // even when it has no house rulership (Chiron, NNode).
+  global.elsewhereEngine.MODERN_PLANET_THEMES = MODERN_PLANET_THEMES;
 
 })(typeof window !== 'undefined' ? window : globalThis);
