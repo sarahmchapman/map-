@@ -148,8 +148,12 @@ html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margi
 
 <script>
 // ── Planet glyphs & colors (match the rest of the site) ────────
-var PSYM = {Sun:'☉',Moon:'☽',Mercury:'☿',Venus:'♀',Mars:'♂',Jupiter:'♃',Saturn:'♄'};
-var PCOL = {Sun:'#c9973f',Moon:'#5a7aa8',Mercury:'#4a8a6a',Venus:'#c0607a',Mars:'#9b3535',Jupiter:'#7a5a30',Saturn:'#6a6055'};
+var PSYM = {Sun:'☉',Moon:'☽',Mercury:'☿',Venus:'♀',Mars:'♂',Jupiter:'♃',Saturn:'♄',
+            Uranus:'♅',Neptune:'♆',Pluto:'♇',Chiron:'⚷',NNode:'☊'};
+var PCOL = {Sun:'#c9973f',Moon:'#5a7aa8',Mercury:'#4a8a6a',Venus:'#c0607a',Mars:'#9b3535',
+            Jupiter:'#7a5a30',Saturn:'#6a6055',
+            Uranus:'#3a7a7a',Neptune:'#4a4a9a',Pluto:'#7a4a6a',
+            Chiron:'#2a2a2a',NNode:'#2c6e49'};
 
 var SIGNS = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
 
@@ -170,34 +174,66 @@ function ensureAscendant(planets) {
 
 // ── Theme paragraph writer ──────────────────────────────────────
 // Takes the engine's structured output for one planet and writes a
-// short paragraph in the voice of the Neutrino-style reports.
+// short paragraph in the voice of the rest of the report. Handles
+// traditional planets (which always have rulerships) and modern outer
+// planets (which sometimes do, sometimes don't — Chiron and NNode
+// have none in standard schemes, so they're described by their own
+// house placement only).
 function writeThemesParagraph(p) {
-  var planet = p.planet;
-  if (!p.rulerships || !p.rulerships.houses.length) {
-    return '<em>' + planet + '</em> does not have a strong rulership signal in your chart.';
-  }
-  var houses = p.rulerships.houses;
-  var themes = p.rulerships.themes;
+  var planet = displayPlanetName(p.planet);
+  var houses = (p.rulerships && p.rulerships.houses) || [];
+  var themes = (p.rulerships && p.rulerships.themes) || [];
+
+  // Path 1: planet rules at least one house — use rulership language.
   if (houses.length === 1) {
     return '<em>' + planet + '</em> rules your ' + ordinal(houses[0]) + ' house, so your '
       + planet + ' lines carry the themes of ' + themes[0] + '.';
   }
-  // two-house version (most traditional planets rule two signs)
-  return '<em>' + planet + '</em> rules your ' + ordinal(houses[0]) + ' and ' + ordinal(houses[1])
-    + ' houses, so your ' + planet + ' lines carry two layers of meaning: '
-    + themes[0] + '; and ' + themes[1] + '.';
+  if (houses.length >= 2) {
+    return '<em>' + planet + '</em> rules your ' + ordinal(houses[0]) + ' and ' + ordinal(houses[1])
+      + ' houses, so your ' + planet + ' lines carry two layers of meaning: '
+      + themes[0] + '; and ' + themes[1] + '.';
+  }
+
+  // Path 2: planet has no rulerships (Chiron, NNode). Describe by its
+  // own house placement plus the planet's modern themes.
+  var modernThemes = (window.elsewhereEngine && window.elsewhereEngine.MODERN_PLANET_THEMES)
+    ? window.elsewhereEngine.MODERN_PLANET_THEMES[planet] : null;
+  var houseLine = '';
+  if (p.house) {
+    // Look up the house themes from the engine if we can; otherwise be
+    // generic. We don't have HOUSE_THEMES in report.html, so we keep
+    // this lean: just the house number.
+    houseLine = 'Your ' + planet + ' sits in your ' + ordinal(p.house) + ' house, '
+      + 'so ' + planet + ' lines activate that area of your life';
+  } else {
+    houseLine = planet + ' lines';
+  }
+  if (modernThemes) {
+    return houseLine + ' — themes of <em>' + modernThemes + '</em>.';
+  }
+  return houseLine + '.';
+}
+
+// ── Display name fixup ──────────────────────────────────────────
+// The engine uses 'NNode' as an internal key; users should see "North
+// Node". Add other rename rules here if needed.
+function displayPlanetName(name){
+  if (name === 'NNode') return 'North Node';
+  return name;
 }
 
 // ── Render a planet card ────────────────────────────────────────
 function renderPlanetCard(p) {
   var glyph = PSYM[p.planet] || '•';
   var color = PCOL[p.planet] || '#333';
+  var name  = displayPlanetName(p.planet);
   return ''
     + '<div class="planet-card">'
     +   '<div class="planet-head">'
     +     '<span class="planet-glyph" style="color:'+color+'">'+glyph+'</span>'
     +     '<div>'
-    +       '<div class="planet-name" style="color:'+color+'">'+p.planet+' lines</div>'
+    +       '<div class="planet-name" style="color:'+color+'">'+name+' lines</div>'
     +       '<div class="planet-summary">'+p.summary+'</div>'
     +     '</div>'
     +   '</div>'
