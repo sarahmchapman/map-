@@ -293,25 +293,40 @@
   // Angular houses (1, 4, 7, 10) — most active and visible.
   // Succedent houses (2, 5, 8, 11) — moderately active, supporting.
   // Cadent houses (3, 6, 9, 12) — weaker, more internal.
-  //
   // Traditional astrology also flags the 6th and 12th specifically as
   // "averse" or "joy-less" houses where planets struggle more.
+  //
+  // Two things this function returns:
+  //  - score: how strong/weak the planet is by house — feeds the bucket sort
+  //  - label: the words shown in the verdict line on the report
+  // We surface the house in the verdict line ONLY when the position is
+  // decisive — angular (clearly strong) or averse 6/12 (clearly weak).
+  // For middling positions (succedent, plain cadent), the score still
+  // contributes but the label is null so the verdict doesn't show a
+  // location-dependent fact that isn't actually moving the verdict.
+  // Astrocartography lines are global; we want location-dependent info
+  // surfaced only when it's pulling its weight.
   function getAngularity(planetName, planets) {
     var house = getHouse(planetName, planets);
     if (!house) return null;
     var angular   = [1,4,7,10];
     var succedent = [2,5,8,11];
     if (angular.indexOf(house) !== -1) {
-      return { house:house, type:'angular', score:4, label:'strong in '+ordinal(house)+' house' };
+      return { house:house, type:'angular', score:4,
+               label:'strong in '+ordinal(house)+' house' };
     }
     if (succedent.indexOf(house) !== -1) {
-      return { house:house, type:'succedent', score:1, label:'in '+ordinal(house)+' house' };
+      // Middling position — keep the score signal, suppress the label.
+      return { house:house, type:'succedent', score:1, label:null };
     }
-    // cadent — 6th and 12th especially weak ("averse" houses)
+    // Cadent — 6th and 12th are decisively weak ("averse" houses),
+    // so they get a label. The other cadent houses (3, 9) are still
+    // weak by score but not decisively so — label suppressed.
     if (house === 6 || house === 12) {
-      return { house:house, type:'cadent', score:-2, label:'weakened in '+ordinal(house)+' house' };
+      return { house:house, type:'cadent', score:-2,
+               label:'weakened in '+ordinal(house)+' house' };
     }
-    return { house:house, type:'cadent', score:-1, label:'in '+ordinal(house)+' house' };
+    return { house:house, type:'cadent', score:-1, label:null };
   }
 
   // Helper to write "1st", "2nd", "3rd", "4th" etc.
@@ -565,10 +580,16 @@
     // Collect supporting (positive) and opposing (negative) factors.
     var positives = [];
     var negatives = [];
+    // Some labels are descriptive rather than scored — they always appear
+    // in the verdict line but don't count for or against. Currently used
+    // only by outer planets with score-0 nature (Uranus), so the verdict
+    // never falls back to "No strong condition factors" for them.
+    var neutrals  = [];
     function push(item) {
       if (!item || !item.label) return;
       if (item.score > 0) positives.push({ label:item.label, score:item.score });
       else if (item.score < 0) negatives.push({ label:item.label, score:item.score });
+      else neutrals.push({ label:item.label });
     }
     push(a.sect);
     push(a.dignity);
@@ -585,6 +606,7 @@
     // Build the summary line, Neutrino-style.
     var pLabels = positives.map(function (p) { return p.label; });
     var nLabels = negatives.map(function (n) { return n.label; });
+    var zLabels = neutrals.map(function (n) { return n.label; });
     var summary;
     if (pLabels.length && nLabels.length) {
       summary = capitalize(pLabels.join(', ')) + ', but ' + nLabels.join(', ');
@@ -592,6 +614,10 @@
       summary = capitalize(pLabels.join(', '));
     } else if (nLabels.length) {
       summary = capitalize(nLabels.join(', '));
+    } else if (zLabels.length) {
+      // Only descriptive (score-0) labels available — use them so the
+      // verdict still says something meaningful (e.g. Uranus's nature).
+      summary = capitalize(zLabels.join(', '));
     } else {
       summary = 'No strong condition factors';
     }
