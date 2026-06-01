@@ -180,18 +180,30 @@ module.exports = async function handler(req, res) {
   }
 
   // ── Step 3: save to cache (best-effort, don't block response) ─
-  // If the insert fails (race condition, downtime, RLS misconfig)
-  // we still return the freshly generated paragraph — the user
-  // doesn't care; future requests will retry caching.
+  // Debug version: surface the actual Supabase error in the response
+  // so we can see what's going wrong without having to dig through logs.
+  let cacheDebug = { attempted: true };
   try {
-    const { error: insertErr } = await supabase
+    const { data, error, status } = await supabase
       .from('description_cache')
-      .insert({ cache_key: cacheKey, content: paragraph });
-    if (insertErr) {
-      // Likely a duplicate key from a race condition — that's fine.
-      console.warn('Cache insert error:', insertErr.message);
+      .insert({ cache_key: cacheKey, content: paragraph })
+      .select();
+    cacheDebug.status = status;
+    cacheDebug.rowsReturned = Array.isArray(data) ? data.length : null;
+    if (error) {
+      cacheDebug.error = {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      };
+      console.warn('Cache insert error:', error.message);
+    } else {
+      cacheDebug.success = true;
     }
   } catch (ex) {
+    cacheDebug.threw = true;
+    cacheDebug.message = ex.message;
     console.warn('Cache insert crashed:', ex.message);
   }
 
@@ -199,6 +211,14 @@ module.exports = async function handler(req, res) {
     planet,
     sign,
     paragraph,
-    source: 'generated'
+    source: 'generated',
+    _cacheDebug: cacheDebug,
+    _envCheck: {
+      hasUrl: !!process.env.SUPABASE_URL,
+      hasKey: !!process.env.SUPABASE_SERVICE_KEY,
+      urlSubdomain: (process.env.SUPABASE_URL || '').replace('https://', '').split('.')[0] || 'missing',
+      keyPrefix: (process.env.SUPABASE_SERVICE_KEY || '').slice(0, 10),
+      keyLength: (process.env.SUPABASE_SERVICE_KEY || '').length
+    }
   });
 }
