@@ -180,30 +180,19 @@ module.exports = async function handler(req, res) {
   }
 
   // ── Step 3: save to cache (best-effort, don't block response) ─
-  // Debug version: surface the actual Supabase error in the response
-  // so we can see what's going wrong without having to dig through logs.
-  let cacheDebug = { attempted: true };
+  // If the insert fails (downtime, transient error, race condition on
+  // duplicate key) we still return the freshly generated paragraph —
+  // the user doesn't care; future requests will retry caching. Errors
+  // go to Vercel's logs for our own observability but never leak into
+  // the API response.
   try {
-    const { data, error, status } = await supabase
+    const { error } = await supabase
       .from('description_cache')
-      .insert({ cache_key: cacheKey, content: paragraph })
-      .select();
-    cacheDebug.status = status;
-    cacheDebug.rowsReturned = Array.isArray(data) ? data.length : null;
+      .insert({ cache_key: cacheKey, content: paragraph });
     if (error) {
-      cacheDebug.error = {
-        message: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint
-      };
       console.warn('Cache insert error:', error.message);
-    } else {
-      cacheDebug.success = true;
     }
   } catch (ex) {
-    cacheDebug.threw = true;
-    cacheDebug.message = ex.message;
     console.warn('Cache insert crashed:', ex.message);
   }
 
@@ -211,14 +200,6 @@ module.exports = async function handler(req, res) {
     planet,
     sign,
     paragraph,
-    source: 'generated',
-    _cacheDebug: cacheDebug,
-    _envCheck: {
-      hasUrl: !!process.env.SUPABASE_URL,
-      hasKey: !!process.env.SUPABASE_SERVICE_KEY,
-      urlSubdomain: (process.env.SUPABASE_URL || '').replace('https://', '').split('.')[0] || 'missing',
-      keyPrefix: (process.env.SUPABASE_SERVICE_KEY || '').slice(0, 10),
-      keyLength: (process.env.SUPABASE_SERVICE_KEY || '').length
-    }
+    source: 'generated'
   });
 }
