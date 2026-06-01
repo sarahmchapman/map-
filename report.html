@@ -73,10 +73,39 @@ html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margi
 .no-auth a{display:inline-block;font-size:10px;font-weight:500;letter-spacing:.25em;text-transform:uppercase;color:var(--paper);background:var(--ink);padding:.9rem 2rem;text-decoration:none}
 .no-auth a:hover{background:var(--gold)}
 
-/* ── Debug bar at bottom (helps test) ── */
-.debug-bar{margin-top:3rem;padding:1.25rem;background:var(--paper-2);border-radius:8px;font-size:.75rem;color:var(--ink-3);line-height:1.7}
-.debug-bar code{font-family:'SF Mono',Menlo,Consolas,monospace;font-size:.72rem;background:var(--paper);padding:.1rem .3rem;border-radius:3px}
-.debug-toggle{cursor:pointer;color:var(--gold);font-size:.78rem;text-align:center;display:block;margin-top:1.5rem}
+/* ── Loading state for paragraphs ── */
+/* While a planet's description is being fetched, the .planet-themes
+   area shows a subtle pulsing placeholder. As soon as the API returns,
+   it's replaced by the real paragraph. */
+.planet-themes.is-loading{
+  display:flex;flex-direction:column;gap:.55rem;padding-top:.2rem
+}
+.planet-themes.is-loading::before,
+.planet-themes.is-loading::after{
+  content:'';display:block;height:.95rem;border-radius:3px;
+  background:linear-gradient(90deg,var(--paper-2) 0%,var(--paper-3) 50%,var(--paper-2) 100%);
+  background-size:200% 100%;
+  animation:shimmer 1.6s ease-in-out infinite
+}
+.planet-themes.is-loading::before{width:92%}
+.planet-themes.is-loading::after{width:78%}
+@keyframes shimmer{
+  0%{background-position:200% 0}
+  100%{background-position:-200% 0}
+}
+
+/* ── Generating-your-reading status line ── */
+/* A small italic line above the buckets while paragraphs load, hidden
+   once everything has arrived. */
+.generating-status{
+  font-family:var(--serif);font-style:italic;font-size:.88rem;
+  color:var(--ink-3);text-align:center;margin:1.5rem 0 2rem;
+  transition:opacity .4s ease
+}
+.generating-status.hidden{opacity:0;pointer-events:none;height:0;margin:0;overflow:hidden}
+
+/* ── Fallback paragraph when a fetch fails ── */
+.planet-themes.is-fallback{font-style:italic;color:var(--ink-3)}
 </style>
 </head>
 <body>
@@ -110,6 +139,9 @@ html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margi
       <p>But how those themes <em>feel</em> when they get louder depends on how that planet is doing in your chart to begin with. A planet that is comfortable, supported, and in its element will amplify in a way that feels generative. A planet that is uncomfortable or under pressure will amplify those same conditions. The categories below sort your planets by the kind of amplification their lines are likely to bring.</p>
     </div>
 
+    <!-- Status line shown while planet descriptions are loading -->
+    <div class="generating-status" id="generatingStatus">Generating your reading…</div>
+
     <!-- Harmonious -->
     <section class="cat-section">
       <div class="cat-header">
@@ -136,15 +168,12 @@ html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margi
       </div>
       <div id="bucket-challenging"></div>
     </section>
-
-    <span class="debug-toggle" id="debugToggle">show raw engine output</span>
-    <pre class="debug-bar" id="debugPanel" style="display:none;white-space:pre-wrap;overflow-x:auto"></pre>
   </div>
 
 </main>
 
 <!-- The engine -->
-<script src="/js/engine.js?v=2"></script>
+<script src="/js/engine.js?v=3"></script>
 
 <script>
 // ── Planet glyphs & colors (match the rest of the site) ────────
@@ -172,47 +201,14 @@ function ensureAscendant(planets) {
   return false;
 }
 
-// ── Theme paragraph writer ──────────────────────────────────────
-// Takes the engine's structured output for one planet and writes a
-// short paragraph in the voice of the rest of the report. Handles
-// traditional planets (which always have rulerships) and modern outer
-// planets (which sometimes do, sometimes don't — Chiron and NNode
-// have none in standard schemes, so they're described by their own
-// house placement only).
-function writeThemesParagraph(p) {
-  var planet = displayPlanetName(p.planet);
-  var houses = (p.rulerships && p.rulerships.houses) || [];
-  var themes = (p.rulerships && p.rulerships.themes) || [];
-
-  // Path 1: planet rules at least one house — use rulership language.
-  if (houses.length === 1) {
-    return '<em>' + planet + '</em> rules your ' + ordinal(houses[0]) + ' house, so your '
-      + planet + ' lines carry the themes of ' + themes[0] + '.';
-  }
-  if (houses.length >= 2) {
-    return '<em>' + planet + '</em> rules your ' + ordinal(houses[0]) + ' and ' + ordinal(houses[1])
-      + ' houses, so your ' + planet + ' lines carry two layers of meaning: '
-      + themes[0] + '; and ' + themes[1] + '.';
-  }
-
-  // Path 2: planet has no rulerships (Chiron, NNode). Describe by its
-  // own house placement plus the planet's modern themes.
-  var modernThemes = (window.elsewhereEngine && window.elsewhereEngine.MODERN_PLANET_THEMES)
-    ? window.elsewhereEngine.MODERN_PLANET_THEMES[planet] : null;
-  var houseLine = '';
-  if (p.house) {
-    // Look up the house themes from the engine if we can; otherwise be
-    // generic. We don't have HOUSE_THEMES in report.html, so we keep
-    // this lean: just the house number.
-    houseLine = 'Your ' + planet + ' sits in your ' + ordinal(p.house) + ' house, '
-      + 'so ' + planet + ' lines activate that area of your life';
-  } else {
-    houseLine = planet + ' lines';
-  }
-  if (modernThemes) {
-    return houseLine + ' — themes of <em>' + modernThemes + '</em>.';
-  }
-  return houseLine + '.';
+// ── Initial theme-paragraph slot ─────────────────────────────────
+// Each planet card initially renders with an empty .planet-themes
+// container marked is-loading. fetchAllDescriptions() then replaces
+// that container's contents with the real paragraph as soon as the
+// /api/describe-planet response arrives. This way the page layout
+// appears instantly and content streams in, instead of blocking.
+function emptyThemesSlot() {
+  return ''; // contents live in the API response; CSS draws the skeleton
 }
 
 // ── Display name fixup ──────────────────────────────────────────
@@ -224,12 +220,20 @@ function displayPlanetName(name){
 }
 
 // ── Render a planet card ────────────────────────────────────────
+// Each card carries data-cache-key so fetchAllDescriptions can find
+// and fill the right card when its paragraph returns.
 function renderPlanetCard(p) {
   var glyph = PSYM[p.planet] || '•';
   var color = PCOL[p.planet] || '#333';
   var name  = displayPlanetName(p.planet);
+  // The engine attaches no .sign to the line object directly, but the
+  // analysis object carries it. We read sign off the card-level data
+  // (set up below by renderBucket from the planet object's `sign`).
+  var cacheKey = (window.elsewhereEngine && p.sign)
+    ? window.elsewhereEngine.getCacheKey(p.planet, p.sign)
+    : '';
   return ''
-    + '<div class="planet-card">'
+    + '<div class="planet-card" data-cache-key="' + cacheKey + '">'
     +   '<div class="planet-head">'
     +     '<span class="planet-glyph" style="color:'+color+'">'+glyph+'</span>'
     +     '<div>'
@@ -237,7 +241,7 @@ function renderPlanetCard(p) {
     +       '<div class="planet-summary">'+p.summary+'</div>'
     +     '</div>'
     +   '</div>'
-    +   '<div class="planet-themes">'+writeThemesParagraph(p)+'</div>'
+    +   '<div class="planet-themes is-loading">'+emptyThemesSlot()+'</div>'
     + '</div>';
 }
 
@@ -303,25 +307,88 @@ function init() {
   renderBucket('bucket-dynamic',     grouped.dynamic);
   renderBucket('bucket-challenging', grouped.challenging);
 
-  // Stash debug output
-  document.getElementById('debugPanel').textContent =
-    JSON.stringify(grouped, null, 2);
-
   document.getElementById('reportContent').style.display = 'block';
+
+  // Fire off parallel fetches for the planet-in-sign descriptions.
+  // Each card has a data-cache-key attribute; this function finds the
+  // right card by that key and fills in its .planet-themes container
+  // when the API returns.
+  fetchAllDescriptions(planets);
 }
 
-// Debug toggle
-document.getElementById('debugToggle').addEventListener('click', function() {
-  var p = document.getElementById('debugPanel');
-  var t = document.getElementById('debugToggle');
-  if (p.style.display === 'none') {
-    p.style.display = 'block';
-    t.textContent = 'hide raw engine output';
-  } else {
-    p.style.display = 'none';
-    t.textContent = 'show raw engine output';
+// ── Status-line escalation ───────────────────────────────────────
+// Most reports complete in under 10 seconds (cache hits) or up to 20
+// seconds (cold cache, all generated fresh). If we cross the 15-second
+// mark and still have outstanding fetches, soften the message so the
+// user knows we haven't stalled.
+function escalateStatusAfter(ms) {
+  return setTimeout(function () {
+    var el = document.getElementById('generatingStatus');
+    if (el && !el.classList.contains('hidden')) {
+      el.textContent = 'Still preparing your reading — almost done…';
+    }
+  }, ms);
+}
+
+// ── Fetch all planet-in-sign descriptions in parallel ────────────
+// Reads the engine's cache key list for the chart, fires one fetch per
+// planet to /api/describe-planet, and as each response arrives slots
+// the paragraph into the matching planet card.
+function fetchAllDescriptions(planets) {
+  var statusEl = document.getElementById('generatingStatus');
+  var keys = window.elsewhereEngine.buildCacheKeysForChart(planets);
+  if (!keys.length) {
+    if (statusEl) statusEl.classList.add('hidden');
+    return;
   }
-});
+
+  var pending = keys.length;
+  var escalateTimer = escalateStatusAfter(15000);
+
+  // Helper: fill in a single planet card's paragraph (or fallback).
+  function fillCard(cacheKey, html, isFallback) {
+    var card = document.querySelector(
+      '.planet-card[data-cache-key="' + cacheKey + '"] .planet-themes'
+    );
+    if (!card) return; // chart changed or planet not rendered (shouldn't happen)
+    card.classList.remove('is-loading');
+    if (isFallback) card.classList.add('is-fallback');
+    card.innerHTML = html;
+  }
+
+  // Mark completion of one fetch and hide the status line when done.
+  function onFetchSettled() {
+    pending--;
+    if (pending <= 0) {
+      clearTimeout(escalateTimer);
+      if (statusEl) statusEl.classList.add('hidden');
+    }
+  }
+
+  keys.forEach(function (k) {
+    fetch('/api/describe-planet', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ planet: k.planet, sign: k.sign })
+    })
+    .then(function (r) {
+      if (!r.ok) throw new Error('API returned ' + r.status);
+      return r.json();
+    })
+    .then(function (data) {
+      if (data && data.paragraph) {
+        fillCard(k.cacheKey, data.paragraph, false);
+      } else {
+        fillCard(k.cacheKey, 'Description unavailable — please refresh.', true);
+      }
+    })
+    .catch(function (err) {
+      console.warn('describe-planet failed for ' + k.planet + ' in ' + k.sign + ':', err.message);
+      fillCard(k.cacheKey, 'Description unavailable — please refresh.', true);
+    })
+    .then(onFetchSettled); // runs whether the promise resolved or rejected
+  });
+}
 
 init();
 </script>
