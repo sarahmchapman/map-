@@ -1,9 +1,9 @@
 {
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" }
-  ],
-  "routes": [
-    { "src": "/(.*\\.html)", "dest": "/$1.html" },
-    { "src": "/(.*)", "dest": "/$1" }
-  ]
+  "name": "elsewhere-astro",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.27.0",
+    "@supabase/supabase-js": "^2.45.0"
+  }
 }
