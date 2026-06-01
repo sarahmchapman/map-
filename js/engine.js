@@ -676,6 +676,40 @@
     return out;
   }
 
+  // ─── Cache key helpers ──────────────────────────────────────
+  // The report.html layer fetches descriptions from /api/describe-planet
+  // by passing a {planet, sign}. The engine owns the canonical naming
+  // here so the cache key format lives in one place — if we ever extend
+  // the key (e.g. to add aspect descriptions later), we change it here
+  // and every caller stays consistent.
+
+  // Build the lookup key for a single planet+sign combination.
+  // Mirrors the format used in api/describe-planet.js when writing.
+  // Example: getCacheKey('Mars', 'Cancer') -> 'planet_sign:mars:cancer'
+  function getCacheKey(planetName, signName) {
+    if (!planetName || !signName) return null;
+    return 'planet_sign:' + String(planetName).toLowerCase()
+                          + ':' + String(signName).toLowerCase();
+  }
+
+  // Build a list of {planet, sign, cacheKey} for every planet in the
+  // chart that will appear in the report. The report can iterate over
+  // this once to know exactly which endpoint calls to fire — no need
+  // to recompute or duplicate the planet list elsewhere.
+  function buildCacheKeysForChart(planets) {
+    var out = [];
+    TRADITIONAL.concat(MODERN).forEach(function (p) {
+      if (planets && planets[p] && planets[p].sign) {
+        out.push({
+          planet: p,
+          sign:   planets[p].sign,
+          cacheKey: getCacheKey(p, planets[p].sign)
+        });
+      }
+    });
+    return out;
+  }
+
   // ─── Public API ─────────────────────────────────────────────
   global.elsewhereEngine = global.elsewhereEngine || {};
   global.elsewhereEngine.getSect             = getSect;
@@ -693,6 +727,8 @@
   global.elsewhereEngine.analyzeChart        = analyzeChart;
   global.elsewhereEngine.categorizeLine      = categorizeLine;
   global.elsewhereEngine.categorizeAllLines  = categorizeAllLines;
+  global.elsewhereEngine.getCacheKey         = getCacheKey;
+  global.elsewhereEngine.buildCacheKeysForChart = buildCacheKeysForChart;
   // Themes table exposed so report.html can describe a modern planet
   // even when it has no house rulership (Chiron, NNode).
   global.elsewhereEngine.MODERN_PLANET_THEMES = MODERN_PLANET_THEMES;
