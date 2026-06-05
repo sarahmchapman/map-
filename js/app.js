@@ -1430,7 +1430,8 @@ function _openReading(lat,lng){
       return out;
     })(),
     parans:parans,
-    houses:(activeChart&&activeChart.houses)?activeChart.houses:null
+    houses:(activeChart&&activeChart.houses)?activeChart.houses:null,
+    aspects:(activeChart&&activeChart.aspects)?activeChart.aspects:null
   }));
   // Save reading to account if signed in
   if (_currentUser) {
