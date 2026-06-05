@@ -283,6 +283,15 @@ function init() {
     planets._houses = data.houses;
   }
 
+  // Attach the natal aspect list so the engine can fold aspect pressure
+  // into the bucket scoring. The engine looks for it at planets._aspects
+  // and re-filters to tight orbs itself. If it's absent (older saved
+  // chart from before aspects were saved) the engine safely scores on
+  // condition alone — no aspect effect, no error.
+  if (data.aspects && data.aspects.length) {
+    planets._aspects = data.aspects;
+  }
+
   // If Ascendant is missing (app.js doesn't save it yet), we can't run
   // the engine. Bail out clearly rather than silently producing nothing.
   if (!ensureAscendant(planets)) {
