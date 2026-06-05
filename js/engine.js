@@ -8,12 +8,14 @@
 //
 // Exposed as window.elsewhereEngine. Add this to any page that needs
 // chart-condition synthesis with:
-//   <script src="/js/engine.js?v=2"></script>
+//   <script src="/js/engine.js?v=3"></script>
 //
 // Phase 1 (done): sect determination — getSect()
-// Phase 2 (this file): essential dignity, whole-sign house, combustion,
-//                      house rulership, and line categorization.
-// Phase 3 (later): aspects synthesis using app.js computeAspects().
+// Phase 2 (done): essential dignity, whole-sign house, combustion,
+//                 house rulership, and line categorization.
+// Phase 3 (this file): aspects — tight-orb filtered, exactness-weighted
+//                      net pressure folded into scoring, one-bucket cap,
+//                      defining aspect surfaced for the card.
 
 (function (global) {
   'use strict';
@@ -481,14 +483,21 @@
     var combustion = getCombustion(planetName, planets);
     var rulerships = getRulerships(planetName, planets);
     var sectStatus = getSectStatus(planetName, sect);
+    var aspects    = getAspectPressure(planetName, planets);
 
-    // Total score = sum of all factor scores. We'll use this to bin
-    // into harmonious/dynamic/challenging in categorizeLine().
-    var score = 0;
-    if (dignity)    score += dignity.score;
-    if (angularity) score += angularity.score;
-    if (combustion) score += combustion.score;
-    if (sectStatus) score += sectStatus.score;
+    // Base score = the planet's own condition (no aspects). We keep this
+    // separate so categorizeLine() can apply the one-bucket cap by
+    // comparing the with-aspects bucket against the base bucket.
+    var baseScore = 0;
+    if (dignity)    baseScore += dignity.score;
+    if (angularity) baseScore += angularity.score;
+    if (combustion) baseScore += combustion.score;
+    if (sectStatus) baseScore += sectStatus.score;
+
+    // Final score folds in net aspect pressure. Round to one decimal so
+    // floating-point addition can't leave noise like 0.3999999999 on the
+    // exposed score.
+    var score = Math.round((baseScore + aspects.score) * 10) / 10;
 
     return {
       planet: planetName,
@@ -499,7 +508,9 @@
       angularity: angularity,
       combustion: combustion,
       rulerships: rulerships,
-      score: score,
+      aspects: aspects,        // { score, defining, all }
+      baseScore: baseScore,    // condition only, before aspects
+      score: score,            // condition + aspects
       kind: 'traditional'
     };
   }
@@ -522,10 +533,13 @@
     var angularity = getAngularity(planetName, planets);
     var rulerships = getRulerships(planetName, planets);
     var nature     = MODERN_NATURE[planetName] || { score: 0, label: null };
+    var aspects    = getAspectPressure(planetName, planets);
 
-    var score = 0;
-    if (angularity) score += angularity.score;
-    score += nature.score;
+    var baseScore = 0;
+    if (angularity) baseScore += angularity.score;
+    baseScore += nature.score;
+
+    var score = Math.round((baseScore + aspects.score) * 10) / 10;
 
     return {
       planet: planetName,
@@ -537,7 +551,9 @@
       combustion: null,
       rulerships: rulerships,
       nature: nature,
-      score: score,
+      aspects: aspects,        // { score, defining, all }
+      baseScore: baseScore,    // condition only, before aspects
+      score: score,            // condition + aspects
       kind: 'modern'
     };
   }
@@ -558,6 +574,130 @@
       if (a) result.planets[p] = a;
     });
     return result;
+  }
+
+  // ─── Aspects (Phase 3) ──────────────────────────────────────
+  // Aspects are angular relationships between two planets in the natal
+  // chart (e.g. Venus trine Saturn). Unlike house placement, aspects
+  // travel with the person — they're the same wherever you go on Earth —
+  // so they belong in the condition score.
+  //
+  // The aspect list is computed in app.js (computeAspects) and rides
+  // along on the planets object as planets._aspects, the same pattern as
+  // planets._houses. Each entry looks like:
+  //   { p1:'Mars', p2:'Pluto', type:'square', sym:'□', orb:0.2 }
+  //
+  // app.js computes aspects with LOOSE orbs (good enough for the map
+  // display). For SCORING we re-filter to TIGHT, planet-weighted orbs so
+  // only aspects a person would actually feel move the buckets. app.js
+  // is left untouched; the tightening happens entirely here.
+
+  // Tight per-planet orbs. For a given pair we use the WIDER of the two
+  // planets' orbs (the more important planet sets the reach).
+  function aspectOrbFor(planetName) {
+    if (planetName === 'Sun' || planetName === 'Moon') return 6;
+    if (planetName === 'Mercury' || planetName === 'Venus' || planetName === 'Mars') return 4;
+    return 3; // Jupiter, Saturn, and all outers
+  }
+
+  // Each aspect type's base direction and strength.
+  //   trine/sextile  → harmonious (positive)
+  //   square/opp     → hard (negative)
+  //   conjunction    → neutral here; its sign is decided by the OTHER
+  //                    planet's nature (Venus/Jupiter help, Mars/Saturn
+  //                    hurt), handled in getAspectPressure.
+  // Magnitudes: the close, "loud" aspects (conjunction, opposition,
+  // square, trine) carry more weight than the quieter sextile.
+  var ASPECT_BASE = {
+    conjunction: { dir:  0, weight: 3 },
+    opposition:  { dir: -1, weight: 3 },
+    square:      { dir: -1, weight: 3 },
+    trine:       { dir:  1, weight: 3 },
+    sextile:     { dir:  1, weight: 2 }
+  };
+
+  // How heavy each planet is as an aspect *source*. Benefics and malefics
+  // press harder than neutral planets — consistent with sect logic, where
+  // Mars and Saturn are the heavies and Venus/Jupiter the helpers.
+  // (Conjunction direction is read off the sign of this value.)
+  var ASPECT_PLANET_WEIGHT = {
+    Sun: 1, Moon: 1, Mercury: 0.5,
+    Venus:  1.5, Jupiter:  1.5,   // benefics — help
+    Mars:  -1.5, Saturn:  -1.5,   // malefics — hurt
+    Uranus: 1, Neptune: 1, Pluto: 1.5
+  };
+
+  // getAspectPressure: for one planet, sum the net score adjustment from
+  // all its aspects that survive the tight orb filter, and identify its
+  // single most-defining aspect (the tightest by orb) for the card label.
+  //
+  // Returns:
+  //   { score:   Number,   // net adjustment to add to the planet's score
+  //     defining: { other, type, orb, label } | null,
+  //     all:      [ ...filtered aspects ] }   // for debugging / later copy
+  // or { score:0, defining:null, all:[] } when there are no aspects.
+  function getAspectPressure(planetName, planets) {
+    var empty = { score: 0, defining: null, all: [] };
+    if (!planets || !planets._aspects || !planets._aspects.length) return empty;
+
+    var mine = [];
+    planets._aspects.forEach(function (a) {
+      if (a.p1 !== planetName && a.p2 !== planetName) return;       // not mine
+      if (!ASPECT_BASE[a.type]) return;                              // unknown type
+      var other = (a.p1 === planetName) ? a.p2 : a.p1;
+      // Tight filter: wider of the two planets' orbs.
+      var allow = Math.max(aspectOrbFor(planetName), aspectOrbFor(other));
+      if (a.orb > allow) return;                                     // too wide — drop
+      mine.push({ other: other, type: a.type, orb: a.orb, allow: allow });
+    });
+    if (!mine.length) return empty;
+
+    var total = 0;
+    mine.forEach(function (m) {
+      var base = ASPECT_BASE[m.type];
+      var dir  = base.dir;
+      var ow   = ASPECT_PLANET_WEIGHT[m.other];
+      if (ow == null) ow = 1;
+
+      // Conjunction has no inherent direction — it takes the SIGN of the
+      // other planet's nature (benefic conj = good, malefic conj = hard).
+      if (m.type === 'conjunction') {
+        dir = ow > 0 ? 1 : (ow < 0 ? -1 : 0);
+      }
+
+      // Exactness weight: 1.0 at exact, fading to 0 at the orb edge.
+      var exact = 1 - (m.orb / m.allow);
+      if (exact < 0) exact = 0;
+
+      // Magnitude of the other planet's pull (always positive here; the
+      // direction is carried by `dir`).
+      var mag = Math.abs(ow);
+
+      // Per-aspect contribution. The 0.8 scalar keeps a single tight hard
+      // aspect to roughly -2 to -2.7 — meaningful (it can shift a bucket)
+      // without dwarfing the planet's own condition (dignity up to ±5).
+      var contrib = dir * base.weight * mag * exact * 0.8;
+      total += contrib;
+    });
+
+    // Round to one decimal so scores stay readable in debugging.
+    total = Math.round(total * 10) / 10;
+
+    // Defining aspect = tightest orb (most exact). mine isn't sorted, so
+    // find the min-orb entry.
+    var def = mine[0];
+    mine.forEach(function (m) { if (m.orb < def.orb) def = m; });
+    var defining = {
+      other: def.other,
+      type:  def.type,
+      orb:   def.orb,
+      // Card label leads with THIS planet (display order), e.g.
+      // "Mars square Pluto". Cache-key canonicalization is a separate
+      // concern handled when we build the copy layer.
+      label: planetName + ' ' + def.type + ' ' + def.other
+    };
+
+    return { score: total, defining: defining, all: mine };
   }
 
   // ─── Line categorization ────────────────────────────────────
@@ -627,10 +767,31 @@
     //  - clearly negative (out-of-sect malefic + detriment + combust) → challenging
     //  - mixed signals → dynamic
     // Tunable as we test on real charts.
-    var category;
-    if (a.score >= 5)       category = 'harmonious';
-    else if (a.score <= -3) category = 'challenging';
-    else                    category = 'dynamic';
+    //
+    // bucketFor maps a score to a bucket index: 0 challenging, 1 dynamic,
+    // 2 harmonious. Used twice — once for the with-aspects score and once
+    // for the base (no-aspects) score — so we can apply the one-bucket cap.
+    function bucketFor(s) {
+      if (s >= 5)  return 2; // harmonious
+      if (s <= -3) return 0; // challenging
+      return 1;              // dynamic
+    }
+    var BUCKETS = ['challenging', 'dynamic', 'harmonious'];
+
+    var withAspects = bucketFor(a.score);
+    // baseScore exists on every analyzed planet (Phase 3+). Fall back to
+    // the final score if an older analysis object lacks it, so this is safe.
+    var base = (typeof a.baseScore === 'number') ? bucketFor(a.baseScore) : withAspects;
+
+    // One-bucket cap: aspects may move a planet at most one step from where
+    // its own condition placed it — never flip it end to end. A strong
+    // planet under heavy fire becomes dynamic, not challenging; a weak
+    // planet with support becomes dynamic, not harmonious.
+    var capped = withAspects;
+    if (withAspects > base + 1) capped = base + 1;
+    if (withAspects < base - 1) capped = base - 1;
+
+    var category = BUCKETS[capped];
 
     // Cazimi is an override — even with other negatives, cazimi makes
     // a planet exceptionally empowered.
@@ -642,7 +803,9 @@
       planet: planetName,
       category: category,
       score: a.score,
+      baseScore: (typeof a.baseScore === 'number') ? a.baseScore : a.score,
       summary: summary,
+      aspect: (a.aspects && a.aspects.defining) ? a.aspects.defining : null,
       rulerships: a.rulerships,    // { houses, themes } — for the paragraph copy
       sign: a.sign,
       house: a.house,
