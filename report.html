@@ -63,6 +63,7 @@ html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margi
 .planet-name{font-family:var(--serif);font-size:1.15rem;font-weight:500;letter-spacing:.04em}
 .planet-summary{font-size:.82rem;color:var(--ink-3);margin-top:.15rem;line-height:1.55}
 .planet-themes{font-family:var(--serif);font-size:.98rem;color:var(--ink-2);line-height:1.7;margin-top:.7rem;padding-left:2.45rem}
+.planet-aspect{font-size:.8rem;letter-spacing:.05em;text-transform:uppercase;margin-top:.7rem;padding-left:2.45rem;font-weight:600;opacity:.85}
 .planet-themes em{color:var(--ink);font-style:italic}
 
 /* ── States ── */
@@ -232,6 +233,20 @@ function renderPlanetCard(p) {
   var cacheKey = (window.elsewhereEngine && p.sign)
     ? window.elsewhereEngine.getCacheKey(p.planet, p.sign)
     : '';
+
+  // Defining aspect label, e.g. "Mars square Pluto". The engine attaches
+  // p.aspect = { other, type, orb, label } when the planet has an aspect
+  // that survived the tight-orb filter; null otherwise. We rebuild the
+  // text here (rather than use p.aspect.label directly) so both planet
+  // names get the display fixup — e.g. NNode -> "North Node".
+  var aspectLine = '';
+  if (p.aspect && p.aspect.other && p.aspect.type) {
+    var aspText = displayPlanetName(p.planet) + ' ' + p.aspect.type
+                + ' ' + displayPlanetName(p.aspect.other);
+    aspectLine = '<div class="planet-aspect" style="color:'+color+'">'
+               + aspText + '</div>';
+  }
+
   return ''
     + '<div class="planet-card" data-cache-key="' + cacheKey + '">'
     +   '<div class="planet-head">'
@@ -241,6 +256,7 @@ function renderPlanetCard(p) {
     +       '<div class="planet-summary">'+p.summary+'</div>'
     +     '</div>'
     +   '</div>'
+    +   aspectLine
     +   '<div class="planet-themes is-loading">'+emptyThemesSlot()+'</div>'
     + '</div>';
 }
