@@ -63,7 +63,12 @@ html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margi
 .planet-name{font-family:var(--serif);font-size:1.15rem;font-weight:500;letter-spacing:.04em}
 .planet-summary{font-size:.82rem;color:var(--ink-3);margin-top:.15rem;line-height:1.55}
 .planet-themes{font-family:var(--serif);font-size:.98rem;color:var(--ink-2);line-height:1.7;margin-top:.7rem;padding-left:2.45rem}
-.planet-aspect{font-size:.8rem;letter-spacing:.05em;text-transform:uppercase;margin-top:.7rem;padding-left:2.45rem;font-weight:600;opacity:.85}
+.aspect-section{margin-top:1.1rem;padding-left:2.45rem}
+.aspect-heading{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);opacity:.7;margin-bottom:.35rem}
+.planet-aspect{font-size:.85rem;letter-spacing:.04em;font-weight:600;margin-bottom:.45rem}
+.aspect-explain{font-family:var(--serif);font-size:.92rem;color:var(--ink-2);line-height:1.65}
+.aspect-explain em{color:var(--ink);font-style:italic}
+.aspect-explain.is-fallback{font-style:italic;color:var(--ink-3)}
 .planet-themes em{color:var(--ink);font-style:italic}
 
 /* ── States ── */
@@ -78,11 +83,14 @@ html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margi
 /* While a planet's description is being fetched, the .planet-themes
    area shows a subtle pulsing placeholder. As soon as the API returns,
    it's replaced by the real paragraph. */
-.planet-themes.is-loading{
+.planet-themes.is-loading,
+.aspect-explain.is-loading{
   display:flex;flex-direction:column;gap:.55rem;padding-top:.2rem
 }
 .planet-themes.is-loading::before,
-.planet-themes.is-loading::after{
+.planet-themes.is-loading::after,
+.aspect-explain.is-loading::before,
+.aspect-explain.is-loading::after{
   content:'';display:block;height:.95rem;border-radius:3px;
   background:linear-gradient(90deg,var(--paper-2) 0%,var(--paper-3) 50%,var(--paper-2) 100%);
   background-size:200% 100%;
@@ -90,6 +98,8 @@ html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margi
 }
 .planet-themes.is-loading::before{width:92%}
 .planet-themes.is-loading::after{width:78%}
+.aspect-explain.is-loading::before{width:85%}
+.aspect-explain.is-loading::after{width:62%}
 @keyframes shimmer{
   0%{background-position:200% 0}
   100%{background-position:-200% 0}
@@ -234,17 +244,26 @@ function renderPlanetCard(p) {
     ? window.elsewhereEngine.getCacheKey(p.planet, p.sign)
     : '';
 
-  // Defining aspect label, e.g. "Mars square Pluto". The engine attaches
+  // Defining aspect, e.g. "Mars square Pluto". The engine attaches
   // p.aspect = { other, type, orb, label } when the planet has an aspect
-  // that survived the tight-orb filter; null otherwise. We rebuild the
-  // text here (rather than use p.aspect.label directly) so both planet
-  // names get the display fixup — e.g. NNode -> "North Node".
-  var aspectLine = '';
+  // that survived the tight-orb filter; null otherwise. The aspect block
+  // sits at the BOTTOM of the card, under an "Aspects" heading: the label
+  // (in the planet's color) and, beneath it, an explanation paragraph that
+  // loads from /api/describe-aspect — so it shows a skeleton shimmer until
+  // the copy arrives, exactly like the planet-in-sign paragraph.
+  //
+  // We rebuild the label text here (rather than use p.aspect.label) so both
+  // planet names get the display fixup, e.g. NNode -> "North Node".
+  var aspectBlock = '';
   if (p.aspect && p.aspect.other && p.aspect.type) {
     var aspText = displayPlanetName(p.planet) + ' ' + p.aspect.type
                 + ' ' + displayPlanetName(p.aspect.other);
-    aspectLine = '<div class="planet-aspect" style="color:'+color+'">'
-               + aspText + '</div>';
+    aspectBlock = ''
+      + '<div class="aspect-section">'
+      +   '<div class="aspect-heading">Aspects</div>'
+      +   '<div class="planet-aspect" style="color:'+color+'">'+aspText+'</div>'
+      +   '<div class="aspect-explain is-loading">'+emptyThemesSlot()+'</div>'
+      + '</div>';
   }
 
   return ''
@@ -256,8 +275,8 @@ function renderPlanetCard(p) {
     +       '<div class="planet-summary">'+p.summary+'</div>'
     +     '</div>'
     +   '</div>'
-    +   aspectLine
     +   '<div class="planet-themes is-loading">'+emptyThemesSlot()+'</div>'
+    +   aspectBlock
     + '</div>';
 }
 
@@ -339,6 +358,12 @@ function init() {
   // right card by that key and fills in its .planet-themes container
   // when the API returns.
   fetchAllDescriptions(planets);
+
+  // Fire off parallel fetches for the aspect explanations. Only planets
+  // with a defining aspect have an aspect slot to fill; this walks the
+  // engine output, finds those, and fills each card's .aspect-explain
+  // container from /api/describe-aspect.
+  fetchAllAspects(grouped);
 }
 
 // ── Status-line escalation ───────────────────────────────────────
@@ -412,6 +437,69 @@ function fetchAllDescriptions(planets) {
       fillCard(k.cacheKey, 'Description unavailable — please refresh.', true);
     })
     .then(onFetchSettled); // runs whether the promise resolved or rejected
+  });
+}
+
+// ── Fetch all aspect explanations in parallel ────────────────────
+// Walks the engine's grouped output, finds every planet that has a
+// defining aspect, and fires one fetch per aspect to /api/describe-aspect.
+// As each response arrives it slots the paragraph into that planet card's
+// .aspect-explain container. The card is located by the same
+// data-cache-key the card already carries (planet-in-sign key), which is
+// unique per card, so it reliably finds the right one.
+//
+// Note: the endpoint canonicalizes the planet pair itself (alphabetical),
+// so it doesn't matter which planet we send as planet1 vs planet2 — the
+// same cached paragraph comes back either way.
+function fetchAllAspects(grouped) {
+  // Gather { cacheKey, planet, other, type } for every planet with an aspect.
+  var items = [];
+  ['harmonious', 'dynamic', 'challenging'].forEach(function (bucket) {
+    (grouped[bucket] || []).forEach(function (p) {
+      if (p.aspect && p.aspect.other && p.aspect.type && p.sign) {
+        items.push({
+          cacheKey: window.elsewhereEngine.getCacheKey(p.planet, p.sign),
+          planet:   p.planet,
+          other:    p.aspect.other,
+          type:     p.aspect.type
+        });
+      }
+    });
+  });
+  if (!items.length) return;
+
+  // Helper: fill one card's aspect explanation (or fallback).
+  function fillAspect(cacheKey, html, isFallback) {
+    var slot = document.querySelector(
+      '.planet-card[data-cache-key="' + cacheKey + '"] .aspect-explain'
+    );
+    if (!slot) return;
+    slot.classList.remove('is-loading');
+    if (isFallback) slot.classList.add('is-fallback');
+    slot.innerHTML = html;
+  }
+
+  items.forEach(function (it) {
+    fetch('/api/describe-aspect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ planet1: it.planet, planet2: it.other, aspect: it.type })
+    })
+    .then(function (r) {
+      if (!r.ok) throw new Error('API returned ' + r.status);
+      return r.json();
+    })
+    .then(function (data) {
+      if (data && data.paragraph) {
+        fillAspect(it.cacheKey, data.paragraph, false);
+      } else {
+        fillAspect(it.cacheKey, 'Explanation unavailable — please refresh.', true);
+      }
+    })
+    .catch(function (err) {
+      console.warn('describe-aspect failed for ' + it.planet + ' ' + it.type + ' ' + it.other + ':', err.message);
+      fillAspect(it.cacheKey, 'Explanation unavailable — please refresh.', true);
+    });
   });
 }
 
