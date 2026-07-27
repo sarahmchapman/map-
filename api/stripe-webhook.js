@@ -16,10 +16,13 @@
 //
 // RAW BODY:
 //   Signature verification must run against the EXACT raw bytes Stripe
-//   sent. Vercel/Next normally auto-parses JSON into an object, which
-//   destroys those bytes and makes verification fail with a confusing
-//   "signature" error. The `config` export below disables body parsing so
-//   we can read the raw body ourselves.
+//   sent. This file is a PLAIN Vercel serverless function (not a Next.js
+//   route), so it reads the raw body directly off the request stream in
+//   readRawBody() below. NOTE: the old Next.js-style
+//   `export const config = { api: { bodyParser: false } }` block does NOT
+//   work in plain Vercel functions and was REMOVED — leaving it in can stop
+//   the function from being served at all (404). Reading the stream
+//   ourselves is all that's needed here.
 //
 // IDEMPOTENT:
 //   Stripe may deliver the same event more than once (it retries to be
@@ -28,8 +31,9 @@
 //
 // Env vars (set in Vercel — never in code):
 //   STRIPE_SECRET_KEY      — sk_test_... (then sk_live_... in production)
-//   STRIPE_WEBHOOK_SECRET  — whsec_...   (generated when you register this
-//                            endpoint in the Stripe dashboard)
+//   STRIPE_WEBHOOK_SECRET  — whsec_...   (MUST match the mode: the test
+//                            endpoint and live endpoint have DIFFERENT
+//                            signing secrets)
 //   SUPABASE_URL           — already set
 //   SUPABASE_SERVICE_KEY   — already set
 
@@ -43,15 +47,10 @@ const supabase = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
-// Disable Vercel's automatic body parsing so we can read the raw bytes
-// that Stripe's signature was computed over.
-export const config = {
-  api: {
-    bodyParser: false
-  }
-};
-
-// Read the raw request body as a Buffer (needed for signature check).
+// Read the raw request body as a Buffer. Stripe's signature was computed
+// over these exact bytes, so we must NOT let anything parse them first.
+// In a plain Vercel Node function the body arrives as a readable stream,
+// which we collect here.
 function readRawBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
