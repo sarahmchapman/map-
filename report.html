@@ -6,6 +6,7 @@
 <title>elsewhere — reading your lines</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+  
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -133,6 +134,24 @@ html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margi
     <h2>No chart loaded</h2>
     <p>To read your lines, first go to the map and submit your birth details (or sign in to an existing account).</p>
     <a href="/">Go to the map</a>
+  </div>
+  <!-- Gate: not signed in -->
+  <div id="gateSignIn" class="no-auth" style="display:none">
+    <h2>Sign in to read your Map Guide</h2>
+    <p>Enter the email you used when you purchased, and we'll send you a link to unlock your reading. No password needed.</p>
+    <div style="max-width:320px;margin:0 auto">
+      <input type="email" id="gateEmail" placeholder="your@email.com" style="font-family:var(--sans);font-size:1rem;font-weight:300;color:var(--ink);background:transparent;border:none;border-bottom:.5px solid var(--paper-3);padding:.55rem 0;width:100%;outline:none;text-align:center;margin-bottom:1.4rem">
+      <br>
+      <button id="gateSendBtn" onclick="gateSendLink()" style="font-size:10px;font-weight:600;letter-spacing:.25em;text-transform:uppercase;color:var(--paper);background:var(--ink);border:none;padding:.9rem 2rem;cursor:pointer">Send my sign-in link</button>
+      <p id="gateSignInMsg" style="font-family:var(--serif);font-style:italic;font-size:.88rem;color:var(--gold);margin-top:1.2rem;display:none"></p>
+    </div>
+  </div>
+
+  <!-- Gate: signed in but hasn't purchased -->
+  <div id="gateLocked" class="no-auth" style="display:none">
+    <h2>Unlock your Map Guide</h2>
+    <p>You're signed in, but you haven't unlocked the Map Guide yet. It's a one-time reading of every line on your map — what each one carries, wherever you go.</p>
+    <a href="/map-guide.html">Get your Map Guide</a>
   </div>
 
   <!-- Report content -->
@@ -504,7 +523,93 @@ function fetchAllAspects(grouped) {
   });
 }
 
-init();
+// ── Access gate ─────────────────────────────────────────────────
+// Before showing the report, confirm the visitor is signed in AND has
+// purchased. Signed-in + paid → run init() (the real report). Not signed
+// in → show the sign-in prompt. Signed in but unpaid → show the purchase
+// prompt. This is a client-side (practical) gate: it stops ordinary
+// visitors; see project notes on the security tradeoff at this price.
+var _sbReport = supabase.createClient(
+  'https://wdulylmxhvlxhjfmfivu.supabase.co',
+  'sb_publishable_pBoHzlLsZiLAr7EYF824DA_R6pw5sdR'
+);
+
+function showOnly(id) {
+  ['noAuthState','gateSignIn','gateLocked','reportContent'].forEach(function(s){
+    var el = document.getElementById(s);
+    if (el) el.style.display = (s === id) ? 'block' : 'none';
+  });
+}
+
+async function runGate() {
+  var sessionData;
+  try {
+    var res = await _sbReport.auth.getSession();
+    sessionData = res.data;
+  } catch (e) {
+    sessionData = null;
+  }
+
+  // Not signed in → prompt sign-in.
+  if (!sessionData || !sessionData.session) {
+    showOnly('gateSignIn');
+    return;
+  }
+
+  var email = sessionData.session.user.email;
+
+  // Signed in → check purchase.
+  try {
+    var r = await fetch('/api/check-access', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email })
+    });
+    var data = await r.json();
+    if (data && data.hasAccess) {
+      init();               // paid → render the real report
+    } else {
+      showOnly('gateLocked'); // signed in, not paid → prompt purchase
+    }
+  } catch (e) {
+    showOnly('gateLocked');   // on error, fail closed (locked)
+  }
+}
+
+// Send a magic link from the gate's sign-in prompt.
+function gateSendLink() {
+  var input = document.getElementById('gateEmail');
+  var msg = document.getElementById('gateSignInMsg');
+  var btn = document.getElementById('gateSendBtn');
+  var email = (input.value || '').trim();
+  if (!email || email.indexOf('@') === -1) {
+    msg.style.display = 'block';
+    msg.style.color = '#9b3535';
+    msg.textContent = 'Please enter a valid email address.';
+    return;
+  }
+  btn.disabled = true; btn.textContent = 'Sending…';
+  fetch('/api/auth', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'send_magic_link', email: email })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(){
+    msg.style.display = 'block';
+    msg.style.color = 'var(--gold)';
+    msg.textContent = 'Check your email for your sign-in link.';
+    btn.textContent = 'Link sent ✦';
+  })
+  .catch(function(){
+    msg.style.display = 'block';
+    msg.style.color = '#9b3535';
+    msg.textContent = 'Something went wrong. Please try again.';
+    btn.disabled = false; btn.textContent = 'Send my sign-in link';
+  });
+}
+
+runGate();
 </script>
 
 </body>
