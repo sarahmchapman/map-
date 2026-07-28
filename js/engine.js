@@ -318,17 +318,22 @@
                label:'strong in '+ordinal(house)+' house' };
     }
     if (succedent.indexOf(house) !== -1) {
-      // Middling position — keep the score signal, suppress the label.
-      return { house:house, type:'succedent', score:1, label:null };
+      // Middling position — keep the score signal. We now always show the
+      // house for completeness (a paid report shouldn't omit a planet's
+      // house), but with NEUTRAL wording, since a succedent house neither
+      // strengthens nor weakens the way angular/averse houses do.
+      return { house:house, type:'succedent', score:1,
+               label:'in '+ordinal(house)+' house' };
     }
     // Cadent — 6th and 12th are decisively weak ("averse" houses),
-    // so they get a label. The other cadent houses (3, 9) are still
-    // weak by score but not decisively so — label suppressed.
+    // so they get the "weakened" label. The other cadent houses (3, 9)
+    // are still weak by score but not decisively so — shown neutrally.
     if (house === 6 || house === 12) {
       return { house:house, type:'cadent', score:-2,
                label:'weakened in '+ordinal(house)+' house' };
     }
-    return { house:house, type:'cadent', score:-1, label:null };
+    return { house:house, type:'cadent', score:-1,
+             label:'in '+ordinal(house)+' house' };
   }
 
   // Helper to write "1st", "2nd", "3rd", "4th" etc.
