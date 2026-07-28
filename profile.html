@@ -75,6 +75,17 @@ canvas.chart-wheel{display:block;width:100%;max-width:340px;aspect-ratio:1/1;hei
 /* ── Sign out ── */
 .signout-btn{font-size:9px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);padding:.65rem 1.5rem;cursor:pointer;width:100%;max-width:200px;display:block;margin:0 auto;transition:all .2s}
 .signout-btn:hover{border-color:var(--gold);color:var(--gold)}
+  .mapguide-section{margin-bottom:2.5rem}
+.mg-card{display:block;background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:8px;padding:1.4rem 1.5rem;text-decoration:none;transition:border-color .2s}
+.mg-card:hover{border-color:var(--gold)}
+.mg-owned{display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.mg-owned-left{display:flex;flex-direction:column;gap:.2rem}
+.mg-title{font-family:var(--serif);font-size:1.15rem;font-weight:400;color:var(--ink)}
+.mg-status{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);font-weight:500}
+.mg-read{font-size:9px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--paper);background:var(--gold);padding:.6rem 1.2rem;border-radius:20px;flex-shrink:0}
+.mg-invite-title{font-family:var(--serif);font-size:1.1rem;font-weight:400;color:var(--ink);margin-bottom:.3rem}
+.mg-invite-desc{font-family:var(--serif);font-style:italic;font-size:.88rem;color:var(--ink-3);line-height:1.6;margin-bottom:.2rem}
+.mg-invite-link{font-size:.8rem;color:var(--gold);letter-spacing:.04em}
 
 /* ── Footer ── */
 .page-footer{text-align:center;padding:1.5rem 0 1rem;border-top:.5px solid var(--paper-3);margin-top:2rem}
@@ -107,6 +118,8 @@ canvas.chart-wheel{display:block;width:100%;max-width:340px;aspect-ratio:1/1;hei
       <h1 class="profile-name" id="profileName">—</h1>
       <p class="profile-meta" id="profileMeta">—</p>
     </div>
+    <!-- Map Guide ownership / invitation -->
+    <div class="mapguide-section" id="mapGuideSection"></div>
 
     <!-- Natal chart wheel -->
     <div class="section-heading">Natal chart</div>
@@ -332,6 +345,11 @@ async function initProfile() {
 
     var user = sessionData.session.user;
     document.getElementById('headerEmail').textContent = user.email;
+    // ── Map Guide ownership ──────────────────────────────────
+    // Check whether this signed-in user has purchased the Map Guide,
+    // and render either the "purchased — read it" card or a gentle
+    // "get your Map Guide" invitation into #mapGuideSection.
+    renderMapGuideSection(user.email);
 
     // Load profile
     var { data: profile, error } = await _sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
@@ -431,7 +449,49 @@ function dateToJD(birthDate, birthTime) {
   return jdn + (hour - 12) / 24 + min / 1440;
 }
 
-// ── Sign out ──────────────────────────────────────────────────
+// ── Map Guide section ─────────────────────────────────────────
+// Calls /api/check-access to see if this email owns the Map Guide,
+// then fills #mapGuideSection with the owned card or the invitation.
+function renderMapGuideSection(email) {
+  var el = document.getElementById('mapGuideSection');
+  if (!el) return;
+  fetch('/api/check-access', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    if (data && data.hasAccess) {
+      el.innerHTML =
+        '<div class="section-heading">Your Map Guide</div>'
+        + '<a class="mg-card" href="/report.html">'
+        +   '<div class="mg-owned">'
+        +     '<div class="mg-owned-left">'
+        +       '<span class="mg-title">The Map Guide</span>'
+        +       '<span class="mg-status">✦ Purchased</span>'
+        +     '</div>'
+        +     '<span class="mg-read">Read it →</span>'
+        +   '</div>'
+        + '</a>';
+    } else {
+      el.innerHTML =
+        '<div class="section-heading">Your Map Guide</div>'
+        + '<a class="mg-card" href="/map-guide.html">'
+        +   '<div class="mg-invite-title">The Map Guide</div>'
+        +   '<div class="mg-invite-desc">A reading of every line on your map — what each one carries, wherever you go.</div>'
+        +   '<div class="mg-invite-link">Get your Map Guide →</div>'
+        + '</a>';
+    }
+  })
+  .catch(function(err){
+    console.warn('check-access failed:', err.message);
+    // On error, show nothing rather than a broken section.
+    el.innerHTML = '';
+  });
+}
+  
+  // ── Sign out ──────────────────────────────────────────────────
 function signOut() {
   _sb.auth.signOut().then(function() {
     window.location.href = '/';
