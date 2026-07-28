@@ -108,6 +108,9 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 .bar-meta{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);line-height:1.8}
 .new-btn{margin-left:auto;font-size:8px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);padding:.25rem .7rem;cursor:pointer;border-radius:20px;flex-shrink:0}
 .new-btn:hover{border-color:var(--gold);color:var(--gold)}
+  .mapguide-btn{margin-left:.5rem;font-size:8px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--paper);background:var(--gold);border:.5px solid var(--gold);padding:.3rem .85rem;cursor:pointer;border-radius:20px;flex-shrink:0;transition:all .2s}
+.mapguide-btn:hover{background:var(--gold-light);border-color:var(--gold-light)}
+.mapguide-btn:disabled{opacity:.5;cursor:wait}
 
 
 .map-section{padding:0 0 1.5rem;max-width:100%;margin:0 auto;width:100%}
@@ -249,7 +252,7 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
   <div class="top-bar">
     <span class="site-wordmark" style="margin-right:.75rem;flex-shrink:0">elsewhere</span>
     <div style="flex:1;min-width:0"><div class="bar-name" id="barName">—</div><div class="bar-meta" id="barMeta">—</div></div>
-    <button class="new-btn" onclick="resetToForm()">↩ New chart</button>
+   <button class="mapguide-btn" id="mapGuideBtn" onclick="buyMapGuide()">✦ Get your Map Guide</button> <button class="new-btn" onclick="resetToForm()">↩ New chart</button>
     <button class="new-btn" id="accountBtn" onclick="openAccountModal()" style="display:none">Profile</button>
     <button class="new-btn" id="signInBtn" onclick="openAuthModal()" style="display:none">Sign in</button>
   </div>
@@ -444,6 +447,32 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     });
   }
 })();
+
+// ── Map Guide purchase ──────────────────────────────────────────
+// Calls the checkout endpoint, then sends the buyer to Stripe's hosted
+// payment page. Stripe collects their email during checkout, which the
+// webhook uses to record the purchase.
+function buyMapGuide() {
+  var btn = document.getElementById('mapGuideBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Opening checkout…'; }
+  fetch('/api/create-checkout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: '{}'
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    if (data && data.url) {
+      window.location.href = data.url;
+    } else {
+      throw new Error(data && data.error ? data.error : 'No checkout URL returned');
+    }
+  })
+  .catch(function(err){
+    console.error('Checkout failed:', err.message);
+    alert('Sorry — something went wrong starting checkout. Please try again.');
+    if (btn) { btn.disabled = false; btn.textContent = '✦ Get your Map Guide'; }
+  });
+}
 </script>
 </body>
-</html>
