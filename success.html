@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>elsewhere — your Map Guide is ready</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#1a1714; --ink-2:#2e2b28; --ink-3:#4a4540;
+  --paper:#faf8f4; --paper-2:#f2ede5; --paper-3:#e8e0d2;
+  --gold:#b8955a; --gold-light:#d4b07a;
+  --serif:'Cormorant Garamond',Georgia,serif;
+  --sans:'Jost',sans-serif;
+}
+html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margin:0;line-height:1.55;min-height:100vh}
+.site-header{width:100%;padding:.75rem 1.5rem;display:flex;align-items:center;justify-content:center;border-bottom:.5px solid var(--paper-3);background:var(--paper)}
+.site-wordmark{font-family:var(--serif);font-size:1.05rem;font-weight:300;letter-spacing:.35em;text-transform:lowercase;color:var(--ink);text-decoration:none}
+.wrap{max-width:520px;margin:0 auto;padding:4rem 1.5rem;text-align:center}
+.star{font-size:1.8rem;color:var(--gold);margin-bottom:1.2rem}
+.eyebrow{font-size:9px;font-weight:500;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem}
+h1{font-family:var(--serif);font-size:clamp(1.8rem,5vw,2.4rem);font-weight:300;line-height:1.2;margin-bottom:1.2rem}
+h1 em{font-style:italic;color:var(--gold)}
+.msg{font-family:var(--serif);font-size:1.05rem;color:var(--ink-2);line-height:1.75;margin-bottom:1rem}
+.msg strong{color:var(--ink);font-weight:500}
+.email-emph{color:var(--gold);font-style:italic}
+.sub{font-family:var(--serif);font-style:italic;font-size:.9rem;color:var(--ink-3);line-height:1.7;margin-top:1.5rem}
+.retry{margin-top:2rem}
+.retry input{font-family:var(--sans);font-size:1rem;font-weight:300;color:var(--ink);background:transparent;border:none;border-bottom:.5px solid var(--paper-3);padding:.55rem 0;width:100%;max-width:300px;outline:none;text-align:center;margin-bottom:1.2rem}
+.retry input:focus{border-bottom-color:var(--gold)}
+.btn{font-size:10px;font-weight:600;letter-spacing:.25em;text-transform:uppercase;color:var(--paper);background:var(--gold);border:none;padding:.9rem 2.2rem;cursor:pointer;transition:background .25s}
+.btn:hover{background:var(--ink)}
+.btn:disabled{opacity:.5;cursor:wait}
+.err{font-family:var(--serif);font-style:italic;font-size:.9rem;color:#9b3535;margin-top:1rem}
+#loadingState .sub{margin-top:.5rem}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="site-wordmark" href="/">elsewhere</a>
+</header>
+
+<div class="wrap">
+
+  <!-- Loading: looking up the purchase -->
+  <div id="loadingState">
+    <div class="star">✦</div>
+    <p class="msg">Confirming your purchase…</p>
+    <p class="sub">One moment while we get your Map Guide ready.</p>
+  </div>
+
+  <!-- Success: magic link sent -->
+  <div id="sentState" style="display:none">
+    <div class="star">✦</div>
+    <div class="eyebrow">purchase complete</div>
+    <h1>Your <em>Map Guide</em> is ready</h1>
+    <p class="msg">We've sent a sign-in link to <span class="email-emph" id="sentEmail"></span>. Click it to unlock and read your Map Guide.</p>
+    <p class="sub">The link signs you in automatically — no password needed. Can't find it? Check your spam folder, or re-send below.</p>
+    <div class="retry">
+      <button class="btn" id="resendBtn" onclick="resend()">Re-send the link</button>
+    </div>
+  </div>
+
+  <!-- Fallback: couldn't get email from session, ask for it -->
+  <div id="askState" style="display:none">
+    <div class="star">✦</div>
+    <div class="eyebrow">purchase complete</div>
+    <h1>Your <em>Map Guide</em> is ready</h1>
+    <p class="msg">Enter the email you used at checkout and we'll send you a sign-in link to unlock your Map Guide.</p>
+    <div class="retry">
+      <input type="email" id="askEmail" placeholder="your@email.com">
+      <br>
+      <button class="btn" id="askBtn" onclick="sendToTyped()">Send my sign-in link</button>
+      <div class="err" id="askErr" style="display:none"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Post-purchase bridge ─────────────────────────────────────────
+// Stripe redirected here with ?session_id=... We look up the email on
+// that paid session, then send a magic link to it so the buyer can sign
+// in and unlock their report. Magic-link sign-in creates their account
+// automatically on first click.
+
+var buyerEmail = null;
+
+function getParam(name) {
+  var m = new RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+function show(id) {
+  ['loadingState','sentState','askState'].forEach(function(s){
+    document.getElementById(s).style.display = (s === id) ? 'block' : 'none';
+  });
+}
+
+// Send a magic link to an email via the existing auth endpoint.
+function sendMagicLink(email) {
+  return fetch('/api/auth', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'send_magic_link', email: email })
+  }).then(function(r){ return r.json(); });
+}
+
+// On load: read session_id, look up the paid email, send the link.
+(function init() {
+  var sessionId = getParam('session_id');
+  if (!sessionId) {
+    // No session id — can't auto-detect. Ask them to type their email.
+    show('askState');
+    return;
+  }
+
+  fetch('/api/checkout-email', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: sessionId })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    if (data && data.paid && data.email) {
+      buyerEmail = data.email;
+      return sendMagicLink(buyerEmail).then(function(){
+        document.getElementById('sentEmail').textContent = buyerEmail;
+        show('sentState');
+      });
+    } else {
+      // Couldn't confirm/read email — fall back to asking.
+      show('askState');
+    }
+  })
+  .catch(function(err){
+    console.error('success init failed:', err.message);
+    show('askState');
+  });
+})();
+
+// Re-send to the detected email.
+function resend() {
+  if (!buyerEmail) return;
+  var btn = document.getElementById('resendBtn');
+  btn.disabled = true; btn.textContent = 'Sending…';
+  sendMagicLink(buyerEmail).then(function(){
+    btn.textContent = 'Link re-sent ✦';
+    setTimeout(function(){ btn.disabled = false; btn.textContent = 'Re-send the link'; }, 3000);
+  });
+}
+
+// Send to a manually typed email (fallback path).
+function sendToTyped() {
+  var input = document.getElementById('askEmail');
+  var errEl = document.getElementById('askErr');
+  var email = (input.value || '').trim();
+  errEl.style.display = 'none';
+  if (!email || email.indexOf('@') === -1) {
+    errEl.textContent = 'Please enter a valid email address.';
+    errEl.style.display = 'block';
+    return;
+  }
+  var btn = document.getElementById('askBtn');
+  btn.disabled = true; btn.textContent = 'Sending…';
+  sendMagicLink(email).then(function(){
+    buyerEmail = email;
+    document.getElementById('sentEmail').textContent = email;
+    show('sentState');
+  }).catch(function(){
+    errEl.textContent = 'Something went wrong. Please try again.';
+    errEl.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Send my sign-in link';
+  });
+}
+</script>
+
+</body>
+</html>
