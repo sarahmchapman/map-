@@ -567,7 +567,8 @@ async function runGate() {
     });
     var data = await r.json();
     if (data && data.hasAccess) {
-      init();               // paid → render the real report
+await refreshHouses();  // fetch correct Placidus houses first
+      init();                 // paid → render the real report
     } else {
       showOnly('gateLocked'); // signed in, not paid → prompt purchase
     }
@@ -576,7 +577,28 @@ async function runGate() {
   }
 }
 
-// Send a magic link from the gate's sign-in prompt.
+// Fetch correct Placidus houses from the server and write them into the
+// saved reading, so init() renders with accurate houses regardless of
+// whether app.js managed to save them in time. The server always returns
+// correct cusps; on any failure we leave the saved data untouched.
+async function refreshHouses() {
+  try {
+    var raw = localStorage.getItem('elsewhere_reading');
+    if (!raw) return;
+    var d = JSON.parse(raw);
+    if (d.jd == null || d.birthLat == null || d.birthLng == null) return;
+    var resp = await fetch('/api/astro?jd=' + d.jd + '&lat=' + d.birthLat + '&lng=' + d.birthLng);
+    var fresh = await resp.json();
+    if (fresh && fresh.houses && fresh.houses.system) {
+      d.houses = fresh.houses;
+      localStorage.setItem('elsewhere_reading', JSON.stringify(d));
+    }
+  } catch (e) {
+    console.warn('refreshHouses failed, using saved houses:', e.message);
+  }
+}
+  
+  // Send a magic link from the gate's sign-in prompt.
 function gateSendLink() {
   var input = document.getElementById('gateEmail');
   var msg = document.getElementById('gateSignInMsg');
