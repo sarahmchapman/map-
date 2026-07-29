@@ -1747,3 +1747,54 @@ function resetToForm(){
   document.getElementById('mapLegend').innerHTML='';
 }
 window.addEventListener('resize',function(){if(activeChart)drawMap();});
+// ═══════════════════════════════════════════════════════════
+// MAP GUIDE BUTTON — buyers get "Your Map Guide", not a second checkout
+// ═══════════════════════════════════════════════════════════
+// Append-only: nothing above this line is changed.
+
+function _swapMapGuideButtons() {
+  var links = document.querySelectorAll('a[href*="map-guide.html"]');
+  for (var i = 0; i < links.length; i++) {
+    links[i].setAttribute('href', '/report.html');
+    links[i].textContent = '✦ Your Map Guide';
+  }
+}
+
+function _checkMapGuideOwnership() {
+  if (!_sb) return;
+  _sb.auth.getSession().then(function(result) {
+    var session = result && result.data ? result.data.session : null;
+    if (!session || !session.user || !session.user.email) return;
+    return fetch('/api/check-access', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: session.user.email, product: 'map_guide' })
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      if (data && data.hasAccess) _swapMapGuideButtons();
+    });
+  }).catch(function(err) {
+    console.error('Map Guide access check failed:', err);
+  });
+}
+
+function _startMapGuideCheck() {
+  var tries = 0;
+  var wait = setInterval(function() {
+    tries++;
+    if (_sb) {
+      clearInterval(wait);
+      _checkMapGuideOwnership();
+      _sb.auth.onAuthStateChange(function(event) {
+        if (event === 'SIGNED_IN') _checkMapGuideOwnership();
+      });
+    } else if (tries > 20) {
+      clearInterval(wait);
+    }
+  }, 150);
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', _startMapGuideCheck);
+} else {
+  _startMapGuideCheck();
+}
