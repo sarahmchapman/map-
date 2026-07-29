@@ -33,7 +33,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 //  >>> price id (also starts with price_...). Live mode has a DIFFERENT
 //  >>> price id than test mode. This is the ONE line to change for launch.
 // ─────────────────────────────────────────────────────────────
-const MAP_GUIDE_PRICE_ID = 'price_1Txwx44mWfCuIJLWGgvzwPrr'; // TEST price
+const MAP_GUIDE_PRICE_ID = 'price_1TyLmg4mWfCuIJLWwIkCl3AQ'; // LIVE price
 
 // Where Stripe sends the buyer after checkout.
 //   success -> the bridge page, WITH the checkout session id so it can look
