@@ -577,10 +577,11 @@ await refreshHouses();  // fetch correct Placidus houses first
   }
 }
 
-// Fetch correct Placidus houses from the server and write them into the
-// saved reading, so init() renders with accurate houses regardless of
-// whether app.js managed to save them in time. The server always returns
-// correct cusps; on any failure we leave the saved data untouched.
+// Fetch correct Placidus houses AND the Ascendant/MC from the server, and
+// write them into the saved reading. This makes the report self-sufficient:
+// it no longer depends on app.js having saved the houses or the Ascendant
+// (which can be missing when the report is opened in a fresh browser via the
+// magic link). The server always returns correct data from the birth info.
 async function refreshHouses() {
   try {
     var raw = localStorage.getItem('elsewhere_reading');
@@ -589,12 +590,36 @@ async function refreshHouses() {
     if (d.jd == null || d.birthLat == null || d.birthLng == null) return;
     var resp = await fetch('/api/astro?jd=' + d.jd + '&lat=' + d.birthLat + '&lng=' + d.birthLng);
     var fresh = await resp.json();
-    if (fresh && fresh.houses && fresh.houses.system) {
-      d.houses = fresh.houses;
-      localStorage.setItem('elsewhere_reading', JSON.stringify(d));
+    if (!fresh || !fresh.houses || !fresh.houses.system) return;
+
+    // 1) Correct Placidus houses.
+    d.houses = fresh.houses;
+
+    // 2) Ensure the Ascendant and Midheaven exist on the planets object.
+    // The server returns them as longitudes (fresh.houses.asc / .mc). If the
+    // saved snapshot is missing them (e.g. opened in a fresh browser), build
+    // them here so the report can render.
+    if (!d.planets) d.planets = {};
+    var signs = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
+    function bodyFromLon(lon) {
+      var L = ((lon % 360) + 360) % 360;
+      return {
+        totalDeg: L,
+        sign: signs[Math.floor(L / 30)],
+        deg: Math.floor(L % 30),
+        min: Math.round((L % 1) * 60)
+      };
     }
+    if (fresh.houses.asc != null && !d.planets.Ascendant) {
+      d.planets.Ascendant = bodyFromLon(fresh.houses.asc);
+    }
+    if (fresh.houses.mc != null && !d.planets.Midheaven) {
+      d.planets.Midheaven = bodyFromLon(fresh.houses.mc);
+    }
+
+    localStorage.setItem('elsewhere_reading', JSON.stringify(d));
   } catch (e) {
-    console.warn('refreshHouses failed, using saved houses:', e.message);
+    console.warn('refreshHouses failed, using saved data:', e.message);
   }
 }
   
