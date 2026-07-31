@@ -464,7 +464,11 @@
       return { role:'off_sect_benefic', score:1,  label:'out-of-sect benefic ('+label+')' };
     }
     if (planetName === sect.malefic) {
-      return { role:'sect_malefic',     score:-2, label:'of-sect malefic ('+label+')' };
+      // In-sect malefic: mitigated, not penalised. Traditional doctrine holds
+      // that the malefic of sect operates constructively — it still demands
+      // something, but it is not working against the chart the way the
+      // out-of-sect malefic does. Scored neutral; the label still names it.
+      return { role:'sect_malefic',     score:0, label:'of-sect malefic ('+label+')' };
     }
     if (planetName === sect.offSectMalefic) {
       return { role:'off_sect_malefic', score:-4, label:'out-of-sect malefic ('+label+')' };
@@ -693,7 +697,7 @@
     // tight hard aspect lands near -2 to -2.7 — meaningful, but smaller than
     // the dignity range (±5). Summing broke that: totals reached -6.4, so
     // aspects outweighed the planet's own condition. The cap restores balance.
-    var ASPECT_TOTAL_CAP = 3;
+    var ASPECT_TOTAL_CAP = 2;
     if (total >  ASPECT_TOTAL_CAP) total =  ASPECT_TOTAL_CAP;
     if (total < -ASPECT_TOTAL_CAP) total = -ASPECT_TOTAL_CAP;
 
@@ -789,8 +793,8 @@
     // 2 harmonious. Used twice — once for the with-aspects score and once
     // for the base (no-aspects) score — so we can apply the one-bucket cap.
     function bucketFor(s) {
-      if (s >= 5)  return 2; // harmonious
-      if (s <= -3) return 0; // challenging
+    if (s >= 2)  return 2; // harmonious
+      if (s <= -2) return 0; // challenging
       return 1;              // dynamic
     }
     var BUCKETS = ['challenging', 'dynamic', 'harmonious'];
