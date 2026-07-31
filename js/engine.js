@@ -906,3 +906,80 @@
   global.elsewhereEngine.MODERN_PLANET_THEMES = MODERN_PLANET_THEMES;
 
 })(typeof window !== 'undefined' ? window : globalThis);
+
+// ═══════════════════════════════════════════════════════════
+// ASPECT SELF-HEALING — compute aspects when the snapshot lacks them
+// ═══════════════════════════════════════════════════════════
+// Saved charts contain planet positions but no aspect list, so
+// getAspectPressure() has been returning 0 for every planet on every
+// chart. Rather than fix the save in app.js (which wouldn't help a
+// buyer opening the report on a device with no saved chart at all),
+// we derive aspects here from positions that are always present.
+//
+// Loose 8° orb on purpose: the engine re-filters to its own tight,
+// planet-weighted orbs in aspectOrbFor(). Compute wide, score narrow.
+//
+// Angles (Ascendant, MC) are deliberately excluded. They shift with
+// location, and only factors that travel with the person belong in an
+// astrocartography condition score.
+
+(function (global) {
+  'use strict';
+  var E = global.elsewhereEngine;
+  if (!E) return;
+
+  var ASPECT_ANGLES = {
+    conjunction: 0, sextile: 60, square: 90, trine: 120, opposition: 180
+  };
+  var ASPECT_SYMS = {
+    conjunction: '☌', sextile: '⚹', square: '□', trine: '△', opposition: '☍'
+  };
+  var ASPECT_BODIES = ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn',
+                       'Uranus','Neptune','Pluto','Chiron','NNode'];
+  var LOOSE_ORB = 8;
+
+  function computeAspects(planets) {
+    var out = [];
+    if (!planets) return out;
+    for (var i = 0; i < ASPECT_BODIES.length; i++) {
+      for (var j = i + 1; j < ASPECT_BODIES.length; j++) {
+        var n1 = ASPECT_BODIES[i], n2 = ASPECT_BODIES[j];
+        var b1 = planets[n1], b2 = planets[n2];
+        if (!b1 || !b2) continue;
+        if (typeof b1.totalDeg !== 'number' || typeof b2.totalDeg !== 'number') continue;
+        var sep = Math.abs(b1.totalDeg - b2.totalDeg) % 360;
+        if (sep > 180) sep = 360 - sep;
+        for (var type in ASPECT_ANGLES) {
+          var orb = Math.abs(sep - ASPECT_ANGLES[type]);
+          if (orb <= LOOSE_ORB) {
+            out.push({ p1: n1, p2: n2, type: type,
+                       sym: ASPECT_SYMS[type],
+                       orb: Math.round(orb * 100) / 100 });
+            break;
+          }
+        }
+      }
+    }
+    return out;
+  }
+
+  function ensureAspects(planets) {
+    if (planets && (!planets._aspects || !planets._aspects.length)) {
+      planets._aspects = computeAspects(planets);
+    }
+    return planets;
+  }
+
+  var _origAnalyzeChart = E.analyzeChart;
+  E.analyzeChart = function (planets) {
+    return _origAnalyzeChart(ensureAspects(planets));
+  };
+
+  var _origCategorizeAll = E.categorizeAllLines;
+  E.categorizeAllLines = function (planets) {
+    return _origCategorizeAll(ensureAspects(planets));
+  };
+
+  E.computeAspects = computeAspects;
+
+})(typeof window !== 'undefined' ? window : globalThis);
