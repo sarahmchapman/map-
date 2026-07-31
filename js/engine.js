@@ -63,7 +63,7 @@
     Neptune: { score: -1, label: 'dissolving by nature — dreams, sensitivity, escape' },
     Pluto:   { score: -2, label: 'intense by nature — power, depth, transformation' },
     Chiron:  { score: -2, label: 'tender by nature — wounding and the work of healing' },
-    NNode:   { score:  1, label: 'forward-pulling by nature — direction of growth' }
+    NNode:   { score:  0, label: 'forward-pulling by nature — direction of growth' }
   };
 
   // Modern themes by planet — used in the rulership paragraph so each
@@ -314,7 +314,7 @@
     var angular   = [1,4,7,10];
     var succedent = [2,5,8,11];
     if (angular.indexOf(house) !== -1) {
-      return { house:house, type:'angular', score:4,
+      return { house:house, type:'angular', score:3,
                label:'strong in '+ordinal(house)+' house' };
     }
     if (succedent.indexOf(house) !== -1) {
@@ -688,6 +688,14 @@
       var contrib = dir * base.weight * mag * exact * 0.8;
       total += contrib;
     });
+
+    // Cap the aspect total at ±3. Individual aspects were tuned so a single
+    // tight hard aspect lands near -2 to -2.7 — meaningful, but smaller than
+    // the dignity range (±5). Summing broke that: totals reached -6.4, so
+    // aspects outweighed the planet's own condition. The cap restores balance.
+    var ASPECT_TOTAL_CAP = 3;
+    if (total >  ASPECT_TOTAL_CAP) total =  ASPECT_TOTAL_CAP;
+    if (total < -ASPECT_TOTAL_CAP) total = -ASPECT_TOTAL_CAP;
 
     // Round to one decimal so scores stay readable in debugging.
     total = Math.round(total * 10) / 10;
