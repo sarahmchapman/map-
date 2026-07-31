@@ -629,7 +629,11 @@
     Sun: 1, Moon: 1, Mercury: 0.5,
     Venus:  1.5, Jupiter:  1.5,   // benefics — help
     Mars:  -1.5, Saturn:  -1.5,   // malefics — hurt
-    Uranus: 1, Neptune: 1, Pluto: 1.5
+   // Outers: the SIGN here sets conjunction direction, so it must agree
+    // with MODERN_NATURE — otherwise a conjunction to a difficult outer
+    // reads as helpful. Magnitudes unchanged; only signs corrected.
+    Uranus: 1,                     // genuinely mixed — left positive deliberately
+    Neptune: -1, Pluto: -1.5, Chiron: -1.5, NNode: 1
   };
 
   // getAspectPressure: for one planet, sum the net score adjustment from
