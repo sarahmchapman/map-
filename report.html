@@ -204,6 +204,8 @@ html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margi
 </main>
 
 <!-- The engine -->
+<script src="/descriptions.js?v=5"></script>
+<script src="/js/app.js?v=3"></script>
 <script src="/js/engine.js?v=4"></script>
 
 <script>
@@ -566,9 +568,7 @@ async function runGate() {
       body: JSON.stringify({ email: email })
     });
     var data = await r.json();
-    if (data && data.hasAccess) {
-await refreshHouses();  // fetch correct Placidus houses first
-      init();                 // paid → render the real report
+    
     } else {
       showOnly('gateLocked'); // signed in, not paid → prompt purchase
     }
@@ -582,7 +582,54 @@ await refreshHouses();  // fetch correct Placidus houses first
 // it no longer depends on app.js having saved the houses or the Ascendant
 // (which can be missing when the report is opened in a fresh browser via the
 // magic link). The server always returns correct data from the birth info.
-async function refreshHouses() {
+// Rebuild the saved reading from the signed-in user's stored profile.
+// Only runs when localStorage has no chart — it never overwrites an
+// existing snapshot. This is what makes the report work cross-device:
+// the chart lives on the account, not in one browser.
+async function buildSnapshotFromProfile(userId) {
+  try {
+    if (localStorage.getItem('elsewhere_reading')) return; // already have one
+    var res = await _sbReport.from('profiles').select('*').eq('id', userId).maybeSingle();
+    var p = res && res.data;
+    if (!p || !p.birth_date || p.birth_lat == null || p.birth_lng == null) return;
+
+    var months = ['January','February','March','April','May','June','July',
+                  'August','September','October','November','December'];
+    var parts = String(p.birth_date).split(' ');
+    var day   = parseInt(parts[0], 10) || 1;
+    var month = months.indexOf(parts[1]) + 1 || 1;
+    var year  = parseInt(parts[2], 10) || 2000;
+    var hour = 12, min = 0;
+    if (p.birth_time) {
+      var tp = String(p.birth_time).split(':');
+      hour = parseInt(tp[0], 10); if (isNaN(hour)) hour = 12;
+      min  = parseInt(tp[1], 10); if (isNaN(min))  min  = 0;
+    }
+    var a = Math.floor((14 - month) / 12);
+    var y = year + 4800 - a;
+    var m = month + 12 * a - 3;
+    var jdn = day + Math.floor((153*m+2)/5) + 365*y + Math.floor(y/4)
+            - Math.floor(y/100) + Math.floor(y/400) - 32045;
+    var jd = jdn + (hour - 12) / 24 + min / 1440;
+
+    if (typeof computePlanets !== 'function') return;
+    var planets = computePlanets(jd, p.birth_lat, p.birth_lng);
+    if (!planets) return;
+
+    localStorage.setItem('elsewhere_reading', JSON.stringify({
+      jd: jd,
+      birthLat: p.birth_lat,
+      birthLng: p.birth_lng,
+      birthDate: p.birth_date,
+      birthPlace: p.birth_place || '',
+      name: p.name || '',
+      planets: planets
+    }));
+  } catch (e) {
+    console.warn('buildSnapshotFromProfile failed:', e.message);
+  }
+}
+  async function refreshHouses() {
   try {
     var raw = localStorage.getItem('elsewhere_reading');
     if (!raw) return;
