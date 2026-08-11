@@ -567,9 +567,16 @@ async function runGate() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: email })
     });
-    var data = await r.json();
-    
-    } else {
+   var data = await r.json();
+      if (data && data.hasAccess) {
+        // A buyer opening their magic link on a phone has no saved chart in
+        // that browser — localStorage is empty and init() would show "No chart
+        // loaded" even though their chart is safely stored on their account.
+        // Rebuild the snapshot from their profile before anything else runs.
+        await buildSnapshotFromProfile(sessionData.session.user.id);
+        await refreshHouses();  // fetch correct Placidus houses first
+        init();                 // paid → render the real report
+      } else {
       showOnly('gateLocked'); // signed in, not paid → prompt purchase
     }
   } catch (e) {
