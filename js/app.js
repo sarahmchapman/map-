@@ -153,14 +153,52 @@ function closeAuthModal() {
   document.getElementById('authModal').style.display = 'none';
 }
 
+// ── Sign-in helpers ─────────────────────────────────────────────
+// Shows a message inside the sign-in box. Falls back to a pop-up
+// if the page doesn't have the message area yet.
+function showAuthMessage(msg) {
+  var el = document.getElementById('authError');
+  if (el) {
+    el.textContent = msg;
+    el.style.display = msg ? 'block' : 'none';
+  } else if (msg) {
+    alert(msg);
+  }
+}
+
+function getAuthEmail() {
+  var input = document.getElementById('authEmail');
+  return input ? input.value.trim() : '';
+}
+
+function getAuthPassword() {
+  var input = document.getElementById('authPassword');
+  return input ? input.value : '';
+}
+
+// Swaps the sign-in form for the "check your email" panel.
+function showAuthSent(email, message) {
+  var msgEl = document.getElementById('authSentMsg');
+  if (msgEl) {
+    msgEl.textContent = message;
+  } else {
+    document.getElementById('authEmailSent').textContent = email;
+  }
+  document.getElementById('authForm').style.display = 'none';
+  document.getElementById('authSent').style.display = 'block';
+}
+
+// ── Email sign-in link (magic link) ─────────────────────────────
 function sendMagicLink() {
-  var email = document.getElementById('authEmail').value.trim();
-  if (!email || !email.includes('@')) {
-    alert('Please enter a valid email address.');
+  var email = getAuthEmail();
+  showAuthMessage('');
+  if (!email || email.indexOf('@') === -1) {
+    showAuthMessage('Please enter a valid email address.');
     return;
   }
 
-  var btn = document.querySelector('#authForm button');
+  var btn = document.getElementById('magicLinkBtn') || document.querySelector('#authForm button');
+  var label = btn.textContent;
   btn.textContent = 'Sending…';
   btn.disabled = true;
 
@@ -170,20 +208,132 @@ function sendMagicLink() {
       emailRedirectTo: 'https://elsewhereastro.com/auth-callback.html'
     }
   }).then(function(result) {
-    if (result.error) {
-      alert('Error: ' + result.error.message);
-      btn.textContent = 'Send magic link';
-      btn.disabled = false;
-    } else {
-      document.getElementById('authEmailSent').textContent = email;
-      document.getElementById('authForm').style.display = 'none';
-      document.getElementById('authSent').style.display = 'block';
-    }
-  }).catch(function(err) {
-    alert('Something went wrong. Please try again.');
-    btn.textContent = 'Send magic link';
+    btn.textContent = label;
     btn.disabled = false;
+    if (result.error) {
+      showAuthMessage('Error: ' + result.error.message);
+    } else {
+      showAuthSent(email, 'We sent a sign-in link to ' + email + '. Click it to sign in.');
+    }
+  }).catch(function() {
+    btn.textContent = label;
+    btn.disabled = false;
+    showAuthMessage('Something went wrong. Please try again.');
   });
+}
+
+// ── Sign in with email + password ───────────────────────────────
+function signInWithPassword() {
+  var email = getAuthEmail();
+  var password = getAuthPassword();
+  showAuthMessage('');
+  if (!email || email.indexOf('@') === -1) {
+    showAuthMessage('Please enter a valid email address.');
+    return;
+  }
+  if (!password) {
+    showAuthMessage('Please enter your password.');
+    return;
+  }
+
+  var btn = document.getElementById('passwordSignInBtn');
+  var label = btn ? btn.textContent : '';
+  if (btn) { btn.textContent = 'Signing in…'; btn.disabled = true; }
+
+  _sb.auth.signInWithPassword({ email: email, password: password })
+    .then(function(result) {
+      if (btn) { btn.textContent = label; btn.disabled = false; }
+      if (result.error) {
+        var m = (result.error.message || '').toLowerCase();
+        if (m.indexOf('not confirmed') > -1) {
+          showAuthMessage('Please confirm your email first. Check your inbox for the confirmation link.');
+        } else if (m.indexOf('invalid') > -1) {
+          showAuthMessage('That email and password don\'t match. If you\'ve only signed in with email links before, you haven\'t set a password yet. Use "Email me a sign-in link" below.');
+        } else {
+          showAuthMessage('Error: ' + result.error.message);
+        }
+        return;
+      }
+      // Same destination as the email link, so both ways of signing in behave alike.
+      localStorage.setItem('elsewhere_autologin', '1');
+      window.location.href = '/profile.html';
+    })
+    .catch(function() {
+      if (btn) { btn.textContent = label; btn.disabled = false; }
+      showAuthMessage('Something went wrong. Please try again.');
+    });
+}
+
+// ── Create an account with email + password ─────────────────────
+function signUpWithPassword() {
+  var email = getAuthEmail();
+  var password = getAuthPassword();
+  showAuthMessage('');
+  if (!email || email.indexOf('@') === -1) {
+    showAuthMessage('Please enter a valid email address.');
+    return;
+  }
+  if (!password || password.length < 8) {
+    showAuthMessage('Please choose a password of at least 8 characters.');
+    return;
+  }
+
+  var btn = document.getElementById('createAccountBtn');
+  var label = btn ? btn.textContent : '';
+  if (btn) { btn.textContent = 'Creating…'; btn.disabled = true; }
+
+  _sb.auth.signUp({
+    email: email,
+    password: password,
+    options: {
+      emailRedirectTo: 'https://elsewhereastro.com/auth-callback.html',
+      data: { has_password: true }
+    }
+  }).then(function(result) {
+    if (btn) { btn.textContent = label; btn.disabled = false; }
+    if (result.error) {
+      showAuthMessage('Error: ' + result.error.message);
+      return;
+    }
+    var u = result.data && result.data.user;
+    // Supabase returns an empty identities list when the email is already registered.
+    if (u && u.identities && u.identities.length === 0) {
+      showAuthMessage('An account with this email already exists. Sign in with your password, or use "Email me a sign-in link" below if you haven\'t set one yet.');
+      return;
+    }
+    // If email confirmation is ever turned off, the user is signed in straight away.
+    if (result.data && result.data.session) {
+      localStorage.setItem('elsewhere_autologin', '1');
+      window.location.href = '/profile.html';
+      return;
+    }
+    showAuthSent(email, 'We sent a confirmation link to ' + email + '. Click it to finish creating your account.');
+  }).catch(function() {
+    if (btn) { btn.textContent = label; btn.disabled = false; }
+    showAuthMessage('Something went wrong. Please try again.');
+  });
+}
+
+// ── Add or change a password (used by the profile page) ────────
+// Calls done(errorMessage). errorMessage is null when it worked.
+function setAccountPassword(password, done) {
+  if (!password || password.length < 8) {
+    done('Please choose a password of at least 8 characters.');
+    return;
+  }
+  _sb.auth.updateUser({ password: password, data: { has_password: true } })
+    .then(function(result) {
+      if (result.error) { done(result.error.message); return; }
+      done(null);
+    })
+    .catch(function() {
+      done('Something went wrong. Please try again.');
+    });
+}
+
+// True once this user has set a password.
+function userHasPassword(user) {
+  return !!(user && user.user_metadata && user.user_metadata.has_password);
 }
 
 function openAccountModal() {
