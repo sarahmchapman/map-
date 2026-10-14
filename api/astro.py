@@ -1,10 +1,14 @@
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
-import json, math, traceback
+import json, math, traceback, os
 
 try:
     import swisseph as swe
     HAS_SWE = True
+    # Chiron needs the asteroid data file seas_18.se1, which sits in this
+    # same api/ folder. Point Swiss Ephemeris at it.
+    EPHE_DIR = os.path.dirname(os.path.abspath(__file__))
+    swe.set_ephe_path(EPHE_DIR)
 except ImportError:
     HAS_SWE = False
 
@@ -161,8 +165,9 @@ def build_acg_swe(jd):
     lines={}
     for name,pid in PLANETS.items():
         try:
-            # Chiron needs MOSEPH flag — no data files available on Vercel
-            flag = (4|256|2048) if name == 'Chiron' else IFLAG
+            # Chiron can't use the built-in Moshier ephemeris; it reads the
+            # seas_18.se1 data file instead (SEFLG_SWIEPH=2).
+            flag = (2|256|2048) if name == 'Chiron' else IFLAG
             r,_=swe.calc_ut(jd,pid,flag)
             ra=r[0]
             dec=r[1]
@@ -373,6 +378,16 @@ class handler(BaseHTTPRequestHandler):
             # Placidus house cusps — only when birth lat/lng are provided.
             # app.js passes &lat=..&lng=.. ; older callers that omit them
             # still work exactly as before (houses is simply null).
+            # Accurate Chiron position (ecliptic longitude) for the chart itself.
+            # None if the data file can't be read; the site then falls back.
+            chiron = None
+            if HAS_SWE:
+                try:
+                    cr,_ = swe.calc_ut(jd, swe.CHIRON, 2|256)
+                    chiron = {'lon': round(n360(cr[0]), 6), 'speed': round(cr[3], 6)}
+                except Exception:
+                    chiron = None
+
             houses = None
             if 'lat' in params and 'lng' in params:
                 try:
@@ -386,6 +401,7 @@ class handler(BaseHTTPRequestHandler):
                 'lines': lines,
                 'parans': parans,
                 'houses': houses,
+                'chiron': chiron,
                 'source': source
             }).encode())
         except Exception as ex:
