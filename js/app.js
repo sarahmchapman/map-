@@ -120,6 +120,12 @@ function updateAuthUI(signedIn) {
   var signInBtn = document.getElementById('signInBtn');
   var accountBtn = document.getElementById('accountBtn');
   if (!signInBtn || !accountBtn) return;
+  // "This is my own birth chart" checkbox on the chart form: only for signed-in
+  // users. Ticked by default only when they don't have a saved chart yet.
+  var mineRow = document.getElementById('saveAsMineRow');
+  var mineBox = document.getElementById('saveAsMine');
+  if (mineRow) mineRow.style.display = signedIn ? 'flex' : 'none';
+  if (mineBox && signedIn) mineBox.checked = !(_currentProfile && _currentProfile.birth_date);
   if (signedIn) {
     signInBtn.style.display = 'none';
     accountBtn.style.display = 'inline-flex';
@@ -1385,8 +1391,22 @@ function _buildChart(day,month,year,hour,min,name,tz){
   selectedFocus='Love';
   activeChart={name:name,_jd:jd,birthDate:day+' '+MONTH_NAMES[month-1]+' '+year,birthTime:pad(hour)+':'+pad(min)+' (UTC'+(tz>=0?'+':'')+tz+')',birthPlace:selectedGeo.display,geo:selectedGeo,planets:planets,aspects:aspects};
 
-  // Save profile to Supabase if signed in
-  if (_currentUser) {
+  // Save to the signed-in person's profile ONLY when this is their own chart:
+  // they have no saved chart yet, or they ticked "This is my own birth chart".
+  // Charts for friends and family are shown on the map but never saved over
+  // the account holder's profile.
+  var mineBox = document.getElementById('saveAsMine');
+  var hasSavedChart = !!(_currentProfile && _currentProfile.birth_date);
+  var saveAsMine = mineBox ? mineBox.checked : !hasSavedChart;
+  if (_currentUser && saveAsMine) {
+    _currentProfile = Object.assign({}, _currentProfile || {}, {
+      name: name,
+      birth_date: day+' '+MONTH_NAMES[month-1]+' '+year,
+      birth_time: pad(hour)+':'+pad(min),
+      birth_place: selectedGeo.display,
+      birth_lat: selectedGeo.lat,
+      birth_lng: selectedGeo.lng
+    });
     _sb.from('profiles').upsert({
       id: _currentUser.id,
       email: _currentUser.email,
