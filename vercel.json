@@ -1,5 +1,10 @@
 {
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" }
-  ]
+  ],
+  "functions": {
+    "api/astro.py": {
+      "includeFiles": "api/seas_18.se1"
+    }
+  }
 }
