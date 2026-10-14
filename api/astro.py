@@ -168,6 +168,8 @@ def build_acg_swe(jd):
             # Chiron can't use the built-in Moshier ephemeris; it reads the
             # seas_18.se1 data file instead (SEFLG_SWIEPH=2).
             flag = (2|256|2048) if name == 'Chiron' else IFLAG
+            if name == 'Chiron':
+                swe.set_ephe_path(EPHE_DIR)  # re-point at api/ right before use
             r,_=swe.calc_ut(jd,pid,flag)
             ra=r[0]
             dec=r[1]
@@ -383,6 +385,7 @@ class handler(BaseHTTPRequestHandler):
             chiron = None
             if HAS_SWE:
                 try:
+                    swe.set_ephe_path(EPHE_DIR)  # re-point at api/ right before use
                     cr,_ = swe.calc_ut(jd, swe.CHIRON, 2|256)
                     chiron = {'lon': round(n360(cr[0]), 6), 'speed': round(cr[3], 6)}
                 except Exception as cex:
