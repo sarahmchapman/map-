@@ -311,22 +311,27 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
   <div style="background:var(--paper);max-width:400px;width:100%;padding:2.5rem 2rem;position:relative">
     <button onclick="closeAuthModal()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--ink-3)">✕</button>
     <p style="font-family:var(--serif);font-size:.75rem;font-weight:300;letter-spacing:.35em;text-transform:lowercase;color:var(--gold);margin-bottom:1.5rem">elsewhere</p>
-    <h2 style="font-family:var(--serif);font-size:1.6rem;font-weight:300;line-height:1.2;margin-bottom:.6rem">Save your chart</h2>
-    <p style="font-family:var(--serif);font-style:italic;font-size:.88rem;color:var(--ink-3);line-height:1.7;margin-bottom:1.8rem">Enter your email and we'll send you a magic link — no password needed. Your birth data will be saved and you'll have your own profile page.</p>
+    <h2 style="font-family:var(--serif);font-size:1.6rem;font-weight:300;line-height:1.2;margin-bottom:.6rem">Sign in to elsewhere</h2>
+    <p style="font-family:var(--serif);font-style:italic;font-size:.88rem;color:var(--ink-3);line-height:1.7;margin-bottom:1.8rem">Sign in to load your chart, or create an account to save your birth data and get your own profile page.</p>
     <div id="authForm">
-      <input type="email" id="authEmail" placeholder="your@email.com" style="font-family:var(--sans);font-size:1rem;font-weight:300;color:var(--ink);background:transparent;border:none;border-bottom:.5px solid var(--paper-3);padding:.55rem 0;width:100%;outline:none;margin-bottom:1.5rem">
-      <button onclick="sendMagicLink()" style="font-size:10px;font-weight:500;letter-spacing:.25em;text-transform:uppercase;color:var(--paper);background:var(--ink);border:none;padding:.9rem 2rem;cursor:pointer;width:100%;transition:background .2s" onmouseover="this.style.background='var(--gold)'" onmouseout="this.style.background='var(--ink)'">Send magic link</button>
+      <input type="email" id="authEmail" placeholder="your@email.com" autocomplete="email" style="font-family:var(--sans);font-size:1rem;font-weight:300;color:var(--ink);background:transparent;border:none;border-bottom:.5px solid var(--paper-3);padding:.55rem 0;width:100%;outline:none;margin-bottom:1.1rem">
+      <input type="password" id="authPassword" placeholder="password" autocomplete="current-password" onkeydown="if(event.key==='Enter'){signInWithPassword();}" style="font-family:var(--sans);font-size:1rem;font-weight:300;color:var(--ink);background:transparent;border:none;border-bottom:.5px solid var(--paper-3);padding:.55rem 0;width:100%;outline:none;margin-bottom:1.1rem">
+      <p id="authError" style="display:none;font-family:var(--serif);font-style:italic;font-size:.85rem;color:var(--red-d);line-height:1.55;margin-bottom:1rem"></p>
+      <button id="passwordSignInBtn" onclick="signInWithPassword()" style="font-size:10px;font-weight:500;letter-spacing:.25em;text-transform:uppercase;color:var(--paper);background:var(--ink);border:none;padding:.9rem 2rem;cursor:pointer;width:100%;transition:background .2s;margin-bottom:.6rem" onmouseover="this.style.background='var(--gold)'" onmouseout="this.style.background='var(--ink)'">Sign in</button>
+      <button id="createAccountBtn" onclick="signUpWithPassword()" style="font-size:10px;font-weight:500;letter-spacing:.25em;text-transform:uppercase;color:var(--ink);background:transparent;border:.5px solid var(--paper-3);padding:.9rem 2rem;cursor:pointer;width:100%;transition:all .2s" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--paper-3)';this.style.color='var(--ink)'">Create account</button>
+      <div style="display:flex;align-items:center;gap:.8rem;margin:1.4rem 0 1rem"><div style="flex:1;height:.5px;background:var(--paper-3)"></div><span style="font-family:var(--serif);font-style:italic;font-size:.8rem;color:var(--ink-3)">or</span><div style="flex:1;height:.5px;background:var(--paper-3)"></div></div>
+      <p style="font-family:var(--serif);font-style:italic;font-size:.82rem;color:var(--ink-3);text-align:center;line-height:1.6">Forgot your password, or never set one?<br><button id="magicLinkBtn" onclick="sendMagicLink()" style="background:none;border:none;font-family:var(--serif);font-style:italic;font-size:.88rem;color:var(--gold);cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:3px">Email me a sign-in link</button></p>
     </div>
     <div id="authSent" style="display:none;text-align:center">
       <div style="font-size:1.5rem;color:var(--gold);margin-bottom:.8rem">✦</div>
       <p style="font-family:var(--serif);font-size:1rem;color:var(--ink);margin-bottom:.5rem">Check your email</p>
-      <p style="font-family:var(--serif);font-style:italic;font-size:.85rem;color:var(--ink-3);line-height:1.6">We sent a magic link to <span id="authEmailSent" style="color:var(--ink)"></span>. Click it to sign in.</p>
+      <p style="font-family:var(--serif);font-style:italic;font-size:.85rem;color:var(--ink-3);line-height:1.6" id="authSentMsg">We sent a sign-in link to <span id="authEmailSent" style="color:var(--ink)"></span>. Click it to sign in.</p>
     </div>
   </div>
 </div>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="/descriptions.js?v=5"></script>
-<script src="/js/app.js?v=3"></script>
+<script src="/js/app.js?v=4"></script>
 <script src="/js/engine.js?v=2"></script>
 
 <script>
