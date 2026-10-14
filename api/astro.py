@@ -385,8 +385,13 @@ class handler(BaseHTTPRequestHandler):
                 try:
                     cr,_ = swe.calc_ut(jd, swe.CHIRON, 2|256)
                     chiron = {'lon': round(n360(cr[0]), 6), 'speed': round(cr[3], 6)}
-                except Exception:
-                    chiron = None
+                except Exception as cex:
+                    # Report why, so a missing data file is easy to diagnose.
+                    try:
+                        seen = sorted(os.listdir(EPHE_DIR))
+                    except Exception:
+                        seen = 'could not list folder'
+                    chiron = {'error': str(cex), 'ephe_dir': EPHE_DIR, 'files_seen': seen}
 
             houses = None
             if 'lat' in params and 'lng' in params:
@@ -398,10 +403,10 @@ class handler(BaseHTTPRequestHandler):
                     houses = None
 
             self.wfile.write(json.dumps({
+                'chiron': chiron,
                 'lines': lines,
                 'parans': parans,
                 'houses': houses,
-                'chiron': chiron,
                 'source': source
             }).encode())
         except Exception as ex:
