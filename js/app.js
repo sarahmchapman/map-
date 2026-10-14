@@ -610,6 +610,56 @@ var CITY_DB=[
 
 function tzFromLng(lng){return Math.round(lng/15);}
 
+// ── Accurate birth time zone ────────────────────────────────────
+// Works out the exact UTC offset (in hours) that was in force at a
+// birthplace on the birth date and time, daylight saving included.
+// zone is a time-zone name like "America/Los_Angeles". The browser's
+// built-in time-zone history does the work. Returns null if it can't.
+function tzOffsetFromZone(zone, y, mo, d, h, mi) {
+  try {
+    var fmt = new Intl.DateTimeFormat('en-US', {
+      timeZone: zone, hourCycle: 'h23',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit'
+    });
+    // Offset (minutes) of the zone at a given UTC moment.
+    var offsetAt = function(ms) {
+      var parts = {};
+      fmt.formatToParts(new Date(ms)).forEach(function(p) { parts[p.type] = p.value; });
+      var wallAsUTC = Date.UTC(+parts.year, +parts.month - 1, +parts.day, (+parts.hour) % 24, +parts.minute);
+      return Math.round((wallAsUTC - Math.floor(ms / 60000) * 60000) / 60000);
+    };
+    var wall = Date.UTC(y, mo - 1, d, h, mi);
+    var off = offsetAt(wall);
+    off = offsetAt(wall - off * 60000); // second pass settles daylight-saving edges
+    if (isNaN(off)) return null;
+    return off / 60;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Looks up the birthplace's time zone and calls done(offsetHours).
+// Falls back to the older estimate if the lookup fails.
+function lookupBirthOffset(lat, lng, y, mo, d, h, mi, done) {
+  var dateStr = y + '-' + pad(mo) + '-' + pad(d);
+  var url = 'https://secure.geonames.org/timezoneJSON?lat=' + Number(lat).toFixed(4)
+    + '&lng=' + Number(lng).toFixed(4) + '&date=' + dateStr + '&username=sarahmchapman';
+  fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var off = (data && data.timezoneId) ? tzOffsetFromZone(data.timezoneId, y, mo, d, h, mi) : null;
+      if (off == null) {
+        // Older estimate: standard offset, plus daylight saving April–October.
+        var raw = (data && data.rawOffset != null) ? data.rawOffset : tzFromLng(lng);
+        var dst = (data && data.dstOffset != null) ? data.dstOffset : raw;
+        off = (mo >= 4 && mo <= 10 && dst !== raw) ? dst : raw;
+      }
+      done(off);
+    })
+    .catch(function() { done(tzFromLng(lng)); });
+}
+
 var selectedGeo=null,selectedFocus='Love',hiIdx=-1;
 var MONTH_NAMES=['January','February','March','April','May','June','July','August','September','October','November','December'];
 function pad(n){return String(n).padStart(2,'0');}
@@ -1318,19 +1368,10 @@ function handleSubmit(e){
   var name=document.getElementById('inName').value.trim()||'You';
   var btn=document.querySelector('.submit-btn');
   btn.textContent='Casting your chart…';btn.disabled=true;
-  var dateStr=year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');
-  var tzUrl='https://secure.geonames.org/timezoneJSON?lat='+selectedGeo.lat.toFixed(4)+'&lng='+selectedGeo.lng.toFixed(4)+'&date='+dateStr+'&username=sarahmchapman';
-  fetch(tzUrl)
-    .then(function(r){return r.json();})
-    .then(function(data){
-      var raw=(data&&data.rawOffset!=null)?data.rawOffset:tzFromLng(selectedGeo.lng);
-      var dst=(data&&data.dstOffset!=null)?data.dstOffset:raw;
-      var summerMonth=(month>=4&&month<=10);
-      var tz=(summerMonth&&dst!==raw)?dst:raw;
-      _buildChart(day,month,year,hour,min,name,tz);
-    })
-    .catch(function(){_buildChart(day,month,year,hour,min,name,tzFromLng(selectedGeo.lng));})
-    .finally(function(){btn.textContent='Reveal My Map';btn.disabled=false;});
+  lookupBirthOffset(selectedGeo.lat,selectedGeo.lng,year,month,day,hour,min,function(tz){
+    try { _buildChart(day,month,year,hour,min,name,tz); }
+    finally { btn.textContent='Reveal My Map';btn.disabled=false; }
+  });
 }
 
 function _buildChart(day,month,year,hour,min,name,tz){
