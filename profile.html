@@ -210,7 +210,7 @@ canvas.chart-wheel{display:block;width:100%;max-width:340px;aspect-ratio:1/1;hei
 </div><!-- /page -->
 
 <script src="/descriptions.js?v=5"></script>
-<script src="/js/app.js?v=5"></script>
+<script src="/js/app.js?v=7"></script>
 <script>
 var SUPABASE_URL = 'https://wdulylmxhvlxhjfmfivu.supabase.co';
 var SUPABASE_KEY = 'sb_publishable_pBoHzlLsZiLAr7EYF824DA_R6pw5sdR';
@@ -429,6 +429,12 @@ async function initProfile() {
     });
     var jd = dateToJD(profile.birth_date, profile.birth_time) - tz / 24;
     var planets = computePlanets(jd, profile.birth_lat, profile.birth_lng);
+    // Replace the rough Chiron estimate with the server's accurate position.
+    var chironLon = await new Promise(function(resolve) {
+      if (typeof fetchChironLon !== 'function') { resolve(null); return; }
+      fetchChironLon(jd, resolve);
+    });
+    if (chironLon != null && typeof parseLon === 'function') planets.Chiron = parseLon(chironLon);
 
     // Update header
     document.getElementById('profileName').innerHTML = profile.name ? '<em>' + profile.name + '</em>' : '<em>Your chart</em>';
