@@ -210,7 +210,7 @@ canvas.chart-wheel{display:block;width:100%;max-width:340px;aspect-ratio:1/1;hei
 </div><!-- /page -->
 
 <script src="/descriptions.js?v=5"></script>
-<script src="/js/app.js?v=4"></script>
+<script src="/js/app.js?v=5"></script>
 <script>
 var SUPABASE_URL = 'https://wdulylmxhvlxhjfmfivu.supabase.co';
 var SUPABASE_KEY = 'sb_publishable_pBoHzlLsZiLAr7EYF824DA_R6pw5sdR';
@@ -417,8 +417,17 @@ async function initProfile() {
     // Load readings
     var { data: readings } = await _sb.from('readings').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
 
-    // Compute natal chart
-    var jd = dateToJD(profile.birth_date, profile.birth_time);
+    // Compute natal chart. Birth time is local to the birthplace, so convert
+    // it to universal time (daylight saving included) before calculating.
+    var bp = parseBirth(profile.birth_date, profile.birth_time);
+    var tz = await new Promise(function(resolve) {
+      if (typeof lookupBirthOffset !== 'function' || profile.birth_lat == null || profile.birth_lng == null) {
+        resolve(0);
+        return;
+      }
+      lookupBirthOffset(profile.birth_lat, profile.birth_lng, bp.year, bp.month, bp.day, bp.hour, bp.min, resolve);
+    });
+    var jd = dateToJD(profile.birth_date, profile.birth_time) - tz / 24;
     var planets = computePlanets(jd, profile.birth_lat, profile.birth_lng);
 
     // Update header
@@ -482,20 +491,34 @@ async function initProfile() {
   }
 }
 
-// ── Parse birth date/time to JD ───────────────────────────────
-function dateToJD(birthDate, birthTime) {
-  if (!birthDate) return 2451545.0;
+// ── Parse birth date/time ─────────────────────────────────────
+// Returns {year, month, day, hour, min} in local birth time.
+// No birth time saved → noon. A time of 00:xx stays midnight.
+function parseBirth(birthDate, birthTime) {
   var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  var parts = birthDate.split(' ');
-  var day = parseInt(parts[0]) || 1;
-  var month = months.indexOf(parts[1]) + 1 || 1;
-  var year = parseInt(parts[2]) || 2000;
-  var hour = 12, min = 0;
+  var parts = (birthDate || '').split(' ');
+  var out = {
+    day: parseInt(parts[0], 10) || 1,
+    month: months.indexOf(parts[1]) + 1 || 1,
+    year: parseInt(parts[2], 10) || 2000,
+    hour: 12,
+    min: 0
+  };
   if (birthTime) {
     var tp = birthTime.split(':');
-    hour = parseInt(tp[0]) || 12;
-    min = parseInt(tp[1]) || 0;
+    var hh = parseInt(tp[0], 10), mm = parseInt(tp[1], 10);
+    if (!isNaN(hh)) out.hour = hh;
+    if (!isNaN(mm)) out.min = mm;
   }
+  return out;
+}
+
+// ── Birth date/time to Julian Day (local time) ────────────────
+function dateToJD(birthDate, birthTime) {
+  if (!birthDate) return 2451545.0;
+  var bp = parseBirth(birthDate, birthTime);
+  var day = bp.day, month = bp.month, year = bp.year;
+  var hour = bp.hour, min = bp.min;
   // Simple JD calculation
   var a = Math.floor((14 - month) / 12);
   var y = year + 4800 - a;
