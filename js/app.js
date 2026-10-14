@@ -645,6 +645,15 @@ function tzOffsetFromZone(zone, y, mo, d, h, mi) {
   }
 }
 
+// Asks the server for Chiron's accurate position (the in-browser estimate
+// can be several degrees off). Calls done(longitude) or done(null).
+function fetchChironLon(jd, done) {
+  fetch('/api/astro?jd=' + jd)
+    .then(function(r) { return r.json(); })
+    .then(function(data) { done(data && data.chiron && data.chiron.lon != null ? data.chiron.lon : null); })
+    .catch(function() { done(null); });
+}
+
 // Looks up the birthplace's time zone and calls done(offsetHours).
 // Falls back to the older estimate if the lookup fails.
 function lookupBirthOffset(lat, lng, y, mo, d, h, mi, done) {
@@ -1434,8 +1443,14 @@ function _buildChart(day,month,year,hour,min,name,tz){
     .then(function(data){
       acgData=data.lines;
       acgData._parans=data.parans||[];
-      // Build Chiron lines client-side since API can\'t compute them
-      if(activeChart&&activeChart.planets._chironRA!=null){
+      // Chiron: use the server's accurate position and lines when available.
+      if(activeChart&&data.chiron&&data.chiron.lon!=null&&acgData.Chiron){
+        activeChart.planets.Chiron=parseLon(data.chiron.lon);
+        activeChart.planets._chironRA=acgData.Chiron.ra;
+        activeChart.planets._chironDec=acgData.Chiron.dec;
+      }
+      // Otherwise fall back to the rough in-browser estimate.
+      else if(activeChart&&activeChart.planets._chironRA!=null){
         var cRA=activeChart.planets._chironRA;
         var cDec=activeChart.planets._chironDec;
         var G=n360(280.46061837+360.98564736629*(activeChart._jd-2451545));
