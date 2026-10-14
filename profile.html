@@ -87,6 +87,23 @@ canvas.chart-wheel{display:block;width:100%;max-width:340px;aspect-ratio:1/1;hei
 .mg-invite-desc{font-family:var(--serif);font-style:italic;font-size:.88rem;color:var(--ink-3);line-height:1.6;margin-bottom:.2rem}
 .mg-invite-link{font-size:.8rem;color:var(--gold);letter-spacing:.04em}
 
+/* ── Password ── */
+.pw-card{background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:8px;padding:1.3rem 1.5rem;margin-bottom:2.5rem}
+#pwPrompt{display:none;border-color:var(--gold)}
+.pw-title{font-family:var(--serif);font-size:1.15rem;font-weight:400;color:var(--ink);margin-bottom:.3rem}
+.pw-desc{font-family:var(--serif);font-style:italic;font-size:.88rem;color:var(--ink-3);line-height:1.6;margin-bottom:.9rem}
+.pw-card input{font-family:var(--sans);font-size:1rem;font-weight:300;color:var(--ink);background:transparent;border:none;border-bottom:.5px solid var(--paper-3);border-radius:0;padding:.55rem 0;width:100%;outline:none;margin-bottom:.9rem}
+.pw-card input:focus{border-bottom-color:var(--gold)}
+.pw-card input::placeholder{color:var(--ink-3);font-style:italic;font-family:var(--serif);font-size:.9rem}
+.pw-msg{font-family:var(--serif);font-style:italic;font-size:.85rem;line-height:1.5;margin-bottom:.8rem;display:none}
+.pw-msg.err{display:block;color:#8b3a3a}
+.pw-msg.ok{display:block;color:var(--gold)}
+.pw-actions{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+.pw-save{font-size:9px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--paper);background:var(--ink);border:none;padding:.7rem 1.4rem;cursor:pointer;transition:background .2s}
+.pw-save:hover{background:var(--gold)}
+.pw-save:disabled{opacity:.5;cursor:wait}
+.pw-later{font-family:var(--serif);font-style:italic;font-size:.85rem;color:var(--ink-3);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:3px}
+
 /* ── Footer ── */
 .page-footer{text-align:center;padding:1.5rem 0 1rem;border-top:.5px solid var(--paper-3);margin-top:2rem}
 </style>
@@ -103,6 +120,18 @@ canvas.chart-wheel{display:block;width:100%;max-width:340px;aspect-ratio:1/1;hei
 </header>
 
 <div class="page">
+  <!-- One-time prompt: add a password (hidden unless needed) -->
+  <div class="pw-card" id="pwPrompt">
+    <div class="pw-title">Add a password</div>
+    <p class="pw-desc">Sign in faster next time, with no waiting for an email link.</p>
+    <input type="password" id="pwPromptInput" placeholder="new password (8+ characters)" autocomplete="new-password" onkeydown="if(event.key==='Enter'){savePasswordFrom('pwPrompt');}">
+    <p class="pw-msg" id="pwPromptMsg"></p>
+    <div class="pw-actions">
+      <button class="pw-save" id="pwPromptBtn" onclick="savePasswordFrom('pwPrompt')">Save password</button>
+      <button class="pw-later" onclick="dismissPasswordPrompt()">Not now</button>
+    </div>
+  </div>
+
   <div id="loadingState"><p>Loading your chart…</p></div>
 
   <div id="noAuthState">
@@ -157,6 +186,17 @@ canvas.chart-wheel{display:block;width:100%;max-width:340px;aspect-ratio:1/1;hei
     <div class="section-heading">Places explored</div>
     <div class="places-list" id="placesList"></div>
 
+    <!-- Password -->
+    <div class="section-heading">Password</div>
+    <div class="pw-card" id="pwSection">
+      <p class="pw-desc" id="pwSectionDesc">Add a password so you can sign in without waiting for an email link.</p>
+      <input type="password" id="pwSectionInput" placeholder="new password (8+ characters)" autocomplete="new-password" onkeydown="if(event.key==='Enter'){savePasswordFrom('pwSection');}">
+      <p class="pw-msg" id="pwSectionMsg"></p>
+      <div class="pw-actions">
+        <button class="pw-save" id="pwSectionBtn" onclick="savePasswordFrom('pwSection')">Save password</button>
+      </div>
+    </div>
+
     <!-- Sign out -->
     <button class="signout-btn" onclick="signOut()">Sign out</button>
 
@@ -170,7 +210,7 @@ canvas.chart-wheel{display:block;width:100%;max-width:340px;aspect-ratio:1/1;hei
 </div><!-- /page -->
 
 <script src="/descriptions.js?v=5"></script>
-<script src="/js/app.js?v=2"></script>
+<script src="/js/app.js?v=4"></script>
 <script>
 var SUPABASE_URL = 'https://wdulylmxhvlxhjfmfivu.supabase.co';
 var SUPABASE_KEY = 'sb_publishable_pBoHzlLsZiLAr7EYF824DA_R6pw5sdR';
@@ -345,6 +385,7 @@ async function initProfile() {
 
     var user = sessionData.session.user;
     document.getElementById('headerEmail').textContent = user.email;
+    renderPasswordUI(user, false);
     // ── Map Guide ownership ──────────────────────────────────
     // Check whether this signed-in user has purchased the Map Guide,
     // and render either the "purchased — read it" card or a gentle
@@ -367,6 +408,9 @@ async function initProfile() {
         + '<a href="/" class="nav-btn" style="display:inline-flex;margin-bottom:.8rem">Go to the map</a>'
         + '<div><a href="/report.html" class="nav-btn" style="display:inline-flex">Your Map Guide →</a></div>';
       na.style.display = 'block';
+      // No chart on this account, so the password section below the chart
+      // isn't shown. Keep the prompt visible instead.
+      renderPasswordUI(user, true);
       return;
     }
 
@@ -502,6 +546,77 @@ function renderMapGuideSection(email) {
   });
 }
   
+// ── Password ──────────────────────────────────────────────────
+// Shows the right password wording, and the one-time "Add a password"
+// prompt for people who signed up with an email link and haven't set one.
+var PW_SET_TEXT = 'You can sign in with your email and password. Enter a new one below to change it.';
+
+function pwPromptKey(user) {
+  return 'elsewhere_pw_prompt_dismissed_' + user.id;
+}
+
+function renderPasswordUI(user, alwaysPrompt) {
+  window._profileUser = user;
+  var has = (typeof userHasPassword === 'function') && userHasPassword(user);
+  var desc = document.getElementById('pwSectionDesc');
+  if (desc && has) desc.textContent = PW_SET_TEXT;
+
+  var dismissed = false;
+  try { dismissed = localStorage.getItem(pwPromptKey(user)) === '1'; } catch (e) {}
+  var prompt = document.getElementById('pwPrompt');
+  if (prompt) prompt.style.display = (!has && (alwaysPrompt || !dismissed)) ? 'block' : 'none';
+}
+
+function dismissPasswordPrompt() {
+  if (window._profileUser) {
+    try { localStorage.setItem(pwPromptKey(window._profileUser), '1'); } catch (e) {}
+  }
+  var prompt = document.getElementById('pwPrompt');
+  if (prompt) prompt.style.display = 'none';
+}
+
+// prefix is 'pwPrompt' or 'pwSection' — the two places a password can be saved.
+function savePasswordFrom(prefix) {
+  var input = document.getElementById(prefix + 'Input');
+  var msg = document.getElementById(prefix + 'Msg');
+  var btn = document.getElementById(prefix + 'Btn');
+  if (!input || !msg || !btn) return;
+  msg.textContent = '';
+  msg.className = 'pw-msg';
+
+  if (typeof setAccountPassword !== 'function') {
+    msg.textContent = 'Please refresh the page and try again.';
+    msg.className = 'pw-msg err';
+    return;
+  }
+
+  var label = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
+  setAccountPassword(input.value, function(err) {
+    btn.disabled = false;
+    btn.textContent = label;
+    if (err) {
+      msg.textContent = err;
+      msg.className = 'pw-msg err';
+      return;
+    }
+    input.value = '';
+    msg.textContent = 'Password saved. Next time, sign in with your email and password.';
+    msg.className = 'pw-msg ok';
+    var desc = document.getElementById('pwSectionDesc');
+    if (desc) desc.textContent = PW_SET_TEXT;
+    if (prefix === 'pwPrompt') {
+      // Leave the confirmation up briefly, then tidy the prompt away.
+      setTimeout(function() {
+        var prompt = document.getElementById('pwPrompt');
+        if (prompt) prompt.style.display = 'none';
+      }, 4000);
+    }
+  });
+}
+
   // ── Sign out ──────────────────────────────────────────────────
 function signOut() {
   _sb.auth.signOut().then(function() {
