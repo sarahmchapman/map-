@@ -55,13 +55,39 @@ canvas.chart-wheel{display:block;width:100%;max-width:340px;aspect-ratio:1/1;hei
 .trio-value{font-family:var(--serif);font-size:1rem;font-weight:300;color:var(--ink);margin-bottom:.3rem}
 .trio-desc{font-family:var(--serif);font-style:italic;font-size:.75rem;color:var(--ink-3);line-height:1.5}
 
-/* ── Planet positions ── */
-.planets-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:2.5rem}
-@media(min-width:480px){.planets-grid{grid-template-columns:1fr 1fr 1fr}}
-.planet-row{display:flex;align-items:center;gap:.6rem;padding:.55rem .75rem;background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:4px}
-.planet-sym{font-size:1rem;width:20px;text-align:center;flex-shrink:0}
-.planet-name{font-size:.65rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);flex:1}
-.planet-pos{font-family:var(--serif);font-size:.88rem;color:var(--ink)}
+/* ── Placements table + house cusps ── */
+.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.placements-caption{font-family:var(--serif);font-style:italic;font-size:.9rem;color:var(--ink-3);line-height:1.55;margin:-.6rem 0 1rem}
+.placements{width:100%;border-collapse:collapse;margin-bottom:.7rem}
+.placements th{font-size:9px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);text-align:left;padding:0 .5rem .6rem;border-bottom:.5px solid #d9cfbd}
+.placements td{padding:.7rem .5rem;border-bottom:.5px solid var(--paper-3);vertical-align:middle}
+.placements .num{text-align:right}
+.pl-glyph{width:34px;font-size:1.2rem;line-height:1}
+.pl-name{font-size:.72rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2)}
+.pl-pos{font-family:var(--serif);font-size:1.12rem;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
+.pl-house{font-family:var(--serif);font-size:1.12rem;color:var(--ink);width:56px}
+.retro{font-family:var(--sans);font-size:.68rem;font-weight:500;color:#9b3535;margin-left:.35rem}
+.retro-key{font-family:var(--serif);font-style:italic;font-size:.85rem;color:var(--ink-3);margin-bottom:2.5rem}
+.cusps-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:.5px solid #d9cfbd;border-left:.5px solid var(--paper-3);margin-bottom:2.5rem}
+.cusp{display:flex;align-items:baseline;gap:.75rem;padding:.75rem 1rem;border-right:.5px solid var(--paper-3);border-bottom:.5px solid var(--paper-3)}
+.cusp.angle{background:#ebdfc6;border-right-color:#d9c9a8;border-bottom-color:#d9c9a8}
+.cusp-label{width:1.5rem;font-size:.68rem;font-weight:500;letter-spacing:.06em;color:#8a6a35;flex-shrink:0}
+.cusp.angle .cusp-label{color:#6e5226}
+.cusp-pos{font-family:var(--serif);font-size:1.1rem;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
+.cusp.angle .cusp-pos{font-weight:500}
+.cusp-pos .short{display:none}
+@media(max-width:560px){
+  .placements th{padding:0 .35rem .55rem}
+  .placements td{padding:.65rem .35rem}
+  .pl-glyph{width:28px}
+  .pl-name{font-size:.66rem;letter-spacing:.1em}
+  .pl-pos{font-size:1.02rem}
+  .pl-house{width:44px;font-size:1.02rem}
+  .cusp{flex-direction:column;gap:.15rem;padding:.6rem .55rem}
+  .cusp-pos{font-size:.98rem}
+  .cusp-pos .long{display:none}
+  .cusp-pos .short{display:inline}
+}
 
 /* ── Places explored ── */
 .places-list{display:flex;flex-direction:column;gap:.75rem;margin-bottom:2.5rem}
@@ -179,8 +205,19 @@ canvas.chart-wheel{display:block;width:100%;max-width:340px;aspect-ratio:1/1;hei
     </div>
 
     <!-- All planet positions -->
-    <div class="section-heading">Planet positions</div>
-    <div class="planets-grid" id="planetsGrid"></div>
+    <div class="section-heading">Placements</div>
+    <p class="placements-caption" id="placementsCaption"></p>
+    <table class="placements" id="placementsTable">
+      <thead>
+        <tr><th scope="col"><span class="visually-hidden"></span></th><th scope="col">Point</th><th scope="col">Position</th><th scope="col" class="num">House</th></tr>
+      </thead>
+      <tbody id="placementsBody"></tbody>
+    </table>
+    <p class="retro-key"><span class="retro" style="margin-left:0">℞</span> retrograde</p>
+
+    <div class="section-heading">House cusps</div>
+    <p class="placements-caption">The four angles, shaded gold, start the 1st, 4th, 7th and 10th houses.</p>
+    <div class="cusps-grid" id="cuspsGrid"></div>
 
     <!-- Places explored -->
     <div class="section-heading">Places explored</div>
@@ -367,6 +404,100 @@ function drawNatalWheel(planets) {
   ctx.fill(); ctx.stroke();
 }
 
+// ── Placements table + house cusps ────────────────────────────
+var SIGN_NAMES = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
+var SIGN_SHORT = ['Ari','Tau','Gem','Can','Leo','Vir','Lib','Sco','Sag','Cap','Aqu','Pis'];
+var PLACEMENT_ORDER = ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode'];
+var PLACEMENT_NAMES = { NNode: 'North Node' };
+var CUSP_LABELS = ['AC','2','3','IC','5','6','DC','8','9','MC','11','12'];
+
+function n360p(x) { return ((x % 360) + 360) % 360; }
+
+// "15°33′ Sagittarius", rounded to the nearest minute (as astro.com does).
+function fmtPos(lon, short) {
+  var t = Math.round(n360p(lon) * 60);
+  var d = Math.floor(t / 60) % 360, m = t % 60;
+  return (d % 30) + '°' + (m < 10 ? '0' : '') + m + '′ ' + (short ? SIGN_SHORT : SIGN_NAMES)[Math.floor(d / 30)];
+}
+
+// Which house (1–12) a longitude falls in, given the 12 cusps.
+function houseOf(lon, cusps) {
+  for (var i = 0; i < 12; i++) {
+    var a = cusps[i], b = cusps[(i + 1) % 12];
+    if (n360p(lon - a) < n360p(b - a)) return i + 1;
+  }
+  return 1;
+}
+
+// Right ascension/declination → ecliptic longitude (for the North Node).
+function raDecToLon(ra, dec, jd) {
+  var e = (23.4392911 - 0.0130042 * ((jd - 2451545) / 36525)) * Math.PI / 180;
+  var r = ra * Math.PI / 180, d = dec * Math.PI / 180;
+  return n360p(Math.atan2(Math.sin(r) * Math.cos(e) + Math.tan(d) * Math.sin(e), Math.cos(r)) * 180 / Math.PI);
+}
+
+function renderPlacements(planets, server, jd, profile) {
+  var asc = planets.Ascendant ? planets.Ascendant.totalDeg : 0;
+
+  // Placidus cusps from the server; equal houses only if it can't provide them.
+  var cusps = [], system = 'Placidus houses';
+  var h = server && server.houses;
+  if (h && !h.error && h['1'] != null) {
+    for (var i = 1; i <= 12; i++) cusps.push(Number(h[String(i)]));
+  } else {
+    for (var j = 0; j < 12; j++) cusps.push(n360p(asc + 30 * j));
+    system = (h && h.error && /latitude/i.test(h.error))
+      ? 'Equal houses (Placidus can\'t be calculated this far north or south)'
+      : 'Equal houses';
+  }
+
+  document.getElementById('placementsCaption').textContent =
+    system + ' · tropical zodiac · ' + [profile.birth_date, profile.birth_time, profile.birth_place].filter(Boolean).join(', ');
+
+  // Positions one day later, to spot retrograde planets.
+  var later = computePlanets(jd + 1, profile.birth_lat, profile.birth_lng);
+
+  var points = {};
+  var pos = server && server.positions;
+  PLACEMENT_ORDER.forEach(function(p) {
+    if (pos && pos[p] && pos[p].lon != null) {
+      // Exact position and speed from the server.
+      points[p] = { lon: pos[p].lon, retro: (p === 'NNode') ? false : pos[p].speed < 0 };
+    } else if (p !== 'NNode' && planets[p] && planets[p].totalDeg != null) {
+      points[p] = { lon: planets[p].totalDeg };
+    }
+  });
+  if (!points.NNode && server && server.lines && server.lines.NNode && server.lines.NNode.ra != null) {
+    points.NNode = { lon: raDecToLon(server.lines.NNode.ra, server.lines.NNode.dec, jd), retro: false };
+  }
+
+  var rows = [];
+  PLACEMENT_ORDER.forEach(function(p) {
+    var pt = points[p]; if (!pt) return;
+    var retro = pt.retro;
+    if (retro == null && p !== 'Sun' && p !== 'Moon' && p !== 'NNode' && later[p] && later[p].totalDeg != null) {
+      retro = (n360p(later[p].totalDeg - pt.lon + 180) - 180) < 0;
+    }
+    rows.push('<tr>'
+      + '<td class="pl-glyph" style="color:' + (PCOL[p] || '#888') + '" aria-hidden="true">' + (PSYM[p] || '') + '\uFE0E</td>'
+      + '<td class="pl-name">' + (PLACEMENT_NAMES[p] || p) + '</td>'
+      + '<td class="pl-pos">' + fmtPos(pt.lon) + (retro ? '<span class="retro" title="Retrograde">℞</span>' : '') + '</td>'
+      + '<td class="pl-house num">' + houseOf(pt.lon, cusps) + '</td>'
+      + '</tr>');
+  });
+  document.getElementById('placementsBody').innerHTML = rows.join('');
+
+  var cells = [];
+  for (var k = 0; k < 12; k++) {
+    var isAngle = (k % 3 === 0);
+    cells.push('<div class="cusp' + (isAngle ? ' angle' : '') + '">'
+      + '<span class="cusp-label">' + CUSP_LABELS[k] + '</span>'
+      + '<span class="cusp-pos"><span class="long">' + fmtPos(cusps[k]) + '</span><span class="short">' + fmtPos(cusps[k], true) + '</span></span>'
+      + '</div>');
+  }
+  document.getElementById('cuspsGrid').innerHTML = cells.join('');
+}
+
 // ── Format date ───────────────────────────────────────────────
 function formatDate(str) {
   if (!str) return '—';
@@ -429,12 +560,19 @@ async function initProfile() {
     });
     var jd = dateToJD(profile.birth_date, profile.birth_time) - tz / 24;
     var planets = computePlanets(jd, profile.birth_lat, profile.birth_lng);
-    // Replace the rough Chiron estimate with the server's accurate position.
-    var chironLon = await new Promise(function(resolve) {
-      if (typeof fetchChironLon !== 'function') { resolve(null); return; }
-      fetchChironLon(jd, resolve);
-    });
-    if (chironLon != null && typeof parseLon === 'function') planets.Chiron = parseLon(chironLon);
+    // Accurate Chiron, North Node and Placidus houses come from the server.
+    var server = await fetch('/api/astro?jd=' + jd + '&lat=' + profile.birth_lat + '&lng=' + profile.birth_lng)
+      .then(function(r) { return r.json(); })
+      .catch(function() { return null; });
+    // Use the server's exact positions (Swiss Ephemeris, as astro.com uses) for
+    // every planet, so the wheel, summary and table all agree to the minute.
+    if (server && server.positions && typeof parseLon === 'function') {
+      Object.keys(server.positions).forEach(function(p) {
+        if (p !== 'NNode' && server.positions[p] && server.positions[p].lon != null) planets[p] = parseLon(server.positions[p].lon);
+      });
+    } else if (server && server.chiron && server.chiron.lon != null && typeof parseLon === 'function') {
+      planets.Chiron = parseLon(server.chiron.lon);
+    }
 
     // Update header
     document.getElementById('profileName').innerHTML = profile.name ? '<em>' + profile.name + '</em>' : '<em>Your chart</em>';
@@ -458,17 +596,8 @@ async function initProfile() {
       document.getElementById('risingDesc').textContent = SIGN_BRIEF[asc.sign] || '';
     }
 
-    // Planet positions grid
-    var grid = document.getElementById('planetsGrid');
-    PORDER.forEach(function(p) {
-      var pd = planets[p]; if (!pd || !pd.sign) return;
-      var div = document.createElement('div');
-      div.className = 'planet-row';
-      div.innerHTML = '<span class="planet-sym" style="color:'+( PCOL[p]||'#888')+'">'+PSYM[p]+'</span>'
-        + '<span class="planet-name">'+p+'</span>'
-        + '<span class="planet-pos">'+pd.deg+'°'+pd.sign+'</span>';
-      grid.appendChild(div);
-    });
+    // Placements table + house cusps
+    renderPlacements(planets, server, jd, profile);
 
     // Places explored
     var list = document.getElementById('placesList');
