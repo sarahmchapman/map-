@@ -396,6 +396,23 @@ class handler(BaseHTTPRequestHandler):
                         seen = 'could not list folder'
                     chiron = {'error': str(cex), 'ephe_dir': EPHE_DIR, 'files_seen': seen}
 
+            # Exact ecliptic positions for the chart itself (what astro.com shows):
+            # longitude in degrees and daily speed (negative = retrograde).
+            positions = None
+            if HAS_SWE:
+                positions = {}
+                POS = [('Sun',swe.SUN),('Moon',swe.MOON),('Mercury',swe.MERCURY),('Venus',swe.VENUS),
+                       ('Mars',swe.MARS),('Jupiter',swe.JUPITER),('Saturn',swe.SATURN),('Uranus',swe.URANUS),
+                       ('Neptune',swe.NEPTUNE),('Pluto',swe.PLUTO),('NNode',swe.TRUE_NODE)]
+                for pname, pid in POS:
+                    try:
+                        pr,_ = swe.calc_ut(jd, pid, 4|256)  # Moshier + speed
+                        positions[pname] = {'lon': round(n360(pr[0]), 6), 'speed': round(pr[3], 6)}
+                    except Exception:
+                        pass
+                if chiron and chiron.get('lon') is not None:
+                    positions['Chiron'] = chiron
+
             houses = None
             if 'lat' in params and 'lng' in params:
                 try:
@@ -407,6 +424,7 @@ class handler(BaseHTTPRequestHandler):
 
             self.wfile.write(json.dumps({
                 'chiron': chiron,
+                'positions': positions,
                 'lines': lines,
                 'parans': parans,
                 'houses': houses,
