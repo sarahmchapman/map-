@@ -48,6 +48,11 @@ html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margi
 .wheel-wrap{width:100%;max-width:640px}
 .wheel-wrap svg{display:block;width:100%;height:auto;overflow:visible}
 .wheel-glyph{font-family:'Segoe UI Symbol','Apple Symbols','Noto Sans Symbols 2','Noto Sans Symbols',sans-serif;cursor:default}
+.wheel-wrap{position:relative}
+.wheel-pt{cursor:pointer;outline:none}
+.wheel-pt:focus-visible circle{stroke:#b8955a;stroke-width:1.5}
+.wheel-tip{position:absolute;left:0;top:0;transform:translate(-50%,calc(-100% - 10px));background:#1a1714;color:#faf8f4;font-family:var(--sans);font-size:.78rem;letter-spacing:.03em;line-height:1.3;padding:.45rem .7rem;border-radius:4px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .12s;z-index:5}
+.wheel-tip.on{opacity:1}
 .wheel-enlarge{display:inline-flex;align-items:center;gap:.5rem;min-height:44px;padding:0 1.1rem;margin-top:.5rem;font-family:var(--sans);font-size:9px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid #cfc4b0;border-radius:22px;cursor:pointer;transition:all .2s}
 .wheel-enlarge:hover{border-color:var(--gold);color:var(--gold)}
 .wheel-note{font-family:var(--serif);font-style:italic;font-size:.85rem;color:var(--ink-3);line-height:1.6;text-align:center;max-width:520px;margin-top:.8rem}
@@ -628,7 +633,11 @@ function buildWheelSvg(data) {
       o.push(line(it.lon, R_ZOD - 9, it.disp, R_GLYPH + 13, col, 0.6, ' opacity="0.6"'));
     }
     var g = pt(it.disp, R_GLYPH), t = pt(it.disp, R_DEG);
-    o.push('<text class="wheel-glyph" x="' + n(g[0]) + '" y="' + n(g[1]) + '" font-size="23" fill="' + col + '" text-anchor="middle" dominant-baseline="central">' + (PSYM[it.name] || '') + '\uFE0E<title>' + label + ' ' + p.d + '°' + mm(p.m) + '′ ' + SIGN_NAMES[p.s] + (it.retro ? ' (retrograde)' : '') + '</title></text>');
+    var full = label + ' ' + p.d + '°' + mm(p.m) + '′ ' + SIGN_NAMES[p.s] + (it.retro ? ' ℞' : '');
+    o.push('<g class="wheel-pt" tabindex="0" role="img" aria-label="' + full + '" data-label="' + full + '">'
+      + '<circle cx="' + n(g[0]) + '" cy="' + n(g[1]) + '" r="17" fill="transparent" pointer-events="all"/>'
+      + '<text class="wheel-glyph" x="' + n(g[0]) + '" y="' + n(g[1]) + '" font-size="23" fill="' + col + '" text-anchor="middle" dominant-baseline="central" style="cursor:pointer">' + (PSYM[it.name] || '') + '\uFE0E</text>'
+      + '</g>');
     o.push('<text x="' + n(t[0]) + '" y="' + n(t[1]) + '" text-anchor="middle" dominant-baseline="central" font-family="' + SERIF + '" fill="' + INK + '"><tspan font-size="13">' + p.d + '°</tspan><tspan font-size="9" dy="-4">' + mm(p.m) + '′</tspan>' + (it.retro ? '<tspan font-size="9" fill="#9b3535" font-family="' + SANS + '" dy="4">℞</tspan>' : '') + '</text>');
   });
 
@@ -638,10 +647,45 @@ function buildWheelSvg(data) {
 function renderWheel(data) {
   if (!data) return;
   var svg = buildWheelSvg(data);
-  var small = document.getElementById('natalWheelSvg');
-  var large = document.getElementById('natalWheelLarge');
-  if (small) small.innerHTML = svg;
-  if (large) large.innerHTML = svg;
+  ['natalWheelSvg', 'natalWheelLarge'].forEach(function(id) {
+    var wrap = document.getElementById(id);
+    if (!wrap) return;
+    wrap.innerHTML = svg + '<div class="wheel-tip" aria-hidden="true"></div>';
+    attachWheelTips(wrap);
+  });
+}
+
+// Tooltip for planet symbols: hover (mouse), tap (phone) or Tab (keyboard).
+function attachWheelTips(wrap) {
+  if (wrap._tipsAttached) return;
+  wrap._tipsAttached = true;
+  function tip() { return wrap.querySelector('.wheel-tip'); }
+  function pointOf(el) { return el && el.closest ? el.closest('.wheel-pt') : null; }
+  function show(g) {
+    var t = tip(); if (!t || !g) return;
+    var r = wrap.getBoundingClientRect(), b = g.getBoundingClientRect();
+    t.textContent = g.getAttribute('data-label');
+    var half = t.offsetWidth / 2, x = b.left + b.width / 2 - r.left;
+    x = Math.max(half, Math.min(r.width - half, x));  // keep the label inside the wheel
+    t.style.left = x + 'px';
+    t.style.top = (b.top - r.top) + 'px';
+    t.classList.add('on');
+  }
+  // A tapped or clicked label stays until you tap elsewhere; a hovered one
+  // follows the mouse.
+  var pinned = false;
+  function hide() { var t = tip(); if (t) t.classList.remove('on'); }
+  wrap.addEventListener('mouseover', function(e) { var g = pointOf(e.target); if (g) show(g); });
+  wrap.addEventListener('mouseout', function(e) {
+    var g = pointOf(e.target); if (g && !pinned && pointOf(e.relatedTarget) !== g) hide();
+  });
+  wrap.addEventListener('click', function(e) {
+    var g = pointOf(e.target);
+    if (g) { pinned = true; show(g); } else { pinned = false; hide(); }
+  });
+  wrap.addEventListener('focusin', function(e) { var g = pointOf(e.target); if (g) show(g); });
+  wrap.addEventListener('focusout', function() { if (!pinned) hide(); });
+  document.addEventListener('click', function(e) { if (!wrap.contains(e.target)) { pinned = false; hide(); } });
 }
 
 function openWheel() {
