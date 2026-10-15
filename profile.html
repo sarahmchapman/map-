@@ -45,6 +45,17 @@ html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margi
 
 /* ── Chart wheel ── */
 .chart-panel{background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:8px;padding:1.5rem;display:flex;flex-direction:column;align-items:center;margin-bottom:2rem}
+.wheel-wrap{width:100%;max-width:640px}
+.wheel-wrap svg{display:block;width:100%;height:auto;overflow:visible}
+.wheel-glyph{font-family:'Segoe UI Symbol','Apple Symbols','Noto Sans Symbols 2','Noto Sans Symbols',sans-serif;cursor:default}
+.wheel-enlarge{display:inline-flex;align-items:center;gap:.5rem;min-height:44px;padding:0 1.1rem;margin-top:.5rem;font-family:var(--sans);font-size:9px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid #cfc4b0;border-radius:22px;cursor:pointer;transition:all .2s}
+.wheel-enlarge:hover{border-color:var(--gold);color:var(--gold)}
+.wheel-note{font-family:var(--serif);font-style:italic;font-size:.85rem;color:var(--ink-3);line-height:1.6;text-align:center;max-width:520px;margin-top:.8rem}
+.wheel-modal{display:none;position:fixed;inset:0;z-index:1000;background:rgba(250,248,244,.98);overflow:auto;padding:3.5rem 1rem 2rem}
+.wheel-modal.open{display:block}
+.wheel-modal .wheel-wrap{max-width:min(96vw,94vh);margin:0 auto}
+.wheel-close{position:fixed;top:.9rem;right:.9rem;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:var(--paper);border:.5px solid var(--paper-3);border-radius:50%;cursor:pointer;color:var(--ink-3);font-size:1rem}
+.wheel-close:hover{color:var(--ink);border-color:var(--gold)}
 canvas.chart-wheel{display:block;width:100%;max-width:340px;aspect-ratio:1/1;height:auto}
 
 /* ── Chart summary ── */
@@ -179,7 +190,16 @@ canvas.chart-wheel{display:block;width:100%;max-width:340px;aspect-ratio:1/1;hei
     <!-- Natal chart wheel -->
     <div class="section-heading">Natal chart</div>
     <div class="chart-panel">
-      <canvas class="chart-wheel" id="natalWheel" width="340" height="340"></canvas>
+      <div class="wheel-wrap" id="natalWheelSvg"></div>
+      <button type="button" class="wheel-enlarge" onclick="openWheel()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" aria-hidden="true"><path d="M8.5 1.5h4v4M12.5 1.5 8 6M5.5 12.5h-4v-4M1.5 12.5 6 8"/></svg>
+        Enlarge chart
+      </button>
+      <p class="wheel-note">Each planet's tick on the zodiac ring marks its exact degree. Hover or tap a symbol for its full position.</p>
+    </div>
+    <div class="wheel-modal" id="wheelModal" role="dialog" aria-modal="true" aria-label="Natal chart, enlarged">
+      <button type="button" class="wheel-close" onclick="closeWheel()" aria-label="Close enlarged chart">✕</button>
+      <div class="wheel-wrap" id="natalWheelLarge"></div>
     </div>
 
     <!-- Sun Moon Rising summary -->
@@ -496,7 +516,143 @@ function renderPlacements(planets, server, jd, profile) {
       + '</div>');
   }
   document.getElementById('cuspsGrid').innerHTML = cells.join('');
+
+  return { points: points, cusps: cusps, retroOf: function(p) { return !!(points[p] && points[p].retro); } };
 }
+
+// ── Natal wheel (SVG) ─────────────────────────────────────────
+// Placidus cusps with degrees, planets at their exact degree (a tick on the
+// zodiac ring), symbols spread apart so they never overlap.
+var WHEEL_SIGNS = ['♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓'];
+var ASPECTS = [
+  { angle: 60,  orb: 4, color: '#7a9fb8', dashed: true },
+  { angle: 90,  orb: 6, color: '#c47b6c' },
+  { angle: 120, orb: 6, color: '#8ba888' },
+  { angle: 180, orb: 7, color: '#c47b6c' }
+];
+var ASPECT_POINTS = ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto'];
+
+function buildWheelSvg(data) {
+  var cusps = data.cusps, points = data.points, asc = cusps[0];
+  var S = 640, cx = 320, cy = 320;
+  var R_OUT = 300, R_ZOD = 258, R_GLYPH = 214, R_DEG = 181, R_IN = 112, R_HNUM = 128;
+  var LINE = '#cfc4b0', GOLD = '#b8955a', GOLD_D = '#8a6a35', INK = '#1a1714', INK3 = '#4a4540';
+  var SERIF = "'Cormorant Garamond', Georgia, serif", SANS = 'Jost, sans-serif';
+  function pt(lon, r) {
+    var a = (180 + (lon - asc)) * Math.PI / 180;
+    return [cx + r * Math.cos(a), cy - r * Math.sin(a)];
+  }
+  function n(x) { return x.toFixed(1); }
+  function line(l1, r1, l2, r2, stroke, width, extra) {
+    var a = pt(l1, r1), b = pt(l2, r2);
+    return '<line x1="' + n(a[0]) + '" y1="' + n(a[1]) + '" x2="' + n(b[0]) + '" y2="' + n(b[1]) + '" stroke="' + stroke + '" stroke-width="' + width + '"' + (extra || '') + '/>';
+  }
+  function dm(lon) {
+    var t = Math.round(n360p(lon) * 60);
+    return { d: Math.floor(t / 60) % 30, m: t % 60, s: Math.floor(Math.floor(t / 60) / 30) % 12 };
+  }
+  function mm(m) { return (m < 10 ? '0' : '') + m; }
+  var o = [];
+
+  // rings
+  o.push('<circle cx="320" cy="320" r="' + R_OUT + '" fill="#f2ede5" stroke="' + LINE + '"/>');
+  o.push('<circle cx="320" cy="320" r="' + R_ZOD + '" fill="#faf8f4" stroke="' + LINE + '"/>');
+  o.push('<circle cx="320" cy="320" r="' + R_IN + '" fill="#f2ede5" stroke="' + LINE + '" stroke-width="0.8"/>');
+
+  // degree ticks
+  for (var deg = 0; deg < 360; deg++) {
+    var len = deg % 10 === 0 ? 8 : (deg % 5 === 0 ? 5 : 2.5);
+    o.push(line(deg, R_ZOD, deg, R_ZOD + len, LINE, 0.7));
+  }
+
+  // sign divisions + glyphs
+  for (var s = 0; s < 12; s++) {
+    o.push(line(s * 30, R_ZOD, s * 30, R_OUT, LINE, 1));
+    var g = pt(s * 30 + 15, (R_ZOD + 8 + R_OUT) / 2);
+    o.push('<text class="wheel-glyph" x="' + n(g[0]) + '" y="' + n(g[1]) + '" font-size="21" fill="' + GOLD_D + '" text-anchor="middle" dominant-baseline="central">' + WHEEL_SIGNS[s] + '\uFE0E<title>' + SIGN_NAMES[s] + '</title></text>');
+  }
+
+  // house cusps, house numbers, cusp degrees
+  var ANG = { 0: 'AC', 3: 'IC', 6: 'DC', 9: 'MC' };
+  for (var i = 0; i < 12; i++) {
+    var c = cusps[i], isAng = (i in ANG), p = dm(c);
+    o.push(line(c, R_IN, c, R_ZOD, isAng ? GOLD : LINE, isAng ? 1.6 : 0.9));
+    var mid = c + n360p(cusps[(i + 1) % 12] - c) / 2, h = pt(mid, R_HNUM);
+    o.push('<text x="' + n(h[0]) + '" y="' + n(h[1]) + '" font-size="11" fill="#8f8577" text-anchor="middle" dominant-baseline="central" font-family="' + SANS + '">' + (i + 1) + '</text>');
+    if (isAng) {
+      o.push(line(c, R_OUT, c, R_OUT + 14, GOLD, 1.6));
+      var l = pt(c, R_OUT + 30);
+      o.push('<text x="' + n(l[0]) + '" y="' + n(l[1] - 7) + '" font-size="11" font-weight="500" fill="' + GOLD_D + '" text-anchor="middle" dominant-baseline="central" font-family="' + SANS + '" letter-spacing="0.06em">' + ANG[i] + '</text>');
+      o.push('<text x="' + n(l[0]) + '" y="' + n(l[1] + 8) + '" font-size="13" fill="' + INK + '" text-anchor="middle" dominant-baseline="central" font-family="' + SERIF + '">' + p.d + '°' + mm(p.m) + '′ ' + SIGN_SHORT[p.s] + '</text>');
+    } else {
+      var q = pt(c, R_OUT + 22);
+      o.push('<text x="' + n(q[0]) + '" y="' + n(q[1]) + '" font-size="12" fill="' + INK3 + '" text-anchor="middle" dominant-baseline="central" font-family="' + SERIF + '">' + p.d + '°' + mm(p.m) + '′</text>');
+    }
+  }
+
+  // aspect lines
+  for (var a1 = 0; a1 < ASPECT_POINTS.length; a1++) {
+    for (var a2 = a1 + 1; a2 < ASPECT_POINTS.length; a2++) {
+      var A = points[ASPECT_POINTS[a1]], B = points[ASPECT_POINTS[a2]];
+      if (!A || !B) continue;
+      var sep = Math.abs(A.lon - B.lon) % 360; if (sep > 180) sep = 360 - sep;
+      for (var k = 0; k < ASPECTS.length; k++) {
+        var asp = ASPECTS[k], diff = Math.abs(sep - asp.angle);
+        if (diff > asp.orb) continue;
+        var op = Math.max(0.35, 1 - diff / asp.orb * 0.65).toFixed(2);
+        o.push(line(A.lon, R_IN, B.lon, R_IN, asp.color, 1, ' opacity="' + op + '"' + (asp.dashed ? ' stroke-dasharray="3 3"' : '')));
+        break;
+      }
+    }
+  }
+
+  // planets: spread symbols apart (keeping order), exact-degree ticks, leaders
+  var items = [];
+  PLACEMENT_ORDER.forEach(function(name) {
+    if (points[name]) items.push({ name: name, lon: points[name].lon, disp: points[name].lon, retro: points[name].retro });
+  });
+  items.sort(function(x, y) { return n360p(x.lon - asc) - n360p(y.lon - asc); });
+  var MIN_SEP = 11.5;
+  for (var pass = 0; pass < 60 && items.length > 1; pass++) {
+    var moved = false;
+    for (var j = 0; j < items.length; j++) {
+      var X = items[j], Y = items[(j + 1) % items.length], gap = n360p(Y.disp - X.disp);
+      if (gap < MIN_SEP) { var push = (MIN_SEP - gap) / 2 + 0.05; X.disp -= push; Y.disp += push; moved = true; }
+    }
+    if (!moved) break;
+  }
+  items.forEach(function(it) {
+    var col = PCOL[it.name] || '#888', p = dm(it.lon), label = (PLACEMENT_NAMES[it.name] || it.name);
+    o.push(line(it.lon, R_ZOD, it.lon, R_ZOD - 9, col, 1.6));
+    if (Math.abs(n360p(it.disp - it.lon + 180) - 180) > 0.6) {
+      o.push(line(it.lon, R_ZOD - 9, it.disp, R_GLYPH + 13, col, 0.6, ' opacity="0.6"'));
+    }
+    var g = pt(it.disp, R_GLYPH), t = pt(it.disp, R_DEG);
+    o.push('<text class="wheel-glyph" x="' + n(g[0]) + '" y="' + n(g[1]) + '" font-size="23" fill="' + col + '" text-anchor="middle" dominant-baseline="central">' + (PSYM[it.name] || '') + '\uFE0E<title>' + label + ' ' + p.d + '°' + mm(p.m) + '′ ' + SIGN_NAMES[p.s] + (it.retro ? ' (retrograde)' : '') + '</title></text>');
+    o.push('<text x="' + n(t[0]) + '" y="' + n(t[1]) + '" text-anchor="middle" dominant-baseline="central" font-family="' + SERIF + '" fill="' + INK + '"><tspan font-size="13">' + p.d + '°</tspan><tspan font-size="9" dy="-4">' + mm(p.m) + '′</tspan>' + (it.retro ? '<tspan font-size="9" fill="#9b3535" font-family="' + SANS + '" dy="4">℞</tspan>' : '') + '</text>');
+  });
+
+  return '<svg viewBox="-60 -60 760 760" role="img" aria-label="Natal chart wheel">' + o.join('') + '</svg>';
+}
+
+function renderWheel(data) {
+  if (!data) return;
+  var svg = buildWheelSvg(data);
+  var small = document.getElementById('natalWheelSvg');
+  var large = document.getElementById('natalWheelLarge');
+  if (small) small.innerHTML = svg;
+  if (large) large.innerHTML = svg;
+}
+
+function openWheel() {
+  var m = document.getElementById('wheelModal');
+  if (m) { m.classList.add('open'); document.body.style.overflow = 'hidden'; }
+}
+function closeWheel() {
+  var m = document.getElementById('wheelModal');
+  if (m) { m.classList.remove('open'); document.body.style.overflow = ''; }
+}
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeWheel(); });
 
 // ── Format date ───────────────────────────────────────────────
 function formatDate(str) {
@@ -579,7 +735,7 @@ async function initProfile() {
     document.getElementById('profileMeta').textContent = [profile.birth_date, profile.birth_time, profile.birth_place].filter(Boolean).join(' · ');
 
     // Draw wheel
-    setTimeout(function() { drawNatalWheel(planets); }, 50);
+    // (The wheel is drawn below, once the exact positions and cusps are known.)
 
     // Sun/Moon/Rising summary
     var sun = planets.Sun, moon = planets.Moon, asc = planets.Ascendant;
@@ -597,7 +753,8 @@ async function initProfile() {
     }
 
     // Placements table + house cusps
-    renderPlacements(planets, server, jd, profile);
+    var chartData = renderPlacements(planets, server, jd, profile);
+    renderWheel(chartData);
 
     // Places explored
     var list = document.getElementById('placesList');
