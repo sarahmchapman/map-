@@ -126,6 +126,15 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 .ltype-btn.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 .focus-filter-btn{font-size:.58rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;padding:.2rem .6rem;border-radius:20px;border:.5px solid var(--paper-3);cursor:pointer;background:transparent;color:var(--ink-3);transition:all .15s}
 .focus-filter-btn.on{background:var(--gold);color:var(--paper);border-color:var(--gold)}
+.place-search{position:relative;padding:.2rem 1.2rem .9rem;background:var(--paper)}
+.place-search-row{position:relative;max-width:520px}
+.place-search-row svg.ps-icon{position:absolute;left:.1rem;top:50%;transform:translateY(-50%);color:var(--gold);pointer-events:none}
+#placeSearch{padding:.55rem 2.4rem .55rem 1.6rem;font-size:.95rem}
+#placeSearchClear{display:none;position:absolute;right:0;top:50%;transform:translateY(-50%);width:44px;height:44px;align-items:center;justify-content:center;background:none;border:none;cursor:pointer;color:var(--ink-3);font-size:.9rem}
+#placeSearchClear:hover{color:var(--ink)}
+#placeSuggestions{position:absolute;top:100%;left:0;right:0;z-index:9999;background:var(--paper);border:1px solid var(--paper-3);border-top:none;border-radius:0 0 6px 6px;box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:280px;overflow-y:auto;display:none}
+#placeSuggestions.show{display:block}
+#placeSearchMsg{display:none;font-family:var(--serif);font-style:italic;font-size:.82rem;color:var(--ink-3);margin-top:.35rem}
 #mapWrap{position:relative;overflow:hidden;border-top:.5px solid var(--paper-3);border-bottom:.5px solid var(--paper-3)}
 #mapTiles{display:block;width:100%;height:660px;cursor:crosshair;touch-action:none}
 #lineSvg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:all;cursor:crosshair;touch-action:none;z-index:2}
@@ -263,6 +272,16 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
   <div class="map-section">
     <div class="chart-heading" style="margin-top:1.8rem;margin-bottom:.5rem;padding:0 1.5rem;max-width:700px;margin-left:auto;margin-right:auto">Astrocartography Map</div>
     <p style="font-family:var(--serif);font-style:italic;font-size:.88rem;color:var(--ink-3);line-height:1.7;padding:0 1.5rem .9rem;max-width:700px;margin:0 auto">Your map shows where each planet's energy is strongest for you around the world. Each planet creates four lines — tap any line to discover what it means for that place. Solid lines (MC + AC) show where a planet directly shapes your path and identity. Dashed lines (IC + DC) show where it influences your home life and relationships.</p>
+    <div class="place-search">
+      <div class="place-search-row">
+        <svg class="ps-icon" width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>
+        <label for="placeSearch" class="visually-hidden" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Search for a place</label>
+        <input type="text" id="placeSearch" autocomplete="off" placeholder="Search any town or city…" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="placeSuggestions">
+        <button type="button" id="placeSearchClear" aria-label="Clear search">✕</button>
+        <div id="placeSuggestions" role="listbox"></div>
+      </div>
+      <p id="placeSearchMsg" role="status"></p>
+    </div>
     <div class="filter-bar">
       <span class="filter-lbl">Planets</span>
       <div class="filter-group" id="togBtns"></div>
@@ -335,7 +354,7 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 </div>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="/descriptions.js?v=5"></script>
-<script src="/js/app.js?v=7"></script>
+<script src="/js/app.js?v=8"></script>
 <script src="/js/engine.js?v=2"></script>
 
 <script>
