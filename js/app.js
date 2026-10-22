@@ -1123,6 +1123,19 @@ function _renderOverlay(){
       html+='<text x="'+bp.x+'" y="'+(bp.y-13)+'" fill="#1a1714" font-size="10" font-family="Jost,sans-serif" font-weight="500" text-anchor="middle">Birth</text>';
     }
   }
+  // Pin for a place found with the search box.
+  var sp=window._searchPin;
+  if(sp){
+    var pp=_ll2px(sp.lat,sp.lng);
+    if(pp.x>-20&&pp.x<W+20&&pp.y>-40&&pp.y<H+20){
+      var x=pp.x.toFixed(1),y=pp.y.toFixed(1);
+      html+='<g transform="translate('+x+','+y+')">'
+        +'<path d="M0,0 C-2,-7 -9,-11 -9,-18 A9,9 0 1 1 9,-18 C9,-11 2,-7 0,0 Z" fill="#1a1714" stroke="#faf8f4" stroke-width="1.5"/>'
+        +'<circle cx="0" cy="-18" r="3.2" fill="#d4b07a"/></g>';
+      var lbl=String(sp.label||'').split(',')[0].replace(/[<>&]/g,'');
+      html+='<text x="'+x+'" y="'+(pp.y-32).toFixed(1)+'" fill="#1a1714" stroke="#faf8f4" stroke-width="3" paint-order="stroke" font-size="11" font-family="Jost,sans-serif" font-weight="500" text-anchor="middle">'+lbl+'</text>';
+    }
+  }
   svg.innerHTML=html;
 }
 
@@ -1242,8 +1255,10 @@ function _setupMapEvents(){
   });
 }
 
-function _handleMapClick(lat,lng){
+function _handleMapClick(lat,lng,placeName){
   if(!acgData||!activeChart)return;
+  // A plain map click clears any pin left by the place search.
+  if(!placeName&&window._searchPin){window._searchPin=null;_redraw();}
   var PALL=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode','SNode'];
   var PALL_PZ=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode']; // SNode excluded from power zones
 
@@ -1313,8 +1328,10 @@ function _handleMapClick(lat,lng){
     var d=Math.sqrt(dlat*dlat+dlng*dlng);
     if(d<bestCD){bestCD=d;nearCity=city.n+(city.c?', '+city.c:'');}
   });
-  var initLabel=nearCity||'This location';
+  var initLabel=placeName||nearCity||'This location';
   openCard(initLabel,bestP,bestLT,lat,lng,inZone.length>=2?inZone:null);
+  // A searched place already has its proper name; no need to look it up.
+  if(placeName){window._resolvedCityName=placeName;return;}
   // Then try GeoNames for better result
   fetch('/api/geonames?type=reverse&lat='+lat.toFixed(5)+'&lng='+lng.toFixed(5)+'&zoom='+Math.round(zoom))
     .then(function(r){return r.json();})
@@ -1328,6 +1345,89 @@ function _handleMapClick(lat,lng){
       }
     }).catch(function(){});
 }
+
+// ── Map place search ──────────────────────────────────────────
+// Type any town or city; picking it moves the map there, drops a pin
+// and opens the reading for that exact spot.
+function goToPlace(place){
+  if(!place||place.lat==null||place.lng==null)return;
+  var label=place.n+(place.r&&place.r!==place.n&&place.r!==place.c?', '+place.r:'')+(place.c?', '+place.c:'');
+  window._searchPin={lat:place.lat,lng:place.lng,label:label};
+  _map.cx=place.lng;_map.cy=place.lat;
+  _map.zoomF=Math.max(_map.zoomF,6);
+  _redraw();
+  _handleMapClick(place.lat,place.lng,label);
+}
+
+(function(){
+  var inp=document.getElementById('placeSearch'),drop=document.getElementById('placeSuggestions');
+  var clearBtn=document.getElementById('placeSearchClear'),msg=document.getElementById('placeSearchMsg');
+  if(!inp||!drop)return;
+  var hi=-1,timer=null,lastHits=[];
+  function its(){return drop.querySelectorAll('.city-item');}
+  function close(){drop.classList.remove('show');hi=-1;inp.setAttribute('aria-expanded','false');}
+  function note(t){if(msg){msg.textContent=t||'';msg.style.display=t?'block':'none';}}
+  function hl(i){var x=its();[].forEach.call(x,function(el){el.classList.remove('hi');el.setAttribute('aria-selected','false');});hi=Math.max(-1,Math.min(i,x.length-1));if(hi>=0){x[hi].classList.add('hi');x[hi].setAttribute('aria-selected','true');}}
+  function pick(city){
+    inp.value=city.n+(city.c?', '+city.c:'');
+    close();note('');
+    if(clearBtn)clearBtn.style.display='flex';
+    if(!acgData||!activeChart){note('Your map is still loading. Try again in a moment.');return;}
+    goToPlace(city);
+  }
+  function render(hits){
+    lastHits=hits;drop.innerHTML='';
+    if(!hits.length){close();return;}
+    hits.forEach(function(city,i){
+      var div=document.createElement('div');div.className='city-item';div.setAttribute('role','option');div.id='placeOpt'+i;
+      div.innerHTML='<span class="ci-name"></span><span class="ci-sub"></span>';
+      div.firstChild.textContent=city.n;
+      div.lastChild.textContent=(city.r&&city.r!==city.n&&city.r!==city.c?city.r+', ':'')+city.c;
+      div.addEventListener('mousedown',function(ev){ev.preventDefault();pick(city);});
+      drop.appendChild(div);
+    });
+    drop.classList.add('show');hi=-1;inp.setAttribute('aria-expanded','true');
+  }
+  function search(q){
+    render(_localSearch(q));
+    fetch('/api/geonames?q='+encodeURIComponent(q))
+      .then(function(r){return r.json();})
+      .then(function(data){
+        if(inp.value.trim()!==q)return;
+        var merged=_localSearch(q);
+        (data.geonames||[]).forEach(function(g){
+          var ar={n:g.name,r:g.adminName1||'',c:g.countryName||'',lat:parseFloat(g.lat),lng:parseFloat(g.lng)};
+          var seen=merged.some(function(lr){return normStr(lr.n)===normStr(ar.n)&&normStr(lr.c)===normStr(ar.c);});
+          if(!seen&&!isNaN(ar.lat))merged.push(ar);
+        });
+        render(merged.slice(0,10));
+        if(!merged.length)note('No places found for "'+q+'". Try a nearby town, or click the map.');
+      }).catch(function(){});
+  }
+  inp.addEventListener('input',function(){
+    note('');var q=inp.value.trim();
+    if(clearBtn)clearBtn.style.display=inp.value?'flex':'none';
+    clearTimeout(timer);
+    if(q.length<2){drop.innerHTML='';close();return;}
+    timer=setTimeout(function(){search(q);},220);
+  });
+  inp.addEventListener('keydown',function(e){
+    var x=its();
+    if(e.key==='ArrowDown'){e.preventDefault();hl(hi+1);}
+    else if(e.key==='ArrowUp'){e.preventDefault();hl(hi-1);}
+    else if(e.key==='Enter'){
+      e.preventDefault();
+      if(hi>=0&&hi<lastHits.length)pick(lastHits[hi]);
+      else if(lastHits.length)pick(lastHits[0]);
+    }
+    else if(e.key==='Escape')close();
+  });
+  inp.addEventListener('blur',function(){setTimeout(close,200);});
+  if(clearBtn)clearBtn.addEventListener('click',function(){
+    inp.value='';clearBtn.style.display='none';close();note('');
+    window._searchPin=null;_redraw();inp.focus();
+  });
+})();
 
 function mapZoom(delta){_map.zoomF=Math.max(1,Math.min(17,_map.zoomF+delta));_redraw();}
 function mapReset(){
