@@ -679,9 +679,17 @@ var selectedGeo=null,selectedFocus='Love',hiIdx=-1;
 var MONTH_NAMES=['January','February','March','April','May','June','July','August','September','October','November','December'];
 function pad(n){return String(n).padStart(2,'0');}
 function normStr(s){return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+// Two search results are the same place only if they share a name and country
+// AND either their state/region or (roughly) their location. Without this,
+// every "Hudson" in the United States collapsed into one result.
+function _samePlace(a,b){
+  if(normStr(a.n)!==normStr(b.n)||normStr(a.c||'')!==normStr(b.c||''))return false;
+  if(a.r&&b.r)return normStr(a.r)===normStr(b.r);
+  return Math.abs(a.lat-b.lat)<0.1&&Math.abs(a.lng-b.lng)<0.1;
+}
 
 function _localSearch(q){
-  var n=normStr(q.trim());if(n.length<1)return[];
+  var n=normStr(q.split(',')[0].trim());if(n.length<1)return[];
   var a=[],b=[];
   for(var i=0;i<CITY_DB.length;i++){
     var city=CITY_DB[i],cn=normStr(city.n),cc=normStr(city.c),cr=normStr(city.r||'');
@@ -722,7 +730,7 @@ function _localSearch(q){
         var results=[];
         (data.geonames||[]).forEach(function(g){results.push({n:g.name,r:g.adminName1||'',c:g.countryName||'',lat:parseFloat(g.lat),lng:parseFloat(g.lng)});});
         var local=_localSearch(q),merged=local.slice();
-        results.forEach(function(ar){var seen=merged.some(function(lr){return normStr(lr.n)===normStr(ar.n)&&normStr(lr.c)===normStr(ar.c);});if(!seen)merged.push(ar);});
+        results.forEach(function(ar){var seen=merged.some(function(lr){return _samePlace(lr,ar);});if(!seen&&!isNaN(ar.lat))merged.push(ar);});
         renderHits(merged.slice(0,12));
       }).catch(function(){});
   }
@@ -1397,10 +1405,10 @@ function goToPlace(place){
         var merged=_localSearch(q);
         (data.geonames||[]).forEach(function(g){
           var ar={n:g.name,r:g.adminName1||'',c:g.countryName||'',lat:parseFloat(g.lat),lng:parseFloat(g.lng)};
-          var seen=merged.some(function(lr){return normStr(lr.n)===normStr(ar.n)&&normStr(lr.c)===normStr(ar.c);});
+          var seen=merged.some(function(lr){return _samePlace(lr,ar);});
           if(!seen&&!isNaN(ar.lat))merged.push(ar);
         });
-        render(merged.slice(0,10));
+        render(merged.slice(0,12));
         if(!merged.length)note('No places found for "'+q+'". Try a nearby town, or click the map.');
       }).catch(function(){});
   }
