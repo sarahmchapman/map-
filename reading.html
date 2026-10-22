@@ -180,7 +180,7 @@ canvas.chart-wheel{display:block;width:100%;max-width:420px;aspect-ratio:1/1;hei
 </div><!-- /page -->
 
 <script src="/descriptions.js?v=5"></script>
-<script src="/js/app.js?v=1"></script>
+<script src="/js/app.js?v=9"></script>
 <script>
 // ─── Carousel (mobile) ───────────────────────────────────────
 var _currentPanel = 0;
@@ -609,9 +609,10 @@ function drawChartWheel(canvasId, planets) {
     ctx.fillText(zsyms[s], tx, ty);
   }
 
-  // ── House divisions (equal houses) ───────────────────────────
+  // ── House divisions (Placidus when available, else equal) ────
+  var cusps = (planets._cusps && planets._cusps.length === 12) ? planets._cusps : null;
   for (var h = 0; h < 12; h++) {
-    var hLon = ascLon + h * 30;
+    var hLon = cusps ? cusps[h] : ascLon + h * 30;
     var hAngle = lonToAngle(hLon);
     var isAngle = (h % 3 === 0);
 
@@ -623,7 +624,9 @@ function drawChartWheel(canvasId, planets) {
     ctx.stroke();
 
     // House numbers in the house band
-    var numLon = ascLon + h * 30 + 15;
+    var numLon = cusps
+      ? cusps[h] + ((((cusps[(h + 1) % 12] - cusps[h]) % 360) + 360) % 360) / 2
+      : ascLon + h * 30 + 15;
     var numAngle = lonToAngle(numLon);
     var numR = (rHouse + rZodiac) / 2;
     ctx.font = Math.round(size * 0.028) + 'px Jost, sans-serif';
@@ -779,6 +782,21 @@ function getHouseNumber(planetLon, ascLon) {
   return Math.floor(rel / 30) + 1;
 }
 
+// House of a longitude in a chart: Placidus cusps when we have them,
+// otherwise equal houses from the Ascendant.
+function houseIn(lon, planets) {
+  var c = planets._cusps;
+  if (!c || c.length !== 12) return getHouseNumber(lon, planets.Ascendant.totalDeg);
+  for (var i = 0; i < 12; i++) {
+    var a = c[i], b = c[(i + 1) % 12];
+    var span = ((b - a) % 360 + 360) % 360, off = ((lon - a) % 360 + 360) % 360;
+    if (off < span) return i + 1;
+  }
+  return 1;
+}
+
+var PLANET_LABEL = { NNode: 'North Node', SNode: 'South Node' };
+
 function ordinal(n) {
   var s = ['th','st','nd','rd'];
   var v = n % 100;
@@ -832,6 +850,44 @@ function initPage() {
   document.getElementById('labelNatal').textContent = 'Born in ' + birthPlace;
 
 
+  // Exact planet positions (Swiss Ephemeris) and Placidus houses for both
+  // places come from the server; the in-browser figures are the fallback.
+  Promise.all([
+    fetchChartData(jd, birthLat, birthLng),
+    fetchChartData(jd, cityLat, cityLng)
+  ]).then(function(res) {
+    applyServerChart(natalPlanets, res[0]);
+    applyServerChart(relocPlanets, res[1]);
+    finishPage(data, natalPlanets, relocPlanets, birthPlace, cityName);
+  });
+}
+
+function fetchChartData(jd, lat, lng) {
+  return fetch('/api/astro?jd=' + jd + '&lat=' + lat + '&lng=' + lng)
+    .then(function(r) { return r.json(); })
+    .catch(function() { return null; });
+}
+
+// Copies the server's exact positions and Placidus cusps onto a chart.
+function applyServerChart(planets, server) {
+  if (!server) return;
+  var pos = server.positions || {};
+  Object.keys(pos).forEach(function(p) {
+    if (pos[p] && pos[p].lon != null && typeof parseLon === 'function') planets[p] = parseLon(pos[p].lon);
+  });
+  var h = server.houses;
+  if (h && !h.error && h['1'] != null) {
+    var cusps = [];
+    for (var i = 1; i <= 12; i++) cusps.push(Number(h[String(i)]));
+    planets._cusps = cusps;
+    if (typeof parseLon === 'function') {
+      planets.Ascendant = parseLon(Number(h.asc));
+      planets.Midheaven = parseLon(Number(h.mc));
+    }
+  }
+}
+
+function finishPage(data, natalPlanets, relocPlanets, birthPlace, cityName) {
   // Draw wheels — wait for Noto Sans Symbols 2 to load for crisp glyphs
   function drawBoth() {
     drawChartWheel('wheelRelocated', window._relocPlanets);
@@ -844,14 +900,14 @@ function initPage() {
   });
 
   // Find planet house shifts
-  var PLANET_ORDER = ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto'];
+  var PLANET_ORDER = ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode'];
   var shifts = [];
   PLANET_ORDER.forEach(function(p) {
     var np = natalPlanets[p];
     var rp = relocPlanets[p];
     if (!np || !rp) return;
-    var natalHouse = getHouseNumber(np.totalDeg, natalPlanets.Ascendant.totalDeg);
-    var relocHouse = getHouseNumber(rp.totalDeg, relocPlanets.Ascendant.totalDeg);
+    var natalHouse = houseIn(np.totalDeg, natalPlanets);
+    var relocHouse = houseIn(rp.totalDeg, relocPlanets);
     if (natalHouse !== relocHouse) {
       shifts.push({ planet: p, natalHouse: natalHouse, relocHouse: relocHouse, sign: rp.sign });
     }
@@ -873,12 +929,13 @@ function initPage() {
       var natalText = getNatalText(sh.planet, sh.natalHouse, birthPlace);
       var relocText = getRelocText(sh.planet, sh.relocHouse, cityName);
       var changeText = getChangeText(sh.planet, sh.natalHouse, sh.relocHouse);
+      var changeId = 'change-' + sh.planet;
       var card = document.createElement('div');
       card.className = 'shift-card';
       card.innerHTML =
         '<div class="shift-card-header">'
           + '<span class="shift-glyph" style="color:' + col + '">' + sym + '</span>'
-          + '<span class="shift-planet-name" style="color:' + col + '">' + sh.planet + '</span>'
+          + '<span class="shift-planet-name" style="color:' + col + '">' + (PLANET_LABEL[sh.planet] || sh.planet) + '</span>'
           + '<span class="shift-arrow">·</span>'
           + '<span class="shift-houses">' + ordinal(sh.natalHouse) + ' house → ' + ordinal(sh.relocHouse) + ' house</span>'
         + '</div>'
@@ -888,13 +945,15 @@ function initPage() {
           + '<div class="shift-rule"></div>'
           + '<div class="shift-label">In ' + cityName + '</div>'
           + '<div class="shift-prose">' + relocText + '</div>'
-          + (changeText
-            ? '<div class="shift-rule"></div>'
-              + '<div class="shift-label">What changes</div>'
-              + '<div class="shift-prose">' + changeText + '</div>'
-            : '')
+          + '<div id="' + changeId + '"' + (changeText ? '' : ' style="display:none"') + '>'
+            + '<div class="shift-rule"></div>'
+            + '<div class="shift-label">What changes</div>'
+            + '<div class="shift-prose">' + (changeText || '') + '</div>'
+          + '</div>'
         + '</div>';
       list.appendChild(card);
+      // No hand-written text for this move? Fetch the written-once, cached one.
+      if (!changeText) loadChangeText(sh.natalHouse, sh.relocHouse, changeId);
     });
   }
 
@@ -1356,7 +1415,7 @@ function getNatalText(planet, house, birthPlace) {
   };
   var desc = (tables[planet] && tables[planet][house]) || '';
   if (!desc) desc = 'Your ' + planet + ' sits in ' + getHouseDesc(house) + ' at your birthplace — shaping this area of life in a deep, foundational way.';
-  return 'At your birthplace, your ' + planet + ' sits in the ' + ordinal(house) + ' house — ' + HOUSE_ANCHORS[house] + '. ' + desc;
+  return 'At your birthplace, your ' + (PLANET_LABEL[planet] || planet) + ' sits in the ' + ordinal(house) + ' house — ' + HOUSE_ANCHORS[house] + '. ' + desc;
 }
 
 function getRelocText(planet, house, cityName) {
@@ -1368,7 +1427,7 @@ function getRelocText(planet, house, cityName) {
   };
   var desc = (tables[planet] && tables[planet][house]) || '';
   if (!desc) desc = 'In ' + cityName + ', your ' + planet + ' activates ' + getHouseDesc(house) + ' — bringing a new quality of energy to this part of your life.';
-  return 'In ' + cityName + ', your ' + planet + ' moves into the ' + ordinal(house) + ' house — ' + HOUSE_ANCHORS[house] + '. ' + desc;
+  return 'In ' + cityName + ', your ' + (PLANET_LABEL[planet] || planet) + ' moves into the ' + ordinal(house) + ' house — ' + HOUSE_ANCHORS[house] + '. ' + desc;
 }
 
 // Opposite house pairs for "what changes"
@@ -1390,6 +1449,28 @@ var OPPOSITE_PAIRS = {
 function getChangeText(planet, natalHouse, relocHouse) {
   var key = natalHouse + '-' + relocHouse;
   return OPPOSITE_PAIRS[key] || '';
+}
+
+// Moves without a hand-written text are written once by /api/describe-shift
+// (in the same voice as OPPOSITE_PAIRS) and cached; shown when ready.
+var _changeRequests = {};  // one request per house move, shared by every planet making it
+function loadChangeText(fromHouse, toHouse, elId) {
+  var key = fromHouse + '-' + toHouse;
+  if (!_changeRequests[key]) {
+    _changeRequests[key] = fetch('/api/describe-shift', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: fromHouse, to: toHouse })
+    }).then(function(r) { return r.json(); });
+  }
+  _changeRequests[key]
+    .then(function(d) {
+      var el = document.getElementById(elId);
+      if (!el || !d || !d.paragraph || d.source === 'fallback') return;
+      el.querySelector('.shift-prose').textContent = d.paragraph;
+      el.style.display = '';
+    })
+    .catch(function() {});
 }
 
 // ─── Line reading (no house shifts) ─────────────────────────
