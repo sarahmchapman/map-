@@ -21,16 +21,31 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { createRequire } from 'module';
+import fs from 'fs';
+import path from 'path';
 
 // Vercel converts this file to the older CommonJS format when it builds the site (see the build log),
 // where require() already exists. (The word import-dot-meta must not appear anywhere in this file:
 // in that format it stops the file from loading at all.)
 const req = typeof require === 'function' ? require : createRequire(process.cwd() + '/api/generate-report.js');
-const CITIES = req('./cities_world.json');   // same list api/report-chart.py uses
-// Make sure Vercel bundles the engine files with this function.
-req.resolve('./_lib/reports/engine.js');
-req.resolve('./_lib/reports/rank.cjs');
-req.resolve('./_lib/reports/report.cjs');
+
+// Find a file shipped with this function (vercel.json includeFiles packs them in). Looks next to this
+// file first, then under the project folder, so it works however Vercel lays the files out.
+function findFile(rel) {
+  const here = typeof __dirname !== 'undefined' ? __dirname : path.join(process.cwd(), 'api');
+  const tries = [path.join(here, rel), path.join(process.cwd(), 'api', rel), path.join(process.cwd(), rel)];
+  for (const f of tries) if (fs.existsSync(f)) return f;
+  const err = new Error('missing file api/' + rel); err.tried = tries; throw err;
+}
+let CITIES = null;
+function loadCities() { if (!CITIES) CITIES = JSON.parse(fs.readFileSync(findFile('cities_world.json'), 'utf8')); return CITIES; }
+// What this function can see, for error messages.
+function filesSeen() {
+  const list = d => { try { return fs.readdirSync(d); } catch (e) { return 'unreadable'; } };
+  const here = typeof __dirname !== 'undefined' ? __dirname : '(none)';
+  return { here, cwd: process.cwd(), inHere: list(here), inApi: list(path.join(process.cwd(), 'api')),
+           inLib: list(path.join(process.cwd(), 'api', '_lib', 'reports')) };
+}
 
 export const ENGINE_VERSION = 'reports engine approved Nov 1, 2026 (speed fix Nov 8)';
 const THEMES = ['love', 'career', 'home'];
@@ -101,7 +116,7 @@ export async function birthJD(date, time, lat, lng) {
 
 // ── Chart data from api/report-chart, in slices, joined back up ──────────
 export async function fetchChart(base, jd, lat, lng, fetchSlice) {
-  const n = CITIES.length, size = Math.ceil(n / SLICES);
+  const CITIES = loadCities(), n = CITIES.length, size = Math.ceil(n / SLICES);
   const get = fetchSlice || (async (start, end) => {
     const r = await fetch(`${base}/api/report-chart?jd=${jd}&lat=${lat}&lng=${lng}&start=${start}&end=${end}`);
     const j = await r.json();
@@ -128,15 +143,24 @@ export function buildReports(chart, opts) {
   // Load the engine fresh each time, so wording that rotates between places
   // starts from the same point for every buyer (as it did when approved).
   for (const k of Object.keys(req.cache)) if (/_lib[\\/]reports[\\/]/.test(k)) delete req.cache[k];
-  const R = req('./_lib/reports/rank.cjs');
-  const { build } = req('./_lib/reports/report.cjs');
+  findFile('_lib/reports/engine.js');   // rank.cjs reads it; fail clearly if it wasn't shipped
+  const R = req(findFile('_lib/reports/rank.cjs'));
+  const { build } = req(findFile('_lib/reports/report.cjs'));
   const all = R.rankAll(chart);
   const out = {}; for (const t of THEMES) out[t] = build(chart, t, opts, all);
   return out;
 }
 
 // ── The endpoint ──────────────────────────────────────────────────────────
-export default async function handler(req, res) {
+export default async function handler(rq, res) {
+  try { return await handle(rq, res); }
+  catch (err) {
+    console.error('generate-report crashed:', err);
+    return res.status(500).json({ error: 'generate-report crashed: ' + err.message, tried: err.tried, files: filesSeen() });
+  }
+}
+
+async function handle(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   let body = req.body || {};
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = {}; } }
@@ -195,6 +219,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ report: reports[theme], cached: false, timing: { chartMs: t1 - t0, engineMs: t2 - t1 } });
   } catch (err) {
     console.error('generate-report failed:', err);
-    return res.status(500).json({ error: 'Could not make the report: ' + err.message });
+    return res.status(500).json({ error: 'Could not make the report: ' + err.message, tried: err.tried, files: filesSeen() });
   }
 }
