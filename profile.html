@@ -191,6 +191,8 @@ canvas.chart-wheel{display:block;width:100%;max-width:340px;aspect-ratio:1/1;hei
     </div>
     <!-- Map Guide ownership / invitation -->
     <div class="mapguide-section" id="mapGuideSection"></div>
+    <!-- Best Places reports -->
+    <div class="mapguide-section" id="reportsSection"></div>
 
     <!-- Natal chart wheel -->
     <div class="section-heading">Natal chart</div>
@@ -722,6 +724,7 @@ async function initProfile() {
     // and render either the "purchased — read it" card or a gentle
     // "get your Map Guide" invitation into #mapGuideSection.
     renderMapGuideSection(user.email);
+    renderReportsSection();
 
     // Load profile
    var { data: profile, error } = await _sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
@@ -866,6 +869,58 @@ function dateToJD(birthDate, birthTime) {
 // ── Map Guide section ─────────────────────────────────────────
 // Calls /api/check-access to see if this email owns the Map Guide,
 // then fills #mapGuideSection with the owned card or the invitation.
+// ── Best Places reports ──────────────────────────────────────
+// Asks /api/generate-report which reports this person has bought
+// (it makes nothing), then shows a card for each: "Read it" if owned,
+// an invitation if not.
+var REPORT_INFO = {
+  love:   { title: 'Love',   desc: 'Where your chart opens to romance, partnership and being met.' },
+  career: { title: 'Career', desc: 'Where your work, reputation and ambitions are most supported.' },
+  home:   { title: 'Home',   desc: 'Where you can rest, heal and feel rooted.' }
+};
+
+async function renderReportsSection() {
+  var el = document.getElementById('reportsSection');
+  if (!el) return;
+  try {
+    var { data: s } = await _sb.auth.getSession();
+    var token = s && s.session && s.session.access_token;
+    if (!token) return;
+    var r = await fetch('/api/generate-report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ action: 'owned' })
+    });
+    var data = await r.json();
+    var owned = (data && data.owned) || [];
+    var html = '<div class="section-heading">Your Best Places reports</div>';
+    ['love', 'career', 'home'].forEach(function(t) {
+      var info = REPORT_INFO[t];
+      if (owned.indexOf(t) !== -1) {
+        html += '<a class="mg-card" style="margin-bottom:.75rem" href="/my-report.html?theme=' + t + '">'
+          + '<div class="mg-owned">'
+          +   '<div class="mg-owned-left">'
+          +     '<span class="mg-title">Best Places for ' + info.title + '</span>'
+          +     '<span class="mg-status">✦ Purchased</span>'
+          +   '</div>'
+          +   '<span class="mg-read">Read it →</span>'
+          + '</div>'
+          + '</a>';
+      } else {
+        html += '<a class="mg-card" style="margin-bottom:.75rem" href="/my-report.html?theme=' + t + '">'
+          + '<div class="mg-invite-title">Best Places for ' + info.title + '</div>'
+          + '<div class="mg-invite-desc">' + info.desc + '</div>'
+          + '<div class="mg-invite-link">Get your ' + info.title + ' report →</div>'
+          + '</a>';
+      }
+    });
+    el.innerHTML = html;
+  } catch (err) {
+    console.warn('reports check failed:', err.message);
+    el.innerHTML = '';
+  }
+}
+
 function renderMapGuideSection(email) {
   var el = document.getElementById('mapGuideSection');
   if (!el) return;
