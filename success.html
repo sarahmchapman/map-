@@ -89,6 +89,26 @@ h1 em{font-style:italic;color:var(--gold)}
 
 var buyerEmail = null;
 
+// What was bought (from the checkout address) → the words on this page.
+// No product, or map_guide → the original Map Guide wording, unchanged.
+(function setWording() {
+  var m = /[?&]product=([^&]*)/.exec(window.location.search);
+  var product = m ? decodeURIComponent(m[1]) : 'map_guide';
+  var NAMES = {
+    report_love:   { html: 'Your <em>Love</em> report is ready',          short: 'your Love report' },
+    report_career: { html: 'Your <em>Career</em> report is ready',        short: 'your Career report' },
+    report_home:   { html: 'Your <em>Home</em> report is ready',          short: 'your Home report' },
+    report_all:    { html: 'Your <em>Best Places</em> reports are ready', short: 'your Best Places reports' }
+  };
+  var w = NAMES[product];
+  if (!w) return;
+  document.title = 'elsewhere — ' + w.short + (product === 'report_all' ? ' are ready' : ' is ready');
+  document.querySelectorAll('h1').forEach(function(h){ h.innerHTML = w.html; });
+  document.querySelectorAll('.msg, .sub').forEach(function(p){
+    p.innerHTML = p.innerHTML.replace(/your Map Guide/g, w.short);
+  });
+})();
+
 function getParam(name) {
   var m = new RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
   return m ? decodeURIComponent(m[1]) : null;
