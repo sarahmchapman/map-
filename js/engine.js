@@ -311,6 +311,13 @@
   function getAngularity(planetName, planets) {
     var house = getHouse(planetName, planets);
     if (!house) return null;
+    // Houses are judged per planet, as in traditional astrology (Oct 31).
+    // A planet in its joy is at its best there; the Moon (body, emotional security) is weak in the hidden
+    // houses (6, 8, 12); the 8th is a dark house for any planet, read lightly (it is also transformation).
+    var JOY = { Mercury:1, Moon:3, Venus:5, Mars:6, Sun:9, Jupiter:11, Saturn:12 };
+    if (JOY[planetName] === house) return { house:house, type:'joy', score:2, label:'in its joy ('+ordinal(house)+' house)' };
+    if (planetName === 'Moon' && (house === 6 || house === 8 || house === 12)) return { house:house, type:'cadent', score:-4, label:'weakened in '+ordinal(house)+' house' };
+    if (house === 8) return { house:house, type:'succedent', score:-1, label:'in the 8th house' };
     var angular   = [1,4,7,10];
     var succedent = [2,5,8,11];
     if (angular.indexOf(house) !== -1) {
