@@ -5,6 +5,14 @@
   "functions": {
     "api/astro.py": {
       "includeFiles": "api/seas_18.se1"
+    },
+    "api/report-chart.py": {
+      "includeFiles": "api/{seas_18.se1,cities_world.json}"
+    },
+    "api/generate-report.js": {
+      "includeFiles": "api/{cities_world.json,_lib/**}",
+      "memory": 3009,
+      "maxDuration": 300
     }
   }
 }
