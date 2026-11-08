@@ -10,12 +10,13 @@
 #     cusps, Ascendant and MC, and the distance in km to each planet's four
 #     lines (MC, IC, ASC, DSC)
 #
-# The city data is sent in a compact form (lists, not named fields) so the
-# response stays well under Vercel's size limit. City i in the response is
-# city i in cities_world.json; api/generate-report.js joins them back up.
+# The city data is sent in a compact form (lists, not named fields), one
+# slice of the city list at a time (start/end), so each answer stays under
+# Vercel's 4.5 MB limit. City i in a slice is city start+i in cities_world.json;
+# api/generate-report.js asks for all the slices and joins them back up.
 #
 # Called by api/generate-report.js (server to server). Not used by any page.
-#   GET /api/report-chart?jd=2449694.3972&lat=51.5074&lng=-0.1278
+#   GET /api/report-chart?jd=2449694.3972&lat=51.5074&lng=-0.1278&start=0&end=4500
 
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
@@ -27,7 +28,7 @@ import numpy as np
 API_DIR = os.path.dirname(os.path.abspath(__file__))
 swe.set_ephe_path(API_DIR)          # Chiron reads seas_18.se1 from this folder
 
-VERSION = 'report-chart 1 (engine of Nov 1, 2026)'
+VERSION = 'report-chart 2 (engine of Nov 1, 2026)'
 BODIES = [('Sun', swe.SUN), ('Moon', swe.MOON), ('Mercury', swe.MERCURY), ('Venus', swe.VENUS),
           ('Mars', swe.MARS), ('Jupiter', swe.JUPITER), ('Saturn', swe.SATURN), ('Uranus', swe.URANUS),
           ('Neptune', swe.NEPTUNE), ('Pluto', swe.PLUTO), ('Chiron', swe.CHIRON), ('NNode', swe.TRUE_NODE)]
@@ -95,8 +96,10 @@ def parans(planets):
     return out
 
 # ── Cities (same method as reports-engine/buildcities.py) ────────────
-def city_data(jd, planets):
-    C = cities()
+def city_data(jd, planets, start=0, end=None):
+    ALL = cities()
+    end = len(ALL) if end is None else min(end, len(ALL))
+    C = ALL[start:end]
     G = (280.46061837 + 360.98564736629 * (jd - 2451545)) % 360
     lat = np.radians([x['lat'] for x in C]); lng = np.radians([x['lng'] for x in C])
 
@@ -128,28 +131,31 @@ def city_data(jd, planets):
             cusps.append(list(c2)[-12:]); asc.append(a2[0]); mcs.append(a2[1])
         except Exception:
             cusps.append(None); asc.append(None); mcs.append(None)   # polar: no Placidus houses
-    return {'count': len(C), 'first': C[0]['n'], 'last': C[-1]['n'],
+    return {'total': len(ALL), 'start': start, 'end': end, 'count': len(C),
+            'first': C[0]['n'] if C else None, 'last': C[-1]['n'] if C else None,
             'cusps': cusps, 'asc': asc, 'mc': mcs, 'dist': dist}
 
-def build(jd, blat, blng):
+def build(jd, blat, blng, start=0, end=None):
     planets, nat = natal(jd, blat, blng)
     return {'version': VERSION, 'jd': jd,
             'gmst': (280.46061837 + 360.98564736629 * (jd - 2451545)) % 360,
             'planets': planets, 'natal': nat, 'parans': parans(planets),
             'bodies': [b[0] for b in BODIES], 'angles': ANGLES,
-            'cities': city_data(jd, planets)}
+            'cities': city_data(jd, planets, start, end)}
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         params = parse_qs(urlparse(self.path).query)
         try:
             jd = float(params['jd'][0]); blat = float(params['lat'][0]); blng = float(params['lng'][0])
+            start = int(params['start'][0]) if 'start' in params else 0
+            end = int(params['end'][0]) if 'end' in params else None
         except Exception:
-            return self._send(400, {'error': 'jd, lat and lng are required'})
+            return self._send(400, {'error': 'jd, lat and lng are required (start and end are optional whole numbers)'})
         if abs(blat) > 66:
             return self._send(400, {'error': 'Placidus houses are undefined for a birthplace beyond 66° latitude'})
         try:
-            return self._send(200, build(jd, blat, blng))
+            return self._send(200, build(jd, blat, blng, start, end))
         except Exception as ex:
             try: seen = sorted(os.listdir(API_DIR))
             except Exception: seen = 'could not list folder'
