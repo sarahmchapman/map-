@@ -49,6 +49,10 @@ def flag_for(pid):
     return (2 if pid == swe.CHIRON else 4) | 256
 
 def natal(jd, blat, blng):
+    # Point Swiss Ephemeris at this folder again right before use (as api/astro.py
+    # does): on Vercel the path set at start-up doesn't always stick, and Chiron
+    # then can't find seas_18.se1.
+    swe.set_ephe_path(API_DIR)
     planets = {}
     for n, pid in BODIES:
         e, _ = swe.calc_ut(jd, pid, flag_for(pid))
@@ -147,7 +151,10 @@ class handler(BaseHTTPRequestHandler):
         try:
             return self._send(200, build(jd, blat, blng))
         except Exception as ex:
-            return self._send(500, {'error': str(ex), 'tb': traceback.format_exc()})
+            try: seen = sorted(os.listdir(API_DIR))
+            except Exception: seen = 'could not list folder'
+            return self._send(500, {'error': str(ex), 'api_dir': API_DIR, 'files_seen': seen,
+                                    'tb': traceback.format_exc()})
 
     def _send(self, code, obj):
         body = json.dumps(obj, separators=(',', ':')).encode()
