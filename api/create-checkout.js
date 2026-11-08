@@ -33,7 +33,22 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 //  >>> price id (also starts with price_...). Live mode has a DIFFERENT
 //  >>> price id than test mode. This is the ONE line to change for launch.
 // ─────────────────────────────────────────────────────────────
-const MAP_GUIDE_PRICE_ID = 'price_1TyLmg4mWfCuIJLWwIkCl3AQ'; // LIVE price
+const MAP_GUIDE_PRICE_ID = 'price_1Txwx44mWfCuIJLWGgvzwPrr'; // TEST price
+const REPORT_PRICE_ID     = 'price_1UZbme4mWfCuIJLWQkXzz5sc'; // TEST price — one Best Places report ($22.22)
+const REPORT_ALL_PRICE_ID = 'price_1UZbnk4mWfCuIJLWAzTv5gKc'; // TEST price — all three reports ($44.44)
+
+// What a buy button can ask for. The label is saved on the purchase by
+// stripe-webhook.js, so the report page knows which report was paid for.
+const PRODUCTS = {
+  map_guide:     MAP_GUIDE_PRICE_ID,
+  report_love:   REPORT_PRICE_ID,
+  report_career: REPORT_PRICE_ID,
+  report_home:   REPORT_PRICE_ID,
+  report_all:    REPORT_ALL_PRICE_ID
+};
+
+// If someone backs out of a report checkout, send them home.
+const REPORT_CANCEL_URL = 'https://www.elsewhereastro.com/';
 
 // Where Stripe sends the buyer after checkout.
 //   success -> the bridge page, WITH the checkout session id so it can look
@@ -53,16 +68,26 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // The buy button says which product it is. No product given = Map Guide,
+  // so the existing Map Guide button keeps working exactly as before.
+  let body = req.body || {};
+  if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = {}; } }
+  const product = body.product || 'map_guide';
+  const price = PRODUCTS[product];
+  if (!price) {
+    return res.status(400).json({ error: 'Unknown product' });
+  }
+
   try {
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       line_items: [
-        { price: MAP_GUIDE_PRICE_ID, quantity: 1 }
+        { price: price, quantity: 1 }
       ],
       billing_address_collection: 'auto',
-      metadata: { product: 'map_guide' },
+      metadata: { product: product },
       success_url: SUCCESS_URL,
-      cancel_url: CANCEL_URL
+      cancel_url: product === 'map_guide' ? CANCEL_URL : REPORT_CANCEL_URL
     });
 
     return res.status(200).json({ url: session.url });
