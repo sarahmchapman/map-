@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>elsewhere — Best Places reports</title>
+<meta name="description" content="Best Places reports — the seven places on Earth where your birth chart best supports love, career, or feeling at home, worked out from your exact chart.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#1a1714; --ink-2:#2e2b28; --ink-3:#4a4540;
+  --paper:#faf8f4; --paper-2:#f2ede5; --paper-3:#e8e0d2;
+  --gold:#b8955a; --gold-light:#d4b07a;
+  --serif:'Cormorant Garamond',Georgia,serif;
+  --sans:'Jost',sans-serif;
+  --harm:#5c8a5c; --dyn:#b8955a; --chal:#9b6555;
+}
+html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margin:0;line-height:1.55}
+
+/* ── Header ── */
+.site-header{width:100%;padding:.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;border-bottom:.5px solid var(--paper-3);background:var(--paper);position:sticky;top:0;z-index:20}
+.site-wordmark{font-family:var(--serif);font-size:1.05rem;font-weight:300;letter-spacing:.35em;text-transform:lowercase;color:var(--ink);text-decoration:none}
+.nav-btn{font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);padding:.3rem .8rem;cursor:pointer;border-radius:20px;text-decoration:none;transition:all .2s}
+.nav-btn:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ── Page ── */
+.page{max-width:760px;margin:0 auto;padding:3rem 1.5rem 5rem}
+
+/* ── Intro ── */
+.eyebrow{font-size:9px;font-weight:500;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem;text-align:center}
+.title{font-family:var(--serif);font-size:clamp(2rem,5vw,2.8rem);font-weight:300;line-height:1.2;text-align:center;margin-bottom:1rem}
+.title em{font-style:italic;color:var(--gold)}
+.subtitle{font-family:var(--serif);font-style:italic;font-size:1.05rem;color:var(--ink-3);line-height:1.7;text-align:center;max-width:560px;margin:0 auto 2.5rem}
+
+/* ── Inside card ── */
+.product-card{background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:10px;padding:2rem 1.8rem;margin-bottom:2.5rem}
+.product-card h2{font-family:var(--serif);font-size:1.7rem;font-weight:400;color:var(--ink);margin-bottom:.5rem}
+.product-tagline{font-family:var(--serif);font-style:italic;font-size:1rem;color:var(--gold);margin-bottom:1.4rem}
+.product-card p{font-family:var(--serif);font-size:1rem;color:var(--ink-2);line-height:1.75;margin-bottom:1rem}
+.inside{margin:1.5rem 0 .5rem}
+.inside-label{font-size:9px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:.9rem}
+.inside-item{display:flex;gap:.7rem;align-items:flex-start;margin-bottom:.85rem}
+.inside-item:last-child{margin-bottom:0}
+.inside-mark{color:var(--gold);flex-shrink:0;font-size:.9rem;line-height:1.6}
+.inside-text{font-family:var(--serif);font-size:.98rem;color:var(--ink-2);line-height:1.6}
+.inside-text strong{color:var(--ink);font-weight:500}
+
+/* ── Report tiles ── */
+.section-heading{font-family:var(--serif);font-size:1.4rem;font-weight:400;color:var(--ink);text-align:center;margin-bottom:.4rem}
+.section-sub{font-family:var(--serif);font-style:italic;font-size:.92rem;color:var(--ink-3);text-align:center;line-height:1.6;max-width:480px;margin:0 auto 1.8rem}
+.report-grid{display:grid;grid-template-columns:1fr;gap:1rem;margin-bottom:1.5rem}
+@media(min-width:620px){.report-grid{grid-template-columns:1fr 1fr 1fr}}
+.report-tile{background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:8px;padding:1.6rem 1.2rem 1.4rem;text-align:center;display:flex;flex-direction:column;align-items:center}
+.report-glyph{font-size:1.5rem;margin-bottom:.5rem;display:block;line-height:1}
+.report-name{font-family:var(--serif);font-size:1.3rem;font-weight:400;color:var(--ink);margin-bottom:.4rem}
+.report-desc{font-family:var(--serif);font-style:italic;font-size:.88rem;color:var(--ink-3);line-height:1.55;margin-bottom:1.1rem;flex:1}
+.report-price{font-family:var(--serif);font-size:1.6rem;font-weight:300;color:var(--ink);line-height:1;margin-bottom:.9rem}
+.buy-btn{font-size:10px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--paper);background:var(--gold);border:none;border-radius:0;padding:.9rem 1.4rem;cursor:pointer;transition:background .25s;display:inline-block;width:100%}
+.buy-btn:hover{background:var(--ink)}
+.buy-btn:disabled{opacity:.5;cursor:wait}
+
+/* ── All three ── */
+.bundle{background:var(--paper);border:.5px solid var(--gold);border-radius:10px;padding:1.8rem 1.6rem;text-align:center;margin-bottom:1.5rem}
+.bundle-eyebrow{font-size:9px;font-weight:500;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);margin-bottom:.5rem}
+.bundle-name{font-family:var(--serif);font-size:1.5rem;font-weight:400;color:var(--ink);margin-bottom:.35rem}
+.bundle-desc{font-family:var(--serif);font-style:italic;font-size:.92rem;color:var(--ink-3);line-height:1.6;margin-bottom:1.1rem}
+.bundle-price{font-family:var(--serif);font-size:2.1rem;font-weight:300;color:var(--ink);line-height:1;margin-bottom:.25rem}
+.bundle-note{font-size:.76rem;color:var(--ink-3);letter-spacing:.04em;margin-bottom:1.2rem}
+.bundle .buy-btn{width:auto;padding:1rem 2.6rem;font-size:11px;letter-spacing:.25em}
+
+.fineprint{font-family:var(--serif);font-style:italic;font-size:.82rem;color:var(--ink-3);line-height:1.65;text-align:center;max-width:520px;margin:0 auto .7rem}
+.fineprint a{color:var(--gold);text-decoration:none;border-bottom:1px solid var(--paper-3)}
+
+/* ── Footer ── */
+.page-footer{text-align:center;padding:2.5rem 0 1rem;margin-top:2.5rem;border-top:.5px solid var(--paper-3)}
+.page-footer span{font-family:var(--serif);font-size:.78rem;color:var(--ink-3)}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="site-wordmark" href="/">elsewhere</a>
+  <a class="nav-btn" href="/">← back to map</a>
+</header>
+
+<main class="page">
+
+  <div class="eyebrow">from elsewhere</div>
+  <h1 class="title">Best <em>Places</em> reports</h1>
+  <p class="subtitle">Your map shows where every planet's energy falls. A Best Places report does the searching for you: it weighs every line and crossing in your chart across thousands of cities, and names the seven places that best support the part of life you choose.</p>
+
+  <!-- What's inside -->
+  <div class="product-card">
+    <h2>What's in each report</h2>
+    <p class="product-tagline">Worked out from your exact birth chart.</p>
+    <div class="inside">
+      <div class="inside-item">
+        <span class="inside-mark">✦</span>
+        <span class="inside-text"><strong>Your seven best places</strong>, each with what your chart brings you there and why it made the list.</span>
+      </div>
+      <div class="inside-item">
+        <span class="inside-mark">✦</span>
+        <span class="inside-text"><strong>Places to approach with care</strong>: up to three, only where your chart is truly difficult for that part of life.</span>
+      </div>
+      <div class="inside-item">
+        <span class="inside-mark">✦</span>
+        <span class="inside-text"><strong>Your map at a glance</strong>: every place pinned on a world map, plus the planets that matter most for this report.</span>
+      </div>
+      <div class="inside-item">
+        <span class="inside-mark">✦</span>
+        <span class="inside-text"><strong>Where you began</strong>: what your birthplace says about this part of your life, and how the method works.</span>
+      </div>
+      <div class="inside-item">
+        <span class="inside-mark">✦</span>
+        <span class="inside-text"><strong>Yours to keep</strong>: a one-time purchase, saved to your profile to return to whenever you like.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- The three reports -->
+  <h2 class="section-heading">Choose your report</h2>
+  <p class="section-sub">One report for the part of life you're thinking about most, or all three together.</p>
+
+  <div class="report-grid">
+    <div class="report-tile">
+      <span class="report-glyph" style="color:var(--chal)">♡</span>
+      <div class="report-name">Love</div>
+      <div class="report-desc">Where your chart opens to romance, partnership and being met.</div>
+      <div class="report-price">$22.22</div>
+      <button class="buy-btn" data-product="report_love" data-label="Get Love">Get Love</button>
+    </div>
+    <div class="report-tile">
+      <span class="report-glyph" style="color:var(--dyn)">◈</span>
+      <div class="report-name">Career</div>
+      <div class="report-desc">Where your work, reputation, money and ambitions are most supported.</div>
+      <div class="report-price">$22.22</div>
+      <button class="buy-btn" data-product="report_career" data-label="Get Career">Get Career</button>
+    </div>
+    <div class="report-tile">
+      <span class="report-glyph" style="color:var(--harm)">⌂</span>
+      <div class="report-name">Home</div>
+      <div class="report-desc">Where you feel at home and at peace, and can rest and put down roots.</div>
+      <div class="report-price">$22.22</div>
+      <button class="buy-btn" data-product="report_home" data-label="Get Home">Get Home</button>
+    </div>
+  </div>
+
+  <div class="bundle">
+    <div class="bundle-eyebrow">best value</div>
+    <div class="bundle-name">All three reports</div>
+    <div class="bundle-desc">Love, Career and Home together, so you can see where they meet.</div>
+    <div class="bundle-price">$44.44</div>
+    <div class="bundle-note">One-time · save $22.22</div>
+    <button class="buy-btn" data-product="report_all" data-label="Get all three">Get all three</button>
+  </div>
+
+  <p class="fineprint">You'll be taken to a secure checkout. Please pay with the email you use for elsewhere: your report is built from the birth details saved to that account, and you'll be asked to add them if you haven't yet.</p>
+  <p class="fineprint">Already bought a report? <a href="/profile.html">Find it on your profile.</a></p>
+
+  <div class="page-footer">
+    <span>© 2025 elsewhere</span>
+  </div>
+
+</main>
+
+<script>
+// ── Report purchase ─────────────────────────────────────────────
+// Each button sends its product label to the checkout endpoint, then
+// goes to Stripe's hosted payment page. Stripe collects the email,
+// which the webhook records with the purchase.
+function buyReport(btn) {
+  var product = btn.getAttribute('data-product');
+  var label = btn.getAttribute('data-label');
+  var all = document.querySelectorAll('.buy-btn');
+  all.forEach(function(b){ b.disabled = true; });
+  btn.textContent = 'Opening checkout…';
+  fetch('/api/create-checkout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ product: product })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    if (data && data.url) {
+      window.location.href = data.url;
+    } else {
+      throw new Error(data && data.error ? data.error : 'No checkout URL returned');
+    }
+  })
+  .catch(function(err){
+    console.error('Checkout failed:', err.message);
+    alert('Sorry — something went wrong starting checkout. Please try again.');
+    all.forEach(function(b){ b.disabled = false; });
+    btn.textContent = label;
+  });
+}
+
+document.querySelectorAll('.buy-btn').forEach(function(btn){
+  btn.addEventListener('click', function(){ buyReport(btn); });
+});
+
+// Coming back from Stripe with the browser's Back button can restore this
+// page with the buttons still disabled; reset them.
+window.addEventListener('pageshow', function(){
+  document.querySelectorAll('.buy-btn').forEach(function(b){
+    b.disabled = false;
+    b.textContent = b.getAttribute('data-label');
+  });
+});
+</script>
+
+</body>
+</html>
