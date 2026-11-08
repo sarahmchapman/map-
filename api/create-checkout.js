@@ -94,7 +94,7 @@ export default async function handler(req, res) {
       ],
       billing_address_collection: 'auto',
       metadata: { product: product },
-      success_url: SUCCESS_URL,
+      success_url: SUCCESS_URL + '&product=' + product,
       cancel_url: product === 'map_guide' ? CANCEL_URL : REPORT_CANCEL_URL
     });
 
