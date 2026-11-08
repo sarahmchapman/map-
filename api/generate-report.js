@@ -22,12 +22,15 @@
 import { createClient } from '@supabase/supabase-js';
 import { createRequire } from 'module';
 
-const require = createRequire(import.meta.url);
-const CITIES = require('./cities_world.json');   // same list api/report-chart.py uses
+// Vercel converts this file to the older CommonJS format when it builds the site (see the build log),
+// where require() already exists. (The word import-dot-meta must not appear anywhere in this file:
+// in that format it stops the file from loading at all.)
+const req = typeof require === 'function' ? require : createRequire(process.cwd() + '/api/generate-report.js');
+const CITIES = req('./cities_world.json');   // same list api/report-chart.py uses
 // Make sure Vercel bundles the engine files with this function.
-require.resolve('./_lib/reports/engine.js');
-require.resolve('./_lib/reports/rank.cjs');
-require.resolve('./_lib/reports/report.cjs');
+req.resolve('./_lib/reports/engine.js');
+req.resolve('./_lib/reports/rank.cjs');
+req.resolve('./_lib/reports/report.cjs');
 
 export const ENGINE_VERSION = 'reports engine approved Nov 1, 2026 (speed fix Nov 8)';
 const THEMES = ['love', 'career', 'home'];
@@ -124,9 +127,9 @@ export async function fetchChart(base, jd, lat, lng, fetchSlice) {
 export function buildReports(chart, opts) {
   // Load the engine fresh each time, so wording that rotates between places
   // starts from the same point for every buyer (as it did when approved).
-  for (const k of Object.keys(require.cache)) if (/_lib[\\/]reports[\\/]/.test(k)) delete require.cache[k];
-  const R = require('./_lib/reports/rank.cjs');
-  const { build } = require('./_lib/reports/report.cjs');
+  for (const k of Object.keys(req.cache)) if (/_lib[\\/]reports[\\/]/.test(k)) delete req.cache[k];
+  const R = req('./_lib/reports/rank.cjs');
+  const { build } = req('./_lib/reports/report.cjs');
   const all = R.rankAll(chart);
   const out = {}; for (const t of THEMES) out[t] = build(chart, t, opts, all);
   return out;
