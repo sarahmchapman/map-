@@ -738,10 +738,29 @@ async function initProfile() {
         '<p style="font-family:var(--serif);font-style:italic;color:var(--ink-3);margin-bottom:.6rem">'
         + 'You are signed in as ' + user.email + '.</p>'
         + '<p style="font-family:var(--serif);font-style:italic;color:var(--ink-3);margin-bottom:1.5rem">'
-        + 'There is no chart saved to this account yet — add your birth details on the map and it will appear here.</p>'
+        + 'Add your birth details on the map to see your chart and get your reports.</p>'
         + '<a href="/" class="nav-btn" style="display:inline-flex;margin-bottom:.8rem">Go to the map</a>'
-        + '<div><a href="/report.html" class="nav-btn" style="display:inline-flex">Your Map Guide →</a></div>';
+        + '<div id="naMapGuide"></div>'
+        + '<div id="naReports" style="text-align:left;margin-top:2.5rem"></div>';
       na.style.display = 'block';
+      // Show the reports they've bought here too (the same section, moved
+      // out of the hidden chart area so it can be seen).
+      var rs = document.getElementById('reportsSection');
+      if (rs) document.getElementById('naReports').appendChild(rs);
+      // Map Guide button only for people who own the Map Guide.
+      fetch('/api/check-access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: user.email })
+      })
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if (d && d.hasAccess) {
+          document.getElementById('naMapGuide').innerHTML =
+            '<a href="/report.html" class="nav-btn" style="display:inline-flex">Your Map Guide →</a>';
+        }
+      })
+      .catch(function(){});
       // No chart on this account, so the password section below the chart
       // isn't shown. Keep the prompt visible instead.
       renderPasswordUI(user, true);
