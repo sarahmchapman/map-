@@ -34,14 +34,13 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 //  >>> price id than test mode. This is the ONE line to change for launch.
 // ─────────────────────────────────────────────────────────────
 const MAP_GUIDE_PRICE_ID = 'price_1TyLmg4mWfCuIJLWwIkCl3AQ'; // LIVE price
-// Report prices: paste the LIVE price ids here once the two report products
-// exist in Stripe live mode. Until then the report buttons return a clear
-// "not set up yet" message and the Map Guide is unaffected.
+// Report prices (LIVE). If one is ever left blank, its buy button returns a
+// clear "not on sale yet" message and the Map Guide is unaffected.
 //   Sandbox ids, for reference only (they do NOT work with the live key):
 //     one report  price_1UZbme4mWfCuIJLWQkXzz5sc
 //     all three   price_1UZbnk4mWfCuIJLWAzTv5gKc
-const REPORT_PRICE_ID     = ''; // LIVE price — one Best Places report ($22.22)
-const REPORT_ALL_PRICE_ID = ''; // LIVE price — all three reports ($44.44)
+const REPORT_PRICE_ID     = 'price_1UZc854mWfCuIJLWXxEBZel9'; // LIVE price — one Best Places report ($22.22)
+const REPORT_ALL_PRICE_ID = 'price_1UZc944mWfCuIJLW3vOJiwog'; // LIVE price — all three reports ($44.44)
 
 // What a buy button can ask for. The label is saved on the purchase by
 // stripe-webhook.js, so the report page knows which report was paid for.
