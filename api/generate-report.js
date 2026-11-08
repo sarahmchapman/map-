@@ -165,7 +165,7 @@ async function handle(req, res) {
   let body = req.body || {};
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = {}; } }
   const theme = body.theme;
-  if (!THEMES.includes(theme)) return res.status(400).json({ error: 'theme must be love, career or home' });
+  if (body.action !== 'owned' && !THEMES.includes(theme)) return res.status(400).json({ error: 'theme must be love, career or home' });
 
   // 1. Who is asking
   const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
@@ -173,6 +173,14 @@ async function handle(req, res) {
   const { data: u, error: uErr } = await supabase.auth.getUser(token);
   if (uErr || !u || !u.user || !u.user.email) return res.status(401).json({ error: 'not_signed_in' });
   const email = u.user.email.toLowerCase();
+
+  // { "action": "owned" } — which reports this person has bought (for the profile page). Makes nothing.
+  if (body.action === 'owned') {
+    const { data: rows, error: oErr } = await supabase.from('purchases').select('product').eq('email', email).eq('status', 'paid');
+    if (oErr) return res.status(500).json({ error: 'Could not check purchases: ' + oErr.message });
+    const owned = THEMES.filter(t => (rows || []).some(b => b.product === 'report_' + t || b.product === 'report_all'));
+    return res.status(200).json({ owned });
+  }
 
   // 2. Have they paid for it?
   const { data: buys, error: pErr } = await supabase.from('purchases').select('product')
