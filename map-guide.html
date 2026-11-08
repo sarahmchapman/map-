@@ -64,7 +64,8 @@ html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margi
 .coming-sub{font-family:var(--serif);font-style:italic;font-size:.92rem;color:var(--ink-3);text-align:center;line-height:1.6;max-width:480px;margin:0 auto 1.8rem}
 .coming-grid{display:grid;grid-template-columns:1fr;gap:.9rem}
 @media(min-width:560px){.coming-grid{grid-template-columns:1fr 1fr 1fr}}
-.coming-tile{background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:8px;padding:1.4rem 1.1rem;text-align:center;opacity:.85}
+.coming-tile{display:block;background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:8px;padding:1.4rem 1.1rem;text-align:center;text-decoration:none;color:inherit;transition:border-color .2s}
+.coming-tile:hover{border-color:var(--gold)}
 .coming-glyph{font-size:1.4rem;margin-bottom:.5rem;display:block}
 .coming-name{font-family:var(--serif);font-size:1.15rem;font-weight:400;color:var(--ink);margin-bottom:.35rem}
 .coming-desc{font-family:var(--serif);font-style:italic;font-size:.82rem;color:var(--ink-3);line-height:1.55;margin-bottom:.7rem}
@@ -126,30 +127,31 @@ html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margi
     </div>
   </div>
 
-  <!-- Coming soon -->
-  <h2 class="coming-heading">Still to come</h2>
-  <p class="coming-sub">The Map Guide reads your whole map. These next readings will point you to the specific places on Earth where your chart sings — for the things that matter most.</p>
+  <!-- Best Places reports -->
+  <h2 class="coming-heading">Best Places reports</h2>
+  <p class="coming-sub">The Map Guide reads your whole map. These reports point you to the specific places on Earth where your chart sings, for the things that matter most.</p>
 
   <div class="coming-grid">
-    <div class="coming-tile">
+    <a class="coming-tile" href="/reports.html">
       <span class="coming-glyph" style="color:var(--chal)">♡</span>
       <div class="coming-name">Love</div>
       <div class="coming-desc">Where in the world your heart is most at home.</div>
-      <span class="coming-badge">Coming soon</span>
-    </div>
-    <div class="coming-tile">
+      <span class="coming-badge">$22.22 · See more</span>
+    </a>
+    <a class="coming-tile" href="/reports.html">
       <span class="coming-glyph" style="color:var(--dyn)">◈</span>
       <div class="coming-name">Career</div>
       <div class="coming-desc">The places that lift your work and your name.</div>
-      <span class="coming-badge">Coming soon</span>
-    </div>
-    <div class="coming-tile">
-      <span class="coming-glyph" style="color:var(--harm)">✦</span>
-      <div class="coming-name">Healing</div>
-      <div class="coming-desc">Where you go to rest, mend, and begin again.</div>
-      <span class="coming-badge">Coming soon</span>
-    </div>
+      <span class="coming-badge">$22.22 · See more</span>
+    </a>
+    <a class="coming-tile" href="/reports.html">
+      <span class="coming-glyph" style="color:var(--harm)">⌂</span>
+      <div class="coming-name">Home</div>
+      <div class="coming-desc">Where you feel at home and at peace.</div>
+      <span class="coming-badge">$22.22 · See more</span>
+    </a>
   </div>
+  <p class="coming-sub" style="margin:1.2rem auto 0">All three together for $44.44. <a href="/reports.html" style="color:var(--gold);text-decoration:none;border-bottom:1px solid var(--paper-3)">Choose your report →</a></p>
 
   <div class="page-footer">
     <span>© 2025 elsewhere</span>
