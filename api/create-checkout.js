@@ -20,7 +20,7 @@
 // and the success page (to send the magic link) can read it.
 //
 // Env vars used:
-//   STRIPE_SECRET_KEY — sk_test_... (already set in Vercel)
+//   STRIPE_SECRET_KEY — sk_live_... (the site runs on Stripe LIVE mode)
 
 import Stripe from 'stripe';
 
@@ -33,9 +33,15 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 //  >>> price id (also starts with price_...). Live mode has a DIFFERENT
 //  >>> price id than test mode. This is the ONE line to change for launch.
 // ─────────────────────────────────────────────────────────────
-const MAP_GUIDE_PRICE_ID = 'price_1Txwx44mWfCuIJLWGgvzwPrr'; // TEST price
-const REPORT_PRICE_ID     = 'price_1UZbme4mWfCuIJLWQkXzz5sc'; // TEST price — one Best Places report ($22.22)
-const REPORT_ALL_PRICE_ID = 'price_1UZbnk4mWfCuIJLWAzTv5gKc'; // TEST price — all three reports ($44.44)
+const MAP_GUIDE_PRICE_ID = 'price_1TyLmg4mWfCuIJLWwIkCl3AQ'; // LIVE price
+// Report prices: paste the LIVE price ids here once the two report products
+// exist in Stripe live mode. Until then the report buttons return a clear
+// "not set up yet" message and the Map Guide is unaffected.
+//   Sandbox ids, for reference only (they do NOT work with the live key):
+//     one report  price_1UZbme4mWfCuIJLWQkXzz5sc
+//     all three   price_1UZbnk4mWfCuIJLWAzTv5gKc
+const REPORT_PRICE_ID     = ''; // LIVE price — one Best Places report ($22.22)
+const REPORT_ALL_PRICE_ID = ''; // LIVE price — all three reports ($44.44)
 
 // What a buy button can ask for. The label is saved on the purchase by
 // stripe-webhook.js, so the report page knows which report was paid for.
@@ -73,9 +79,12 @@ export default async function handler(req, res) {
   let body = req.body || {};
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = {}; } }
   const product = body.product || 'map_guide';
+  if (!(product in PRODUCTS)) {
+    return res.status(400).json({ error: 'Unknown product' });
+  }
   const price = PRODUCTS[product];
   if (!price) {
-    return res.status(400).json({ error: 'Unknown product' });
+    return res.status(503).json({ error: 'This report is not on sale yet (live price not set up).' });
   }
 
   try {
