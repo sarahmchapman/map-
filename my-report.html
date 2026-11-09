@@ -162,16 +162,36 @@ function showPreparing(first) {
 }
 function showSignIn() {
   view('<div class="state"><div class="star">✦</div><h2>Sign in to read your report</h2>' +
-    '<p>Enter the email you used when you bought it, and we will send you a link. No password needed.</p>' +
-    '<input type="email" id="em" placeholder="your@email.com"><button class="btn" id="sb" onclick="sendLink()">Send my sign-in link</button><p id="sm" style="font-size:16px"></p></div>');
+    '<p>Sign in with the email you used when you bought it.</p>' +
+    '<input type="email" id="em" placeholder="your@email.com" autocomplete="email" style="margin-bottom:10px">' +
+    '<input type="password" id="pw" placeholder="password" autocomplete="current-password" onkeydown="if(event.key===\'Enter\'){signInPw();}">' +
+    '<button class="btn" id="pb" onclick="signInPw()">Sign in</button>' +
+    '<p id="sm" style="font-size:16px"></p>' +
+    '<p style="font-size:15px">Forgot your password, or never set one?<br>' +
+    '<button id="sb" onclick="sendLink()" style="background:none;border:none;padding:0;font:inherit;font-style:italic;color:#b8955a;text-decoration:underline;text-underline-offset:3px;cursor:pointer">Email me a sign-in link</button></p></div>');
+}
+async function signInPw() {
+  var em = (document.getElementById('em').value || '').trim(), pw = document.getElementById('pw').value || '';
+  var b = document.getElementById('pb'), m = document.getElementById('sm');
+  if (em.indexOf('@') === -1) { m.className = 'err'; m.textContent = 'Please enter a valid email address.'; return; }
+  if (!pw) { m.className = 'err'; m.textContent = 'Please enter your password, or use the email link below.'; return; }
+  b.disabled = true; b.textContent = 'Signing in…';
+  var res = null;
+  try { res = await SB.auth.signInWithPassword({ email: em, password: pw }); } catch (e) { res = { error: e }; }
+  if (!res || res.error || !res.data || !res.data.session) {
+    m.className = 'err'; m.textContent = "That email and password didn't match. Try again, or use the email link below.";
+    b.disabled = false; b.textContent = 'Sign in';
+    return;
+  }
+  load();
 }
 function sendLink() {
   var em = (document.getElementById('em').value || '').trim(), b = document.getElementById('sb'), m = document.getElementById('sm');
-  if (em.indexOf('@') === -1) { m.className = 'err'; m.textContent = 'Please enter a valid email address.'; return; }
+  if (em.indexOf('@') === -1) { m.className = 'err'; m.textContent = 'Enter your email above, then tap the link again.'; return; }
   b.disabled = true; b.textContent = 'Sending…';
   fetch('/api/auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'send_magic_link', email: em }) })
     .then(function () { m.className = ''; m.textContent = 'Check your email for your sign-in link, then come back to this page.'; b.textContent = 'Link sent ✦'; })
-    .catch(function () { m.className = 'err'; m.textContent = 'Something went wrong. Please try again.'; b.disabled = false; b.textContent = 'Send my sign-in link'; });
+    .catch(function () { m.className = 'err'; m.textContent = 'Something went wrong. Please try again.'; b.disabled = false; b.textContent = 'Email me a sign-in link'; });
 }
 function showLocked() {
   view('<div class="state"><div class="star">✦</div><h2>' + T.h1 + '</h2>' +
