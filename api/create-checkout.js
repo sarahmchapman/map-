@@ -81,6 +81,11 @@ export default async function handler(req, res) {
   if (!(product in PRODUCTS)) {
     return res.status(400).json({ error: 'Unknown product' });
   }
+  // If the buyer is signed in to elsewhere, the page sends their account
+  // email. Stripe then uses it (locked), so a wallet like Apple Pay can't
+  // swap in a different email and file the purchase under the wrong account.
+  const accountEmail = (typeof body.email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email.trim()))
+    ? body.email.trim().toLowerCase() : null;
   const price = PRODUCTS[product];
   if (!price) {
     return res.status(503).json({ error: 'This report is not on sale yet (live price not set up).' });
@@ -93,7 +98,8 @@ export default async function handler(req, res) {
         { price: price, quantity: 1 }
       ],
       billing_address_collection: 'auto',
-      metadata: { product: product },
+      metadata: accountEmail ? { product: product, account_email: accountEmail } : { product: product },
+      ...(accountEmail ? { customer_email: accountEmail } : {}),
       success_url: SUCCESS_URL + '&product=' + product,
       cancel_url: product === 'map_guide' ? CANCEL_URL : REPORT_CANCEL_URL
     });
