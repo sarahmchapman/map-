@@ -179,9 +179,13 @@ function showLocked() {
     '<button class="btn" onclick="buy(\'report_' + theme + '\', this)">Get your ' + T.word + ' report · $22.22</button>' +
     '<button class="btn gold" onclick="buy(\'report_all\', this)">All three reports · $44.44</button><p id="bm" class="err"></p></div>');
 }
-function buy(product, btn) {
+async function buy(product, btn) {
   btn.disabled = true; btn.textContent = 'Opening checkout…';
-  fetch('/api/create-checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ product: product }) })
+  // Signed in here, so send the account email: the purchase is filed under
+  // this account even if Apple Pay supplies a different email.
+  var email = null;
+  try { var s = (await SB.auth.getSession()).data.session; email = s && s.user && s.user.email; } catch (e) {}
+  fetch('/api/create-checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(email ? { product: product, email: email } : { product: product }) })
     .then(function (r) { return r.json(); })
     .then(function (d) { if (d && d.url) location.href = d.url; else throw new Error(d && d.error || 'no checkout link'); })
     .catch(function (e) { document.getElementById('bm').textContent = 'Sorry, checkout could not open: ' + e.message; btn.disabled = false; btn.textContent = 'Try again'; });
