@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>elsewhere — your Map Guide is ready</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -34,7 +35,8 @@ h1 em{font-style:italic;color:var(--gold)}
 .btn:hover{background:var(--ink)}
 .btn:disabled{opacity:.5;cursor:wait}
 .err{font-family:var(--serif);font-style:italic;font-size:.9rem;color:#9b3535;margin-top:1rem}
-#loadingState .sub{margin-top:.5rem}
+#loadingState .sub,#openingState .sub{margin-top:.5rem}
+.linkbtn{background:none;border:none;font-family:var(--serif);font-style:italic;font-size:.9rem;color:var(--gold);cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:3px}
 </style>
 </head>
 <body>
@@ -45,31 +47,80 @@ h1 em{font-style:italic;color:var(--gold)}
 
 <div class="wrap">
 
-  <!-- Loading: looking up the purchase -->
+  <!-- Loading: confirming the purchase -->
   <div id="loadingState">
     <div class="star">✦</div>
     <p class="msg">Confirming your purchase…</p>
-    <p class="sub">One moment while we get your Map Guide ready.</p>
+    <p class="sub">One moment while we get <span class="pname">your Map Guide</span> ready.</p>
   </div>
 
-  <!-- Success: magic link sent -->
+  <!-- Signed in: opening the report -->
+  <div id="openingState" style="display:none">
+    <div class="star">✦</div>
+    <div class="eyebrow">purchase complete</div>
+    <p class="msg">Opening <span class="pname">your Map Guide</span>…</p>
+    <p class="sub">This takes a few seconds.</p>
+  </div>
+
+  <!-- Not signed in, new: create a password -->
+  <div id="createState" style="display:none">
+    <div class="star">✦</div>
+    <div class="eyebrow">purchase complete</div>
+    <h1 class="ptitle">Your <em>Map Guide</em> is ready</h1>
+    <p class="msg">Create a password to open it. Your account will use <span class="email-emph buyerEmail"></span>, so you can sign in and come back to it any time.</p>
+    <div class="retry">
+      <input type="password" id="createPw" placeholder="choose a password (8+ characters)" autocomplete="new-password" onkeydown="if(event.key==='Enter'){createAccount();}">
+      <br>
+      <button class="btn" id="createBtn" onclick="createAccount()">Create password &amp; open</button>
+      <div class="err" id="createErr" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- Not signed in, already has an account: sign in -->
+  <div id="signinState" style="display:none">
+    <div class="star">✦</div>
+    <div class="eyebrow">purchase complete</div>
+    <h1 class="ptitle">Your <em>Map Guide</em> is ready</h1>
+    <p class="msg">You already have an elsewhere account with <span class="email-emph buyerEmail"></span>. Enter your password to open it.</p>
+    <div class="retry">
+      <input type="password" id="signinPw" placeholder="your password" autocomplete="current-password" onkeydown="if(event.key==='Enter'){signIn();}">
+      <br>
+      <button class="btn" id="signinBtn" onclick="signIn()">Sign in &amp; open</button>
+      <div class="err" id="signinErr" style="display:none"></div>
+    </div>
+    <p class="sub">Forgot your password, or never set one?<br><button class="linkbtn" onclick="resend()">Email me a sign-in link</button></p>
+  </div>
+
+  <!-- Sign-in link sent (fallback) -->
   <div id="sentState" style="display:none">
     <div class="star">✦</div>
     <div class="eyebrow">purchase complete</div>
-    <h1>Your <em>Map Guide</em> is ready</h1>
-    <p class="msg">We've sent a sign-in link to <span class="email-emph" id="sentEmail"></span>. Click it to unlock and read your Map Guide.</p>
-    <p class="sub">The link signs you in automatically — no password needed. Can't find it? Check your spam folder, or re-send below.</p>
+    <h1 class="ptitle">Your <em>Map Guide</em> is ready</h1>
+    <p class="msg">We've sent a sign-in link to <span class="email-emph buyerEmail"></span>. Click it to sign in, and you'll find it on your profile.</p>
+    <p class="sub">Can't find it? Check your spam folder, or re-send below.</p>
     <div class="retry">
       <button class="btn" id="resendBtn" onclick="resend()">Re-send the link</button>
     </div>
   </div>
 
-  <!-- Fallback: couldn't get email from session, ask for it -->
+  <!-- Paid, but it hasn't shown up yet -->
+  <div id="delayState" style="display:none">
+    <div class="star">✦</div>
+    <div class="eyebrow">purchase complete</div>
+    <h1 class="ptitle">Your <em>Map Guide</em> is ready</h1>
+    <p class="msg" id="delayMsg">Your payment went through. It's taking a little longer than usual to appear on your account.</p>
+    <div class="retry">
+      <a class="btn" id="delayBtn" href="/profile.html" style="text-decoration:none;display:inline-block">Open it</a>
+    </div>
+    <p class="sub">If it still isn't there in a few minutes, reply to your receipt email and we'll sort it out.</p>
+  </div>
+
+  <!-- Fallback: couldn't read the purchase, ask for the email -->
   <div id="askState" style="display:none">
     <div class="star">✦</div>
     <div class="eyebrow">purchase complete</div>
-    <h1>Your <em>Map Guide</em> is ready</h1>
-    <p class="msg">Enter the email you used at checkout and we'll send you a sign-in link to unlock your Map Guide.</p>
+    <h1 class="ptitle">Your <em>Map Guide</em> is ready</h1>
+    <p class="msg">Enter the email you used at checkout and we'll send you a sign-in link to open it.</p>
     <div class="retry">
       <input type="email" id="askEmail" placeholder="your@email.com">
       <br>
@@ -81,46 +132,163 @@ h1 em{font-style:italic;color:var(--gold)}
 </div>
 
 <script>
-// ── Post-purchase bridge ─────────────────────────────────────────
-// Stripe redirected here with ?session_id=... We look up the email on
-// that paid session, then send a magic link to it so the buyer can sign
-// in and unlock their report. Magic-link sign-in creates their account
-// automatically on first click.
+// ── Post-purchase page ───────────────────────────────────────────
+// Stripe sends the buyer here with ?session_id=...&product=...
+//  • Signed in already → wait until the purchase is recorded, then open it.
+//  • Not signed in → they create a password (their account uses the email
+//    they paid with), are signed in, and the purchase opens.
+//  • Already have an account → they sign in with their password.
+// The email sign-in link is kept only as a fallback.
 
+var SB = supabase.createClient('https://wdulylmxhvlxhjfmfivu.supabase.co', 'sb_publishable_pBoHzlLsZiLAr7EYF824DA_R6pw5sdR');
 var buyerEmail = null;
-
-// What was bought (from the checkout address) → the words on this page.
-// No product, or map_guide → the original Map Guide wording, unchanged.
-(function setWording() {
-  var m = /[?&]product=([^&]*)/.exec(window.location.search);
-  var product = m ? decodeURIComponent(m[1]) : 'map_guide';
-  var NAMES = {
-    report_love:   { html: 'Your <em>Love</em> report is ready',          short: 'your Love report' },
-    report_career: { html: 'Your <em>Career</em> report is ready',        short: 'your Career report' },
-    report_home:   { html: 'Your <em>Home</em> report is ready',          short: 'your Home report' },
-    report_all:    { html: 'Your <em>Best Places</em> reports are ready', short: 'your Best Places reports' }
-  };
-  var w = NAMES[product];
-  if (!w) return;
-  document.title = 'elsewhere — ' + w.short + (product === 'report_all' ? ' are ready' : ' is ready');
-  document.querySelectorAll('h1').forEach(function(h){ h.innerHTML = w.html; });
-  document.querySelectorAll('.msg, .sub').forEach(function(p){
-    p.innerHTML = p.innerHTML.replace(/your Map Guide/g, w.short);
-  });
-})();
+var sessionId = null;
 
 function getParam(name) {
   var m = new RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
   return m ? decodeURIComponent(m[1]) : null;
 }
 
+// What was bought → wording, where it opens, and how to tell it's recorded.
+var PRODUCT = getParam('product') || 'map_guide';
+var INFO = {
+  map_guide:     { html: 'Your <em>Map Guide</em> is ready',          short: 'your Map Guide',           dest: '/report.html' },
+  report_love:   { html: 'Your <em>Love</em> report is ready',         short: 'your Love report',         dest: '/my-report.html?theme=love',   theme: 'love' },
+  report_career: { html: 'Your <em>Career</em> report is ready',       short: 'your Career report',       dest: '/my-report.html?theme=career', theme: 'career' },
+  report_home:   { html: 'Your <em>Home</em> report is ready',         short: 'your Home report',         dest: '/my-report.html?theme=home',   theme: 'home' },
+  report_all:    { html: 'Your <em>Best Places</em> reports are ready', short: 'your Best Places reports', dest: '/my-report.html?theme=love',   theme: 'love' }
+};
+var W = INFO[PRODUCT] || INFO.map_guide;
+document.title = 'elsewhere — ' + W.short + (PRODUCT === 'report_all' ? ' are ready' : ' is ready');
+document.querySelectorAll('.ptitle').forEach(function(h){ h.innerHTML = W.html; });
+document.querySelectorAll('.pname').forEach(function(s){ s.textContent = W.short; });
+document.getElementById('delayBtn').href = W.dest;
+
 function show(id) {
-  ['loadingState','sentState','askState'].forEach(function(s){
+  ['loadingState','openingState','createState','signinState','sentState','delayState','askState'].forEach(function(s){
     document.getElementById(s).style.display = (s === id) ? 'block' : 'none';
   });
 }
+function setEmail(email) {
+  buyerEmail = email;
+  document.querySelectorAll('.buyerEmail').forEach(function(s){ s.textContent = email; });
+}
+function sleep(ms) { return new Promise(function(r){ setTimeout(r, ms); }); }
 
-// Send a magic link to an email via the existing auth endpoint.
+// Has the webhook recorded this purchase on the signed-in account yet?
+async function purchaseRecorded(session) {
+  try {
+    if (W.theme) {
+      var r = await fetch('/api/generate-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+        body: JSON.stringify({ action: 'owned' })
+      });
+      var d = await r.json();
+      return !!(d && d.owned && d.owned.indexOf(W.theme) !== -1);
+    }
+    var r2 = await fetch('/api/check-access', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: session.user.email })
+    });
+    var d2 = await r2.json();
+    return !!(d2 && d2.hasAccess);
+  } catch (e) { return false; }
+}
+
+// Signed in: wait (up to ~30 s) for the purchase, then open it.
+async function openWhenReady(session) {
+  show('openingState');
+  try {
+    localStorage.setItem('elsewhere_user', JSON.stringify({ id: session.user.id, email: session.user.email }));
+  } catch (e) {}
+  for (var i = 0; i < 15; i++) {
+    if (await purchaseRecorded(session)) { window.location.href = W.dest; return; }
+    await sleep(2000);
+  }
+  if (buyerEmail && session.user.email && buyerEmail.toLowerCase() !== session.user.email.toLowerCase()) {
+    document.getElementById('delayMsg').textContent =
+      'Your payment went through, but it was made with ' + buyerEmail +
+      ', and you are signed in as ' + session.user.email + '. Sign in with ' + buyerEmail + ' to open it.';
+  }
+  show('delayState');
+}
+
+// On load.
+(async function init() {
+  sessionId = getParam('session_id');
+  if (!sessionId) { show('askState'); return; }
+
+  var signedIn = null;
+  try { signedIn = (await SB.auth.getSession()).data.session; } catch (e) {}
+
+  var data = null;
+  try {
+    data = await fetch('/api/checkout-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId })
+    }).then(function(r){ return r.json(); });
+  } catch (e) { console.error('checkout lookup failed:', e.message); }
+  if (data && data.email) setEmail(data.email);
+
+  if (signedIn) { openWhenReady(signedIn); return; }
+
+  if (data && data.paid && data.email) {
+    show('createState');
+    setTimeout(function(){ var el = document.getElementById('createPw'); if (el) el.focus(); }, 50);
+  } else {
+    show('askState');
+  }
+})();
+
+// Create the account with the email they paid with, then open the purchase.
+async function createAccount() {
+  var pw = document.getElementById('createPw').value || '';
+  var err = document.getElementById('createErr');
+  var btn = document.getElementById('createBtn');
+  err.style.display = 'none';
+  if (pw.length < 8) { err.textContent = 'Please choose a password of at least 8 characters.'; err.style.display = 'block'; return; }
+  btn.disabled = true; btn.textContent = 'Creating your account…';
+  try {
+    var r = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'claim_purchase', session_id: sessionId, password: pw })
+    });
+    var d = await r.json();
+    if (d && d.exists) { setEmail(d.email); show('signinState'); return; }
+    if (!d || !d.created) throw new Error((d && d.error) || 'Something went wrong. Please try again.');
+    setEmail(d.email);
+    var res = await SB.auth.signInWithPassword({ email: d.email, password: pw });
+    if (res.error || !res.data.session) throw new Error('Your account was created, but signing in failed. Please sign in with your new password.');
+    openWhenReady(res.data.session);
+  } catch (e) {
+    err.textContent = e.message; err.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Create password & open';
+  }
+}
+
+// Existing account: sign in with their password, then open the purchase.
+async function signIn() {
+  var pw = document.getElementById('signinPw').value || '';
+  var err = document.getElementById('signinErr');
+  var btn = document.getElementById('signinBtn');
+  err.style.display = 'none';
+  if (!pw) { err.textContent = 'Please enter your password.'; err.style.display = 'block'; return; }
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  var res = await SB.auth.signInWithPassword({ email: buyerEmail, password: pw });
+  if (res.error || !res.data.session) {
+    err.textContent = "That password didn't match. Try again, or use the email link below.";
+    err.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Sign in & open';
+    return;
+  }
+  openWhenReady(res.data.session);
+}
+
+// Email sign-in link (fallback).
 function sendMagicLink(email) {
   return fetch('/api/auth', {
     method: 'POST',
@@ -129,51 +297,17 @@ function sendMagicLink(email) {
   }).then(function(r){ return r.json(); });
 }
 
-// On load: read session_id, look up the paid email, send the link.
-(function init() {
-  var sessionId = getParam('session_id');
-  if (!sessionId) {
-    // No session id — can't auto-detect. Ask them to type their email.
-    show('askState');
-    return;
-  }
-
-  fetch('/api/checkout-email', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ session_id: sessionId })
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(data){
-    if (data && data.paid && data.email) {
-      buyerEmail = data.email;
-      return sendMagicLink(buyerEmail).then(function(){
-        document.getElementById('sentEmail').textContent = buyerEmail;
-        show('sentState');
-      });
-    } else {
-      // Couldn't confirm/read email — fall back to asking.
-      show('askState');
-    }
-  })
-  .catch(function(err){
-    console.error('success init failed:', err.message);
-    show('askState');
-  });
-})();
-
-// Re-send to the detected email.
 function resend() {
   if (!buyerEmail) return;
   var btn = document.getElementById('resendBtn');
+  show('sentState');
   btn.disabled = true; btn.textContent = 'Sending…';
   sendMagicLink(buyerEmail).then(function(){
-    btn.textContent = 'Link re-sent ✦';
+    btn.textContent = 'Link sent ✦';
     setTimeout(function(){ btn.disabled = false; btn.textContent = 'Re-send the link'; }, 3000);
   });
 }
 
-// Send to a manually typed email (fallback path).
 function sendToTyped() {
   var input = document.getElementById('askEmail');
   var errEl = document.getElementById('askErr');
@@ -187,8 +321,7 @@ function sendToTyped() {
   var btn = document.getElementById('askBtn');
   btn.disabled = true; btn.textContent = 'Sending…';
   sendMagicLink(email).then(function(){
-    buyerEmail = email;
-    document.getElementById('sentEmail').textContent = email;
+    setEmail(email);
     show('sentState');
   }).catch(function(){
     errEl.textContent = 'Something went wrong. Please try again.';
