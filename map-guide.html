@@ -6,6 +6,7 @@
 <title>elsewhere — the Map Guide</title>
 <meta name="description" content="The Map Guide — a personalised reading of every planetary line on your astrocartography map, and what each one carries wherever you go.">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -164,13 +165,23 @@ html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margi
 // Calls the checkout endpoint, then sends the buyer to Stripe's hosted
 // payment page. Stripe collects their email during checkout, which the
 // webhook uses to record the purchase.
-function buyMapGuide() {
+// If the buyer is signed in, send their account email so the purchase is
+// filed under their account (Apple Pay would otherwise supply its own email).
+var _sbBuy = (window.supabase && supabase.createClient)
+  ? supabase.createClient('https://wdulylmxhvlxhjfmfivu.supabase.co', 'sb_publishable_pBoHzlLsZiLAr7EYF824DA_R6pw5sdR') : null;
+async function accountEmail() {
+  try { var s = _sbBuy && (await _sbBuy.auth.getSession()).data.session; return (s && s.user && s.user.email) || null; }
+  catch (e) { return null; }
+}
+
+async function buyMapGuide() {
   var btn = document.getElementById('buyBtn');
   if (btn) { btn.disabled = true; btn.textContent = 'Opening checkout…'; }
+  var email = await accountEmail();
   fetch('/api/create-checkout', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: '{}'
+    body: email ? JSON.stringify({ email: email }) : '{}'
   })
   .then(function(r){ return r.json(); })
   .then(function(data){
