@@ -197,7 +197,8 @@ function showLocked() {
   view('<div class="state"><div class="star">✦</div><h2>' + T.h1 + '</h2>' +
     '<p>Your ' + T.word + ' report shows your seven strongest places in the world for ' + T.word + ', read from your own birth chart, and the places to avoid.</p>' +
     '<button class="btn" onclick="buy(\'report_' + theme + '\', this)">Get your ' + T.word + ' report · $22.22</button>' +
-    '<button class="btn gold" onclick="buy(\'report_all\', this)">All three reports · $44.44</button><p id="bm" class="err"></p></div>');
+    '<button class="btn gold" onclick="buy(\'report_all\', this)">All three reports · $44.44</button><p id="bm" class="err"></p>' +
+    '<p style="font-size:14px;font-style:italic;opacity:.75;margin-top:14px">For entertainment purposes only.</p></div>');
 }
 async function buy(product, btn) {
   btn.disabled = true; btn.textContent = 'Opening checkout…';
