@@ -1,5 +1,8 @@
 // api/auth.js — Supabase auth handler for elsewhere
 import { createClient } from '@supabase/supabase-js';
+import Stripe from 'stripe';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -43,6 +46,50 @@ export default async function handler(req, res) {
       });
       if (error) return res.status(400).json({ error: error.message });
       return res.json({ success: true });
+    }
+
+    // ── Claim a purchase: create the buyer's account ─────────
+    // Used by success.html when someone pays without being signed in.
+    // We check with Stripe that this checkout really was paid, take the
+    // email it was paid with (the same email the webhook files the
+    // purchase under), and create an account with the password they chose.
+    // If an account already exists for that email we change nothing and
+    // tell the page, which then asks them to sign in instead.
+    if (action === 'claim_purchase') {
+      const { session_id, password } = req.body;
+      if (typeof session_id !== 'string' || !session_id.startsWith('cs_')) {
+        return res.status(400).json({ error: 'Missing purchase details. Please use the link from your checkout.' });
+      }
+      if (typeof password !== 'string' || password.length < 8) {
+        return res.status(400).json({ error: 'Please choose a password of at least 8 characters.' });
+      }
+
+      let session;
+      try {
+        session = await stripe.checkout.sessions.retrieve(session_id);
+      } catch (e) {
+        return res.status(400).json({ error: 'We could not find that purchase.' });
+      }
+      if (!session || session.payment_status !== 'paid') {
+        return res.status(402).json({ error: 'This purchase has not been paid.' });
+      }
+
+      const email = (
+        (session.customer_details && session.customer_details.email) ||
+        session.customer_email || ''
+      ).toLowerCase();
+      if (!email) return res.status(400).json({ error: 'No email was recorded with this purchase.' });
+
+      const { error } = await supabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true
+      });
+      if (error) {
+        if (/already|registered|exists/i.test(error.message)) return res.json({ exists: true, email });
+        return res.status(400).json({ error: error.message });
+      }
+      return res.json({ created: true, email });
     }
 
     // ── Save profile after magic link confirmed ───────────────
