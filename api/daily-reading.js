@@ -105,24 +105,27 @@ Rules you must follow:
 - Name each influence as given, e.g. "Mercury on your Venus" for a conjunction, "Venus trine your Moon", "Mars on your relocated IC".
 - Say where it lands using the house given for this place (the meaning is supplied). Do not invent house meanings.
 - If an influence is marked only_here, say it only happens in this place (e.g. "only happens in New York").
-- Use the "lasts" value for timing (today / this week / this month / this season). If the planet is retrograde, you may mention it.
+- Keep the influences in the order given (today first) and write every one of them.
+- Copy each influence's "when" (today / this week / this month / this season) and "timing" exactly into your reply. For this month and this season influences, the text must also mention the dates from "timing" (e.g. "until Feb 15, exact again Jan 23"). For today, you may mention the time.
+- If at_birthplace is true, mention once, naturally, that this is where they were born (their birth chart's own angles), e.g. "in London, where you were born". It still only happens here.
+- If the planet is retrograde, you may mention it.
 - "tense" influences: name the challenge kindly and give a way through. "easy": name the opening. "strong": intense, can go either way.
 - Headline: 2 to 6 words, evocative, works as a phone notification on its own.
-- Each influence: one or two short sentences.
+- Each influence: one or two short sentences. The headline should reflect today's influences first.
 - good_for and go_easy_on: two to four words each, drawn from the influences.
 
 Reply with JSON only, no other text, in exactly this shape:
-{"headline": "...", "influences": [{"title": "...", "lasts": "...", "only_here": true|false, "text": "..."}], "good_for": "...", "go_easy_on": "..."}
+{"headline": "...", "influences": [{"title": "...", "when": "...", "timing": "...", "only_here": true|false, "text": "..."}], "good_for": "...", "go_easy_on": "..."}
 
 Example of the approved voice (New York):
-{"headline": "Your energy goes home", "influences": [{"title": "Mars on your relocated IC", "lasts": "this week", "only_here": true, "text": "Only happens in New York. Mars is crossing the base of your chart here, the point of home and roots: energy for home projects, sorting out a living space or a move. It can stir tension at home if it has nowhere to go."}, {"title": "Mercury on your Venus", "lasts": "today", "only_here": false, "text": "Here it lands in your 5th house of romance and creativity: flirting and making things."}], "good_for": "home plans, creative work", "go_easy_on": "snapping at housemates"}`;
+{"headline": "Your energy goes home", "influences": [{"title": "Moon on your Sun", "when": "today", "timing": "exact today at 10:25 am", "only_here": false, "text": "A clear, bright mood this morning. In New York it lands in your 6th house of daily work, so start the day on the task that matters most."}, {"title": "Mars on your relocated IC", "when": "this week", "timing": "exact Nov 9, in effect Nov 6 to Nov 13", "only_here": true, "text": "Only happens in New York. Mars is crossing the base of your chart here, the point of home and roots: energy for home projects or a move, until Nov 13. It can stir tension at home if it has nowhere to go."}, {"title": "Jupiter on your relocated IC", "when": "this month", "timing": "Oct 4 to Nov 17; exact Oct 22", "only_here": true, "text": "Only happens in New York. Growth and good fortune around home and roots, until Nov 17."}], "good_for": "home plans, focused work", "go_easy_on": "snapping at housemates"}`;
 
 function describe(f) {
   const angle = ANGLE_MEANING[f.natal];
   const target = angle ? angle : `natal ${f.natal}`;
   return {
     influence: `${f.transit} ${f.aspect} ${target}`,
-    lasts: f.lasts, tone: f.tone, retrograde: f.retrograde, only_here: f.only_here,
+    when: f.when, timing: f.timing, tone: f.tone, retrograde: f.retrograde, only_here: f.only_here,
     lands_in: `house ${f.transit_house}: ${HOUSES[f.transit_house]}`,
     natal_planet_house_here: f.natal_house ? `house ${f.natal_house}: ${HOUSES[f.natal_house]}` : null
   };
@@ -140,12 +143,12 @@ function parseReply(text) {
   return null;
 }
 
-async function writeReading(place, day, daily) {
-  const facts = { place, day, influences: (daily.top || []).map(describe), retrograde_today: daily.retrograde_today };
+async function writeReading(place, day, daily, atBirthplace) {
+  const facts = { place, day, at_birthplace: !!atBirthplace, influences: (daily.top || []).map(describe), retrograde_today: daily.retrograde_today };
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, max_tokens: 1500, system: SYSTEM,
+    body: JSON.stringify({ model: MODEL, max_tokens: 2500, system: SYSTEM,
       messages: [{ role: 'user', content: 'Write today\'s reading from these facts. Reply with the JSON object only, no code fences, no other text.\n' + JSON.stringify(facts, null, 2) }] })
   });
   const j = await r.json();
@@ -197,13 +200,18 @@ export default async function handler(req, res) {
 
     // 4. Today's influences here
     const base = `https://${req.headers['x-forwarded-host'] || req.headers.host}`;
-    const q = `jd=${jd}&lat=${lat}&lng=${lng}` + (isFinite(Number(body.at)) && body.at ? `&at=${Number(body.at)}` : '');
+    const tz = isFinite(Number(body.tz)) ? Math.max(-14, Math.min(14, Number(body.tz))) : 0;
+    const q = `jd=${jd}&lat=${lat}&lng=${lng}&tz=${tz}` + (isFinite(Number(body.at)) && body.at ? `&at=${Number(body.at)}` : '');
     const dr = await fetch(`${base}/api/daily?${q}`);
     const daily = await dr.json();
     if (!dr.ok) return res.status(500).json({ error: 'Daily engine failed: ' + (daily && daily.error) });
 
     // 5. Write it up
-    const { reading, usage, model } = await writeReading(place, day, daily);
+    // Within 50 km of the birthplace: the relocated chart is the birth chart.
+    const toRad = x => x * Math.PI / 180;
+    const km = 6371 * Math.acos(Math.min(1, Math.sin(toRad(lat)) * Math.sin(toRad(blat)) +
+      Math.cos(toRad(lat)) * Math.cos(toRad(blat)) * Math.cos(toRad(lng - blng))));
+    const { reading, usage, model } = await writeReading(place, day, daily, km < 50);
     return res.status(200).json({ place, day, reading, engine: daily.top, model, usage });
   } catch (err) {
     console.error('daily-reading failed:', err);
