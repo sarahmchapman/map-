@@ -31,10 +31,14 @@ input[type=date]{font-family:'Jost',sans-serif;font-size:15px;padding:8px;border
 .head{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:400;margin:6px 0 16px}
 .inf{margin:0 0 16px}
 .inf .t{font-weight:500;font-size:14px}
+.inf .g{display:inline-block;width:22px;font-size:16px;color:#8a6a35}
+.inf .tm{margin-left:22px}
 .inf .l{font-size:11px;color:#8f8577;letter-spacing:.06em;margin-left:6px}
 .badge{display:inline-block;font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#2f5d3f;background:#e2eee4;padding:2px 8px;border-radius:10px;margin-left:6px}
 .inf .tm{font-size:12px;color:#8a6a35;margin-top:2px}
-.inf p{font-family:'Cormorant Garamond',serif;font-size:18px;line-height:1.5;margin:4px 0 0;color:#2e2b28}
+.inf p{font-family:'Cormorant Garamond',serif;font-size:18px;line-height:1.5;margin:4px 0 0 22px;color:#2e2b28}
+.sec{font-size:10px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:#8a6a35;margin:18px 0 10px;display:flex;align-items:center;gap:10px}
+.sec::after{content:'';flex:1;height:.5px;background:#e8e0d2}
 .gf{font-size:13px;color:#4a4540;border-top:.5px solid #e8e0d2;padding-top:12px}
 .err{color:#9b3535;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:17px}
 .meta{font-size:11px;color:#8f8577;margin-top:10px}
@@ -107,14 +111,22 @@ document.getElementById('go').addEventListener('click', async function () {
       throw new Error(j.error === 'not_a_tester' ? 'Your email is not in DAILY_TESTERS in Vercel yet.' : (j.error || ('status ' + r.status)));
     }
     var R = j.reading;
+    var G = { Sun: '☉', Moon: '☽', Mercury: '☿', Venus: '♀', Mars: '♂', Jupiter: '♃', Saturn: '♄', Uranus: '♅', Neptune: '♆', Pluto: '♇' };
+    var LABEL = { 'today': 'Today', 'this week': 'This week', 'this month': 'This month', 'this season': 'This season' };
+    function glyph(title) { var m = String(title).match(/^(\w+)/); return G[m && m[1]] ? '<span class="g" aria-hidden="true">' + G[m[1]] + '\uFE0E</span>' : '<span class="g"></span>'; }
+    var prose = '', prevW = null;
+    R.influences.forEach(function (f, i) {
+      var w = f.when || f.lasts || '';
+      if (w !== prevW) prose += '<div class="sec">' + esc(LABEL[w] || w) + '</div>';
+      prevW = w;
+      prose += '<div class="inf" id="inf' + i + '">' + glyph(f.title) + '<span class="t">' + esc(f.title) + '</span>' +
+        (f.only_here ? '<span class="badge">Only here</span>' : '') +
+        (f.timing ? '<div class="tm">' + esc(f.timing) + '</div>' : '') + '<p>' + esc(f.text) + '</p></div>';
+    });
     out.innerHTML =
       '<div class="notif"><b>ELSEWHERE · 8:00</b>' + esc(R.headline) + '</div>' +
       '<div class="card"><div class="place">' + esc(p.name + ' · ' + t.day) + '</div><div class="head">' + esc(R.headline) + '</div>' +
-      R.influences.map(function (f) {
-        return '<div class="inf"><span class="t">' + esc(f.title) + '</span><span class="l">' + esc(f.when || f.lasts) + '</span>' +
-          (f.only_here ? '<span class="badge">Only here</span>' : '') +
-          (f.timing ? '<div class="tm">' + esc(f.timing) + '</div>' : '') + '<p>' + esc(f.text) + '</p></div>';
-      }).join('') +
+      prose +
       '<div class="gf"><b>Good for:</b> ' + esc(R.good_for) + ' · <b>Go easy on:</b> ' + esc(R.go_easy_on) + '</div></div>' +
       '<div class="meta">' + esc(j.model) + (j.usage ? ' · ' + j.usage.input_tokens + ' in / ' + j.usage.output_tokens + ' out tokens' : '') + '</div>';
   } catch (e) {
