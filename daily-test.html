@@ -101,7 +101,10 @@ document.getElementById('go').addEventListener('click', async function () {
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + s.access_token },
       body: JSON.stringify({ lat: p.lat, lng: p.lng, place: p.name, day: t.day, at: t.jd }) });
     var j = await r.json();
-    if (!r.ok) throw new Error(j.error === 'not_a_tester' ? 'Your email is not in DAILY_TESTERS in Vercel yet.' : (j.error || ('status ' + r.status)));
+    if (!r.ok) {
+      if (j.raw) out.innerHTML = '<pre style="white-space:pre-wrap;font-size:12px;background:#fff;padding:12px;border:.5px solid #e8e0d2">' + esc(j.raw) + '</pre>';
+      throw new Error(j.error === 'not_a_tester' ? 'Your email is not in DAILY_TESTERS in Vercel yet.' : (j.error || ('status ' + r.status)));
+    }
     var R = j.reading;
     out.innerHTML =
       '<div class="notif"><b>ELSEWHERE · 8:00</b>' + esc(R.headline) + '</div>' +
@@ -113,7 +116,7 @@ document.getElementById('go').addEventListener('click', async function () {
       '<div class="gf"><b>Good for:</b> ' + esc(R.good_for) + ' · <b>Go easy on:</b> ' + esc(R.go_easy_on) + '</div></div>' +
       '<div class="meta">' + esc(j.model) + (j.usage ? ' · ' + j.usage.input_tokens + ' in / ' + j.usage.output_tokens + ' out tokens' : '') + '</div>';
   } catch (e) {
-    out.innerHTML = '<p class="err">' + esc(e.message) + '</p>';
+    out.innerHTML = '<p class="err">' + esc(e.message) + '</p>' + out.innerHTML;
   }
   btn.disabled = false; btn.textContent = 'Write the reading';
 });
