@@ -128,20 +128,35 @@ function describe(f) {
   };
 }
 
+// Pull the JSON object out of the AI's reply, forgiving code fences, curly
+// quotes around keys and trailing commas.
+function parseReply(text) {
+  let s = String(text || '').replace(/```(?:json)?/gi, '').trim();
+  const a = s.indexOf('{'), b = s.lastIndexOf('}');
+  if (a === -1 || b <= a) return null;
+  s = s.slice(a, b + 1);
+  const tries = [s, s.replace(/[“”]/g, '"').replace(/,\s*([}\]])/g, '$1')];
+  for (const t of tries) { try { return JSON.parse(t); } catch (e) { /* try the next */ } }
+  return null;
+}
+
 async function writeReading(place, day, daily) {
   const facts = { place, day, influences: (daily.top || []).map(describe), retrograde_today: daily.retrograde_today };
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, max_tokens: 700, system: SYSTEM,
-      messages: [{ role: 'user', content: 'Write today\'s reading from these facts:\n' + JSON.stringify(facts, null, 2) }] })
+    body: JSON.stringify({ model: MODEL, max_tokens: 1500, system: SYSTEM,
+      messages: [{ role: 'user', content: 'Write today\'s reading from these facts. Reply with the JSON object only, no code fences, no other text.\n' + JSON.stringify(facts, null, 2) }] })
   });
   const j = await r.json();
   if (!r.ok) throw new Error('AI request failed: ' + ((j && j.error && j.error.message) || r.status));
-  const text = (j.content || []).map(c => c.text || '').join('').trim();
-  const m = text.match(/\{[\s\S]*\}/);
-  let reading;
-  try { reading = JSON.parse(m ? m[0] : text); } catch (e) { throw new Error('AI reply was not valid JSON'); }
+  const text = (j.content || []).filter(c => c.type === 'text').map(c => c.text || '').join('').trim();
+  const reading = parseReply(text);
+  if (!reading) {
+    const e = new Error('AI reply was not valid JSON (stop: ' + j.stop_reason + ')');
+    e.raw = text.slice(0, 1500);
+    throw e;
+  }
   if (!reading.headline || !Array.isArray(reading.influences)) throw new Error('AI reply was missing parts');
   return { reading, usage: j.usage, model: j.model || MODEL };
 }
@@ -192,6 +207,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ place, day, reading, engine: daily.top, model, usage });
   } catch (err) {
     console.error('daily-reading failed:', err);
-    return res.status(500).json({ error: 'daily-reading failed: ' + err.message });
+    return res.status(500).json({ error: 'daily-reading failed: ' + err.message, raw: err.raw });
   }
 }
