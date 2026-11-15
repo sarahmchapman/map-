@@ -1546,11 +1546,12 @@ function _buildChart(day,month,year,hour,min,name,tz){
   ['MC','IC','ASC','DSC'].forEach(function(lt){var b=document.getElementById('lt-'+lt);if(b)b.classList.add('on');});
   renderChart();buildToggleBar();buildLegend();drawMap();
   // Fetch accurate ACG lines from server API
-  fetch('/api/astro?jd='+jd)
+  fetch('/api/astro?jd='+jd+'&lat='+selectedGeo.lat+'&lng='+selectedGeo.lng)
     .then(function(r){return r.json();})
     .then(function(data){
       acgData=data.lines;
       acgData._parans=data.parans||[];
+      if(activeChart&&data.houses&&!data.houses.error)activeChart.planets._houses=data.houses;
       // Chiron: use the server's accurate position and lines when available.
       if(activeChart&&data.chiron&&data.chiron.lon!=null&&acgData.Chiron){
         activeChart.planets.Chiron=parseLon(data.chiron.lon);
@@ -1694,6 +1695,178 @@ function _lineDistance(lat,lng,pts){
     var d=Math.sqrt(dlat*dlat+dlng*dlng);if(d<best)best=d;
   }
   return best;
+}
+
+// ── Parans: latitudes where two planets sit on angles at the same moment ──
+// Same method as the reports (api/report-chart.py): 0.1° latitude steps
+// from 70°S to 70°N, MC/IC-with-MC/IC pairs skipped (they never form a band).
+var PARAN_BODIES=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode'];
+function computeParans(acg){
+  var A=['MC','IC','ASC','DSC'],N=1401,out=[];
+  var names=PARAN_BODIES.filter(function(n){return acg&&acg[n]&&acg[n].ra!=null&&acg[n].dec!=null;});
+  // Each planet's sidereal time on each angle at each latitude, worked out once.
+  var T={};
+  names.forEach(function(n){
+    var ra=acg[n].ra,td=Math.tan(acg[n].dec*Math.PI/180),rows={};
+    A.forEach(function(a){rows[a]=new Float64Array(N);});
+    for(var k=0;k<N;k++){
+      var lat=(k-700)/10;
+      rows.MC[k]=((ra%360)+360)%360;
+      rows.IC[k]=(((ra+180)%360)+360)%360;
+      var ch=-Math.tan(lat*Math.PI/180)*td;
+      if(Math.abs(ch)>1){rows.ASC[k]=NaN;rows.DSC[k]=NaN;continue;}
+      var H=Math.acos(ch)*180/Math.PI;
+      rows.ASC[k]=(((ra-H)%360)+360)%360;
+      rows.DSC[k]=(((ra+H)%360)+360)%360;
+    }
+    T[n]=rows;
+  });
+  for(var i=0;i<names.length;i++)for(var j=i+1;j<names.length;j++){
+    var p=names[i],q=names[j];
+    for(var ai=0;ai<4;ai++)for(var bi=0;bi<4;bi++){
+      var a=A[ai],b=A[bi];
+      if(ai<2&&bi<2)continue;
+      var X=T[p][a],Y=T[q][b],prev=null;
+      for(var k=0;k<N;k++){
+        var d=X[k]-Y[k];
+        if(d!==d){prev=null;continue;}          // planet never rises or sets here
+        d=((((d+180)%360)+360)%360)-180;
+        if(prev!==null&&Math.abs(d)<30&&Math.abs(prev)<30&&(d===0||(d>0)!==(prev>0))){
+          var t=prev!==d?prev/(prev-d):0;
+          out.push({p1:p,a1:a,p2:q,a2:b,lat:Math.round(((k-1-700)/10+t*0.1)*100)/100});
+        }
+        prev=d;
+      }
+    }
+  }
+  return out;
+}
+
+// What a paran means for this chart, in plain words.
+// Planet verdicts come from the Map Guide engine (engine.js), so the card
+// never contradicts the Map Guide or the reports.
+var PARAN_GIVES={Sun:'visibility and confidence',Moon:'emotional ease',Mercury:'ideas and conversation',Venus:'charm and ease',
+  Mars:'drive and passion',Jupiter:'luck and growth',Saturn:'structure and effort',Uranus:'freedom and change',
+  Neptune:'dreams and intuition',Pluto:'intensity and transformation',Chiron:'old wounds and healing',NNode:'a sense of direction'};
+var PARAN_WHERE={MC:'in your career and public life',IC:'at home and in your private life',ASC:'in how you come across',DSC:'in your relationships'};
+var PARAN_ANGWORD={MC:'at the top of the sky',IC:'at the base of the chart',ASC:'rising',DSC:'setting'};
+// A difficult planet by nature (same list the reports use).
+var PARAN_HARD={Saturn:'Saturn makes things slow and heavy',Chiron:'Chiron brings old wounds to the surface',
+  Pluto:'Pluto adds intensity and power struggles',Mars:'Mars brings friction',Uranus:'Uranus brings sudden change'};
+// What a planet the Map Guide calls challenging does in a crossing.
+var PARAN_EFFECT={Sun:'confidence takes effort',Moon:'that comfort is harder to feel',Mercury:'misunderstandings are likely',
+  Venus:'love and pleasure come with complications',Mars:'it brings friction',Jupiter:'luck can tip into excess',
+  Saturn:'things feel slow and heavy',Uranus:'change can feel disruptive',Neptune:'confusion is likely',
+  Pluto:'it brings power struggles',Chiron:'old wounds come to the surface',NNode:'growth comes with growing pains'};
+function _paranVerdicts(){
+  if(!activeChart)return {};
+  if(activeChart._verdicts)return activeChart._verdicts;
+  var E=window.elsewhereEngine;
+  if(!E)return {};
+  var all=E.categorizeAllLines(activeChart.planets),v={};
+  ['harmonious','dynamic','challenging'].forEach(function(c){(all[c]||[]).forEach(function(x){v[x.planet]=x;});});
+  return activeChart._verdicts=v;
+}
+function _paranRead(p){
+  var V=_paranVerdicts(),NM={NNode:'North Node'};
+  var nm=function(q){return NM[q]||q;};
+  var cat=function(q){return V[q]?V[q].category:'dynamic';};
+  // Same test the reports use for a difficult planet in a crossing.
+  var difficult=function(q){return q==='Chiron'||cat(q)==='challenging'||(['Mars','Saturn','Pluto'].indexOf(q)>-1&&cat(q)!=='harmonious');};
+  var has=function(a,b){return (p.p1===a&&p.p2===b)||(p.p1===b&&p.p2===a);};
+  var s=[];
+  s.push(nm(p.p1)+' '+PARAN_ANGWORD[p.a1]+' meets '+nm(p.p2)+' '+PARAN_ANGWORD[p.a2]+': '
+    +PARAN_GIVES[p.p1]+' '+PARAN_WHERE[p.a1]+', and '+PARAN_GIVES[p.p2]+' '+PARAN_WHERE[p.a2]+'.');
+  var good=[p.p1,p.p2].filter(function(q){return !difficult(q)&&cat(q)==='harmonious';});
+  var hard=[p.p1,p.p2].filter(difficult);
+  var hardWords=hard.map(function(q){return cat(q)==='challenging'?'your '+nm(q)+' is challenging, so '+PARAN_EFFECT[q]:PARAN_HARD[q];});
+  var goodWords=good.length===2?'Both planets are well placed in your chart':'Your '+nm(good[0]||'')+' is well placed';
+  if(good.length&&hard.length)s.push(goodWords+', but '+hardWords[0]+'.');
+  else if(hard.length===2)s.push(hardWords[0]+', and '+hardWords[1]+'. With two difficult planets, this is a hard crossing.');
+  else if(hard.length===1)s.push(hardWords[0]+'.');
+  else if(good.length===2)s.push(goodWords+', so this crossing works in your favour.');
+  else if(good.length===1)s.push(goodWords+', which helps carry it.');
+  else s.push('Neither planet is strongly placed in your chart, so its effect is mixed.');
+  // Crossings with their own meaning (Sarah's rules, as in the reports)
+  if(has('Uranus','Pluto'))s.push('Uranus with Pluto is a red flag: expect upheaval.');
+  if(has('Saturn','Chiron'))s.push('Saturn with Chiron is a likely source of conflict.');
+  if(has('Sun','Chiron'))s.push('For love, Sun with Chiron is a caution: old wounds come up in partnership.');
+  if(has('Sun','Pluto'))s.push('For love, Sun with Pluto is a good sign: deep, transforming bonds.');
+  var tone=has('Uranus','Pluto')||hard.length===2?'Challenging':hard.length?'Mixed':good.length?'Supportive':'Mixed';
+  return {tone:tone,text:s.map(function(x){return x.charAt(0).toUpperCase()+x.slice(1);}).join(' ')};
+}
+
+// One-line summary for the compact card row.
+var PARAN_SHORT_HARD={Saturn:'Saturn slows things down',Chiron:'Chiron stirs old wounds',Pluto:'Pluto brings power struggles',Mars:'Mars brings friction',Uranus:'Uranus brings sudden change'};
+var PARAN_SHORT_CHAL={Sun:'the Sun makes confidence harder',Moon:'the Moon makes comfort harder to feel',Mercury:'Mercury brings misunderstandings',
+  Venus:'Venus complicates love',Mars:'Mars brings friction',Jupiter:'Jupiter can tip into excess',Saturn:'Saturn slows things down',
+  Uranus:'Uranus brings disruption',Neptune:'Neptune brings confusion',Pluto:'Pluto brings power struggles',Chiron:'Chiron stirs old wounds',NNode:'the North Node brings growing pains'};
+function _paranShort(p){
+  var V=_paranVerdicts(),NM={NNode:'North Node'},nm=function(q){return NM[q]||q;};
+  var cat=function(q){return V[q]?V[q].category:'dynamic';};
+  var difficult=function(q){return q==='Chiron'||cat(q)==='challenging'||(['Mars','Saturn','Pluto'].indexOf(q)>-1&&cat(q)!=='harmonious');};
+  var has=function(a,b){return (p.p1===a&&p.p2===b)||(p.p1===b&&p.p2===a);};
+  if(has('Uranus','Pluto'))return 'A red flag: upheaval';
+  if(has('Saturn','Chiron'))return 'A likely source of conflict';
+  var good=[p.p1,p.p2].filter(function(q){return !difficult(q)&&cat(q)==='harmonious';});
+  var hard=[p.p1,p.p2].filter(difficult).map(function(q){return cat(q)==='challenging'?PARAN_SHORT_CHAL[q]:PARAN_SHORT_HARD[q];});
+  var out;
+  if(good.length===2)out='Both planets well placed for you';
+  else if(good.length&&hard.length)out=nm(good[0])+' helps, but '+hard[0];
+  else if(hard.length===2)out=hard[0]+'; '+hard[1];
+  else if(hard.length)out=hard[0];
+  else if(good.length)out=nm(good[0])+' helps';
+  else out='A mixed influence';
+  return out.charAt(0).toUpperCase()+out.slice(1);
+}
+
+// Styles for the paran rows (added once, so everything stays in app.js).
+function _paranStyles(){
+  if(document.getElementById('paranStyles'))return;
+  var st=document.createElement('style');st.id='paranStyles';
+  st.textContent='.pc{border-bottom:.5px solid var(--paper-3)}.pc:last-child{border-bottom:none}'
+    +'.pc summary{list-style:none;display:flex;align-items:center;gap:.6rem;padding:.55rem 0;cursor:pointer}'
+    +'.pc summary::-webkit-details-marker{display:none}'
+    +'.pc .pg{font-family:var(--serif);font-size:1.05rem;min-width:2.4rem}'
+    +'.pc .pm{flex:1;display:flex;flex-direction:column}'
+    +'.pc .pn{font-size:.62rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase}'
+    +'.pc .ps{font-family:var(--serif);font-size:.86rem;color:var(--ink-2);margin-top:.1rem}'
+    +'.pc .pt{font-size:.52rem;letter-spacing:.14em;text-transform:uppercase;border:.5px solid;border-radius:20px;padding:.12rem .5rem;white-space:nowrap}'
+    +'.pc .pv{color:var(--ink-3);font-size:1rem;transition:transform .2s}.pc[open] .pv{transform:rotate(90deg)}'
+    +'.pc .pb{padding:0 0 .75rem 3rem}'
+    +'.pc .pl{font-family:var(--serif);font-style:italic;font-size:.78rem;color:var(--ink-3);margin-bottom:.25rem}'
+    +'.paran-what{font-family:var(--serif);font-style:italic;font-size:.78rem;color:var(--gold);cursor:pointer;text-decoration:underline;text-underline-offset:3px}';
+  document.head.appendChild(st);
+}
+
+// The parans section of the map card: every paran within 1.5° of the
+// clicked latitude (the same band the reports use), closed until tapped.
+function _paranCardHTML(lat){
+  if(!acgData||lat==null)return '';
+  if(!acgData._paransExact)acgData._paransExact=computeParans(acgData);
+  _paranStyles();
+  var near=acgData._paransExact
+    .filter(function(p){return Math.abs(p.lat-lat)<1.5;})
+    .sort(function(a,b){return Math.abs(a.lat-lat)-Math.abs(b.lat-lat);});
+  var NM={NNode:'North Node'},ANG={MC:'MC',IC:'IC',ASC:'AC',DSC:'DC'};
+  var TONE={Supportive:'#2c6e49',Mixed:'#b8955a',Challenging:'#9b3535'};
+  var html='<div class="rc-rule"></div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:baseline"><div class="rc-slbl">Parans on this latitude</div>'
+    +'<span class="paran-what" onclick="var e=document.getElementById(\'paranWhat\');e.style.display=e.style.display===\'none\'?\'block\':\'none\'">What’s a paran?</span></div>'
+    +'<div id="paranWhat" class="rc-prose" style="display:none;font-size:.82rem;color:var(--ink-3);font-style:italic;margin-bottom:.4rem">A paran is a band of latitude where two of your planets sit on angles at the same moment. It runs right around the globe, so it adds to whatever lines are nearby. Your reports count these too.</div>';
+  if(!near.length)return html+'<div class="rc-prose" style="font-size:.82rem">No parans fall on this latitude.</div>';
+  return html+near.map(function(p){
+    var r=_paranRead(p),km=Math.round(Math.abs(p.lat-lat)*111);
+    var nm=function(n,a){return '<span style="color:'+PCOL[n]+'">'+(NM[n]||n)+' '+ANG[a]+'</span>';};
+    return '<details class="pc"><summary>'
+      +'<span class="pg"><span style="color:'+PCOL[p.p1]+'">'+PSYM[p.p1]+'</span> <span style="color:'+PCOL[p.p2]+'">'+PSYM[p.p2]+'</span></span>'
+      +'<span class="pm"><span class="pn">'+nm(p.p1,p.a1)+' <span style="color:var(--ink-3)">×</span> '+nm(p.p2,p.a2)+'</span>'
+      +'<span class="ps">'+_paranShort(p)+'</span></span>'
+      +'<span class="pt" style="color:'+TONE[r.tone]+';border-color:'+TONE[r.tone]+'">'+r.tone+'</span>'
+      +'<span class="pv">›</span></summary>'
+      +'<div class="pb"><div class="pl">'+Math.abs(p.lat).toFixed(1)+'°'+(p.lat>=0?'N':'S')+(km<15?' · right here':' · ~'+km+' km from here')+'</div>'
+      +'<div class="rc-prose" style="margin:0">'+r.text+'</div></div></details>';
+  }).join('');
 }
 
 function _diveDeeperBtn(cityName,lat,lng){
@@ -2041,7 +2214,7 @@ function openCard(cityName,planet,ltype,_lat,_lng,powerZone){
       }).join('')
       +'<div class="rc-rule"></div>'
       +'<div class="rc-slbl">The energies together</div>'
-      +'<div class="rc-prose">'+pzData.body+'</div>'
+      +'<div class="rc-prose">'+pzData.body+'</div>'+_paranCardHTML(_lat)
       +_diveDeeperBtn(cityName,_lat,_lng);
   } else {
     document.getElementById('rcBody').innerHTML=
@@ -2051,7 +2224,7 @@ function openCard(cityName,planet,ltype,_lat,_lng,powerZone){
       +'<div class="rc-slbl">In this place you feel</div><div class="rc-feeling">'+((FEELING[planet]||{})[focus]||'powerfully present')+'.</div>'
       +'<div class="rc-slbl">What\'s activated</div><div class="rc-prose" id="rcActivated">'+((LINE_ACTIVATED[planet]&&LINE_ACTIVATED[planet][ltype])||LINE_DESC[ltype]||'')+' '+((SIGN_MODIFIERS[planet]&&SIGN_MODIFIERS[planet][pd.sign])||'')+'</div>'
       +'<div class="rc-slbl">Your chart here</div><div class="rc-prose">'+personText+'</div>'
-      +'<div class="rc-irow"><div class="rc-ibox"><div class="rc-ilbl">Best for</div><div class="rc-itext">'+((BEST_FOR[planet]&&BEST_FOR[planet][ltype])||'')+'</div></div><div class="rc-ibox"><div class="rc-ilbl">Watch for</div><div class="rc-itext">'+((WATCH_FOR[planet]&&WATCH_FOR[planet][ltype])||'')+'</div></div></div>'
+      +'<div class="rc-irow"><div class="rc-ibox"><div class="rc-ilbl">Best for</div><div class="rc-itext">'+((BEST_FOR[planet]&&BEST_FOR[planet][ltype])||'')+'</div></div><div class="rc-ibox"><div class="rc-ilbl">Watch for</div><div class="rc-itext">'+((WATCH_FOR[planet]&&WATCH_FOR[planet][ltype])||'')+'</div></div></div>'+_paranCardHTML(_lat)
       +_diveDeeperBtn(cityName,_lat,_lng);
   }
   document.getElementById('readingCard').classList.add('open');
