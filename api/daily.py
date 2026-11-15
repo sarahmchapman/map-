@@ -260,16 +260,21 @@ def in_effect(at, view_end, targets, cusps, natal, zone, ref_year, planets=SLOW)
                 when = 'long-term' if days > 365 else 'this season' if days > 45 else 'this month' if days > 10 else 'this week'
                 d = lambda j: fmt_date(j, zone, ref_year)
                 ex = [d(x) for x in exacts]
-                timing = 'in effect ' + d(start) + ' to ' + d(end)
+                nxt = [x for x in exacts if x >= at]
+                # Building: getting closer to exact right now; easing: moving away
+                # (between two retrograde passes it eases, then builds again).
+                building = orb_at(at + 0.5, planet, tlon, ang) < orb_at(at, planet, tlon, ang)
+                timing = ('Building' if building else 'Easing') + ' · in effect ' + d(start) + ' to ' + d(end)
                 if ex:
                     timing += '; exact ' + ' and '.join(ex)
-                nxt = [x for x in exacts if x >= at]
+                elif closest:
+                    timing += '; closest ' + d(closest[1])
                 closeness = (abs(nxt[0] - at) / max(days, 1)) if nxt else 0.6
                 it = item(planet, tname, A, aname, only_here, ref, cusps, natal)
                 it.update({'when': when, 'span': when, 'timing': timing,
                            'dates': {'from': d(start), 'to': d(end), 'exact': ex,
                                      'closest': ({'date': d(closest[1]), 'orb': round(closest[0], 2)} if closest else None)},
-                           'building': bool(nxt) and nxt[0] > at,
+                           'building': building, 'phase': 'building' if building else 'easing',
                            '_next': nxt[0] if nxt else None,
                            '_t': nxt[0] if nxt else start,
                            'score': score(planet, tname, aname, closeness, only_here)})
