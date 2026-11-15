@@ -12,12 +12,15 @@
 //      astrology comes only from the engine; the AI only writes it up.
 //
 //   POST /api/daily-reading   { "lat": 40.71, "lng": -74.01, "place": "New York",
-//                               "day": "Thursday", "at": <optional jd UT> }
+//                               "zone": "America/New_York", "view": "today",
+//                               "date": "2026-11-14" (local day; optional) }
+//   view: today | tomorrow | week | month (the app's tabs)
 //   header: Authorization: Bearer <Supabase access token>
 //
 // Env vars in Vercel: SUPABASE_URL, SUPABASE_SERVICE_KEY (already set),
 //   ANTHROPIC_API_KEY (your Anthropic key), DAILY_TESTERS (emails allowed to
-//   test, separated by commas), optional DAILY_MODEL (defaults below).
+//   test, separated by commas), optional DAILY_MODEL (defaults below),
+//   optional SITE_URL (defaults to https://elsewhereastro.com).
 
 import { createClient } from '@supabase/supabase-js';
 
@@ -25,7 +28,8 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SER
   { auth: { autoRefreshToken: false, persistSession: false } });
 
 const MODEL = process.env.DAILY_MODEL || 'claude-sonnet-5-5';
-const GEONAMES_USER = 'sarahmchapman';   // same account the map uses
+const GEONAMES_USER = process.env.GEONAMES_USER || 'sarahmchapman';   // same account the map uses
+const SITE = (process.env.SITE_URL || 'https://elsewhereastro.com').replace(/\/$/, '');
 
 // ── Birth time → world time (same as api/generate-report.js and js/app.js) ──
 const MONTHS = ['january','february','march','april','may','june','july','august','september','october','november','december'];
@@ -53,14 +57,11 @@ async function lookupBirthOffset(lat, lng, y, mo, d, h, mi) {
     const url = 'https://secure.geonames.org/timezoneJSON?lat=' + Number(lat).toFixed(4) + '&lng=' + Number(lng).toFixed(4) +
       '&date=' + y + '-' + pad(mo) + '-' + pad(d) + '&username=' + GEONAMES_USER;
     const data = await (await fetch(url)).json();
-    let off = (data && data.timezoneId) ? tzOffsetFromZone(data.timezoneId, y, mo, d, h, mi) : null;
-    if (off == null) {
-      const raw = (data && data.rawOffset != null) ? data.rawOffset : tzFromLng(lng);
-      const dst = (data && data.dstOffset != null) ? data.dstOffset : raw;
-      off = (mo >= 4 && mo <= 10 && dst !== raw) ? dst : raw;
-    }
+    // Only trust a real time-zone answer. Guessing from longitude can put the
+    // birth time an hour out, which moves every angle and house, so fail instead.
+    const off = (data && data.timezoneId) ? tzOffsetFromZone(data.timezoneId, y, mo, d, h, mi) : null;
     return off;
-  } catch (e) { return tzFromLng(lng); }
+  } catch (e) { return null; }
 }
 function jdFromDate(y, mo, d, h, mn) {
   if (mo <= 2) { y--; mo += 12; }
@@ -79,6 +80,7 @@ function parseBirthTime(s) {
 }
 async function birthJD(date, time, lat, lng) {
   const tz = await lookupBirthOffset(lat, lng, date.y, date.mo, date.d, time.h, time.mi);
+  if (tz == null) return null;
   let utH = time.h - tz, utD = date.d;
   if (utH >= 24) { utH -= 24; utD++; } if (utH < 0) { utH += 24; utD--; }
   return jdFromDate(date.y, date.mo, utD, utH, time.mi);
@@ -96,39 +98,50 @@ const ANGLE_MEANING = {
   MC: 'the relocated MC (career, reputation, public life)', IC: 'the relocated IC (home, family, roots)'
 };
 
-const SYSTEM = `You write the daily horoscope for elsewhere, an astrocartography app. Each reading is for one person, for the place they are today.
+const VIEW_TEXT = {
+  today: 'today', tomorrow: 'tomorrow', week: 'the next seven days', month: 'the next thirty days'
+};
+
+const SYSTEM = `You write the daily horoscope for elsewhere, an astrocartography app. Each reading is for one person, for the place they are, for one tab of the app: today, tomorrow, this week or this month.
 
 Voice: short and to the point, warm, plain English, a little poetic but never vague. Second person ("you"). No filler, no exclamation marks, no emojis, no predictions of events, no medical, legal or money advice.
 
 Rules you must follow:
-- Use ONLY the influences given. Never add other planets, aspects, signs or houses.
-- Name each influence as given, e.g. "Mercury on your Venus" for a conjunction, "Venus trine your Moon", "Mars on your relocated IC".
-- Say where it lands using the house given for this place (the meaning is supplied). Do not invent house meanings.
-- If an influence is marked only_here, say it only happens in this place (e.g. "only happens in New York").
-- Keep the influences in the order given (today first) and write every one of them.
-- Copy each influence's "when" (today / this week / this month / this season) and "timing" exactly into your reply. For this month and this season influences, the text must also mention the dates from "timing" (e.g. "until Feb 15, exact again Jan 23"). For today, you may mention the time.
-- If at_birthplace is true, mention once, naturally, that this is where they were born (their birth chart's own angles), e.g. "in London, where you were born". It still only happens here.
-- If the planet is retrograde, you may mention it.
-- "tense" influences: name the challenge kindly and give a way through. "easy": name the opening. "strong": intense, can go either way.
-- Headline: 2 to 6 words, evocative, works as a phone notification on its own.
-- Each influence: one or two short sentences. The headline should reflect today's influences first.
+- Write one short text for EACH influence given, in the same order, and nothing else. Never add other planets, aspects, signs or houses.
+- Each text: one or two short sentences. Do not repeat the influence's name at the start; the app shows it above your text.
+- Say where it lands using what is supplied: "lands_in" (a house of the chart for this place) or, for a relocated angle, "angle" (its meaning). Do not invent meanings.
+- If only_here is true, say it only happens in this place (e.g. "Only happens in New York.").
+- If at_birthplace is true, mention once, naturally, that this is where they were born, e.g. "in London, where you were born".
+- Timing: for tab today/tomorrow, "exact at" items happen at that time of day; "in effect" items are the backdrop. For week/month, mention the key date from "timing" in the text (e.g. "exact Nov 17", "until Feb 15"). Never invent dates.
+- "building": true means it is still getting stronger; false means it is easing. If retrograde is true, you may mention it.
+- "tense": name the challenge kindly and give a way through. "easy": name the opening. "strong": intense, can go either way.
+- Headline: 2 to 6 words, evocative, works as a phone notification on its own, led by the first influences.
 - good_for and go_easy_on: two to four words each, drawn from the influences.
 
-Reply with JSON only, no other text, in exactly this shape:
-{"headline": "...", "influences": [{"title": "...", "when": "...", "timing": "...", "only_here": true|false, "text": "..."}], "good_for": "...", "go_easy_on": "..."}
+Reply with JSON only, no other text, in exactly this shape (texts has one entry per influence, same order):
+{"headline": "...", "texts": ["...", "..."], "good_for": "...", "go_easy_on": "..."}
 
-Example of the approved voice (New York):
-{"headline": "Your energy goes home", "influences": [{"title": "Moon on your Sun", "when": "today", "timing": "exact today at 10:25 am", "only_here": false, "text": "A clear, bright mood this morning. In New York it lands in your 6th house of daily work, so start the day on the task that matters most."}, {"title": "Mars on your relocated IC", "when": "this week", "timing": "exact Nov 9, in effect Nov 6 to Nov 13", "only_here": true, "text": "Only happens in New York. Mars is crossing the base of your chart here, the point of home and roots: energy for home projects or a move, until Nov 13. It can stir tension at home if it has nowhere to go."}, {"title": "Jupiter on your relocated IC", "when": "this month", "timing": "Oct 4 to Nov 17; exact Oct 22", "only_here": true, "text": "Only happens in New York. Growth and good fortune around home and roots, until Nov 17."}], "good_for": "home plans, focused work", "go_easy_on": "snapping at housemates"}`;
+Example of the approved voice (New York, tab today):
+{"headline": "Your energy goes home", "texts": ["A clear, bright mood this morning. In New York it lands in your 6th house of daily work, so start with the task that matters most.", "Only happens in New York. Mars is crossing the base of your chart here, the point of home and roots: energy for home projects or a move. It can stir tension at home if it has nowhere to go."], "good_for": "home plans, focused work", "go_easy_on": "snapping at housemates"}`;
 
 function describe(f) {
-  const angle = ANGLE_MEANING[f.natal];
-  const target = angle ? angle : `natal ${f.natal}`;
+  const angle = f.only_here ? ANGLE_MEANING[f.natal] : null;
   return {
-    influence: `${f.transit} ${f.aspect} ${target}`,
+    influence: `${f.transit} ${f.aspect} ${angle ? angle : 'natal ' + f.natal}`,
     when: f.when, timing: f.timing, tone: f.tone, retrograde: f.retrograde, only_here: f.only_here,
-    lands_in: `house ${f.transit_house}: ${HOUSES[f.transit_house]}`,
-    natal_planet_house_here: f.natal_house ? `house ${f.natal_house}: ${HOUSES[f.natal_house]}` : null
+    building: f.building, span: f.span,
+    ...(angle ? { angle } : {
+      lands_in: `house ${f.transit_house}: ${HOUSES[f.transit_house]}`,
+      natal_planet_house_here: f.natal_house ? `house ${f.natal_house}: ${HOUSES[f.natal_house]}` : null
+    })
   };
+}
+
+// The name shown above each text, built from the engine (never from the AI).
+const ASPECT_WORD = { conjunct: 'on', opposite: 'opposite', square: 'square', trine: 'trine', sextile: 'sextile' };
+function titleOf(f) {
+  const target = f.only_here ? 'your relocated ' + (f.natal === 'Ascendant' || f.natal === 'Descendant' ? f.natal : f.natal) : 'your ' + f.natal;
+  return `${f.transit} ${ASPECT_WORD[f.aspect] || f.aspect} ${target}`;
 }
 
 // Pull the JSON object out of the AI's reply, forgiving code fences, curly
@@ -143,25 +156,43 @@ function parseReply(text) {
   return null;
 }
 
-async function writeReading(place, day, daily, atBirthplace) {
-  const facts = { place, day, at_birthplace: !!atBirthplace, influences: (daily.top || []).map(describe), retrograde_today: daily.retrograde_today };
+async function askAI(facts) {
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
     body: JSON.stringify({ model: MODEL, max_tokens: 2500, system: SYSTEM,
-      messages: [{ role: 'user', content: 'Write today\'s reading from these facts. Reply with the JSON object only, no code fences, no other text.\n' + JSON.stringify(facts, null, 2) }] })
+      messages: [{ role: 'user', content: 'Write this reading from these facts. Reply with the JSON object only, no code fences, no other text.\n' + JSON.stringify(facts, null, 2) }] })
   });
   const j = await r.json();
   if (!r.ok) throw new Error('AI request failed: ' + ((j && j.error && j.error.message) || r.status));
   const text = (j.content || []).filter(c => c.type === 'text').map(c => c.text || '').join('').trim();
-  const reading = parseReply(text);
-  if (!reading) {
-    const e = new Error('AI reply was not valid JSON (stop: ' + j.stop_reason + ')');
-    e.raw = text.slice(0, 1500);
-    throw e;
+  return { parsed: parseReply(text), text, usage: j.usage, model: j.model || MODEL, stop: j.stop_reason };
+}
+
+async function writeReading(place, view, dateLabel, daily, atBirthplace) {
+  const items = daily.top || [];
+  const facts = { place, tab: view, covers: VIEW_TEXT[view], date: dateLabel, at_birthplace: !!atBirthplace,
+    house_system: daily.relocated && daily.relocated.house_system,
+    influences: items.map(describe), retrograde: daily.retrograde };
+  let last, usage = { input_tokens: 0, output_tokens: 0 }, model = MODEL;
+  // One retry if the reply is not usable (wrong shape or wrong number of texts).
+  for (let attempt = 0; attempt < 2; attempt++) {
+    last = await askAI(facts);
+    model = last.model;
+    if (last.usage) { usage.input_tokens += last.usage.input_tokens || 0; usage.output_tokens += last.usage.output_tokens || 0; }
+    const p = last.parsed;
+    if (p && p.headline && Array.isArray(p.texts) && p.texts.length === items.length && p.texts.every(x => typeof x === 'string' && x.trim())) {
+      // Everything except the wording comes from the engine.
+      const influences = items.map((f, i) => ({
+        title: titleOf(f), transit: f.transit, when: f.when, timing: f.timing, only_here: f.only_here,
+        dates: f.dates, building: f.building, exact_here: f.when === 'today' || f.when === 'tomorrow' || !!f.exact_here, text: p.texts[i].trim()
+      }));
+      return { reading: { headline: String(p.headline).trim(), influences, good_for: p.good_for || '', go_easy_on: p.go_easy_on || '' }, usage, model };
+    }
   }
-  if (!reading.headline || !Array.isArray(reading.influences)) throw new Error('AI reply was missing parts');
-  return { reading, usage: j.usage, model: j.model || MODEL };
+  const e = new Error('AI reply was not usable (stop: ' + (last && last.stop) + ')');
+  e.raw = last && last.text ? last.text.slice(0, 1500) : '';
+  throw e;
 }
 
 // ── Handler ─────────────────────────────────────────────────────────────
@@ -173,8 +204,12 @@ export default async function handler(req, res) {
     const lat = Number(body.lat), lng = Number(body.lng);
     if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180)
       return res.status(400).json({ error: 'lat and lng are required' });
-    const place = String(body.place || 'here').slice(0, 60);
-    const day = String(body.day || '').slice(0, 20);
+    const place = String(body.place || 'here').replace(/[^\p{L}\p{M}\s,.'-]/gu, '').trim().slice(0, 60) || 'here';
+    const view = ['today', 'tomorrow', 'week', 'month'].includes(body.view) ? body.view : 'today';
+    const zone = String(body.zone || '');
+    try { new Intl.DateTimeFormat('en-US', { timeZone: zone }); } catch (e) { return res.status(400).json({ error: 'zone (time zone name) is required' }); }
+    if (!zone) return res.status(400).json({ error: 'zone (time zone name) is required' });
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(String(body.date || '')) ? String(body.date) : null;
 
     // 1. Who is asking
     const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
@@ -182,6 +217,7 @@ export default async function handler(req, res) {
     const { data: u, error: uErr } = await supabase.auth.getUser(token);
     if (uErr || !u || !u.user || !u.user.email) return res.status(401).json({ error: 'not_signed_in' });
     const email = u.user.email.toLowerCase();
+    const userId = u.user.id;
 
     // 2. Testers only, for now
     const testers = String(process.env.DAILY_TESTERS || '').toLowerCase().split(',').map(s => s.trim()).filter(Boolean);
@@ -189,20 +225,18 @@ export default async function handler(req, res) {
     if (!process.env.ANTHROPIC_API_KEY) return res.status(500).json({ error: 'ANTHROPIC_API_KEY is not set in Vercel' });
 
     // 3. Birth details
-    const { data: profs, error: prErr } = await supabase.from('profiles').select('*').eq('email', email).order('created_at', { ascending: false }).limit(1);
+    const { data: p, error: prErr } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
     if (prErr) return res.status(500).json({ error: 'Could not read profile: ' + prErr.message });
-    const p = profs && profs[0];
-    const date = p && parseBirthDate(p.birth_date), time = p && parseBirthTime(p.birth_time);
+    const bdate = p && parseBirthDate(p.birth_date), time = p && parseBirthTime(p.birth_time);
     const blat = p && Number(p.birth_lat), blng = p && Number(p.birth_lng);
-    if (!p || !date || !time || !isFinite(blat) || !isFinite(blng) || p.birth_lat == null || p.birth_lng == null)
+    if (!p || !bdate || !time || !isFinite(blat) || !isFinite(blng) || p.birth_lat == null || p.birth_lng == null)
       return res.status(422).json({ error: 'birth_details_incomplete' });
-    const jd = await birthJD(date, time, blat, blng);
+    const jd = await birthJD(bdate, time, blat, blng);
+    if (jd == null) return res.status(503).json({ error: 'birth_time_lookup_failed', message: 'Could not look up the time zone of your birthplace. Please try again in a minute.' });
 
     // 4. Today's influences here
-    const base = `https://${req.headers['x-forwarded-host'] || req.headers.host}`;
-    const tz = isFinite(Number(body.tz)) ? Math.max(-14, Math.min(14, Number(body.tz))) : 0;
-    const q = `jd=${jd}&lat=${lat}&lng=${lng}&tz=${tz}` + (isFinite(Number(body.at)) && body.at ? `&at=${Number(body.at)}` : '');
-    const dr = await fetch(`${base}/api/daily?${q}`);
+    const q = `jd=${jd}&lat=${lat}&lng=${lng}&zone=${encodeURIComponent(zone)}&view=${view}` + (date ? `&date=${date}` : '');
+    const dr = await fetch(`${SITE}/api/daily?${q}`);
     const daily = await dr.json();
     if (!dr.ok) return res.status(500).json({ error: 'Daily engine failed: ' + (daily && daily.error) });
 
@@ -211,8 +245,9 @@ export default async function handler(req, res) {
     const toRad = x => x * Math.PI / 180;
     const km = 6371 * Math.acos(Math.min(1, Math.sin(toRad(lat)) * Math.sin(toRad(blat)) +
       Math.cos(toRad(lat)) * Math.cos(toRad(blat)) * Math.cos(toRad(lng - blng))));
-    const { reading, usage, model } = await writeReading(place, day, daily, km < 50);
-    return res.status(200).json({ place, day, reading, engine: daily.top, model, usage });
+    const { reading, usage, model } = await writeReading(place, view, daily.date, daily, km < 50);
+    return res.status(200).json({ place, view, date: daily.date, house_system: daily.relocated.house_system,
+      reading, model, usage });
   } catch (err) {
     console.error('daily-reading failed:', err);
     return res.status(500).json({ error: 'daily-reading failed: ' + err.message, raw: err.raw });
