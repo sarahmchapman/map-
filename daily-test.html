@@ -42,15 +42,26 @@ input[type=date]{font-family:'Jost',sans-serif;font-size:15px;padding:8px;border
 .gf{font-size:13px;color:#4a4540;border-top:.5px solid #e8e0d2;padding-top:12px}
 .err{color:#9b3535;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:17px}
 .meta{font-size:11px;color:#8f8577;margin-top:10px}
+.tabs{display:flex;gap:6px;margin:22px 0 0;border-bottom:.5px solid #d9cfbd}
+.tab{background:none;border:none;border-bottom:2px solid transparent;border-radius:0;padding:10px 10px 9px;font-size:11px;letter-spacing:.16em;color:#8f8577}
+.tab.on{color:#1a1714;background:none;border-color:transparent;border-bottom-color:#b8955a}
+.hint{font-family:'Cormorant Garamond',serif;font-style:italic;color:#8f8577;font-size:15px;margin:12px 0 0}
+.card{margin-top:14px}
 </style>
 </head>
 <body>
 <main>
   <h1>Daily horoscope test</h1>
-  <p class="sub">What the app would send you at 8am local time, for any place and day.</p>
+  <p class="sub">What the app would show you, for any place and day. Today's headline is the 8am notification.</p>
   <div class="row" id="places"></div>
   <div class="row"><input type="date" id="day"><button class="go" id="go">Write the reading</button></div>
-  <div id="out"></div>
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-v="today">Today</button>
+    <button class="tab" data-v="tomorrow">Tomorrow</button>
+    <button class="tab" data-v="week">This week</button>
+    <button class="tab" data-v="month">This month</button>
+  </div>
+  <div id="out"><p class="hint">Pick a place and a day, then write the reading. Each tab is written when you open it.</p></div>
 </main>
 <script>
 var SB = supabase.createClient('https://wdulylmxhvlxhjfmfivu.supabase.co', 'sb_publishable_pBoHzlLsZiLAr7EYF824DA_R6pw5sdR');
@@ -61,78 +72,93 @@ var PLACES = [
   { name: 'London', lat: 51.51, lng: -0.13, zone: 'Europe/London' },
   { name: 'My location', here: true }
 ];
-var chosen = PLACES[0];
+var chosen = PLACES[0], view = 'today', cache = {}, busy = false;
+var G = { Sun: '☉', Moon: '☽', Mercury: '☿', Venus: '♀', Mars: '♂', Jupiter: '♃', Saturn: '♄', Uranus: '♅', Neptune: '♆', Pluto: '♇' };
+var SECTIONS = {
+  today:    [['Exact today', true], ['In effect', false]],
+  tomorrow: [['Exact tomorrow', true], ['In effect', false]],
+  week:     [['Exact this week', true], ['Also in effect', false]],
+  month:    [['Exact this month', true], ['Also in effect', false]]
+};
+var NAMES = { today: 'Today', tomorrow: 'Tomorrow', week: 'This week', month: 'This month' };
+
 document.getElementById('places').innerHTML = PLACES.map(function (p, i) {
   return '<button data-i="' + i + '"' + (i === 0 ? ' class="on"' : '') + '>' + p.name + '</button>';
 }).join('');
 document.getElementById('places').addEventListener('click', function (e) {
   var b = e.target.closest('button'); if (!b) return;
   document.querySelectorAll('#places button').forEach(function (x) { x.classList.remove('on'); });
-  b.classList.add('on'); chosen = PLACES[+b.getAttribute('data-i')];
+  b.classList.add('on'); chosen = PLACES[+b.getAttribute('data-i')]; cache = {};
 });
 var d = new Date(); document.getElementById('day').value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+document.getElementById('day').addEventListener('change', function () { cache = {}; });
 
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-// Offset (hours) of a time zone at a given local wall time.
-function zoneOffset(zone, y, mo, dd, h) {
-  var fmt = new Intl.DateTimeFormat('en-US', { timeZone: zone, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
-  function at(ms) { var p = {}; fmt.formatToParts(new Date(ms)).forEach(function (x) { p[x.type] = x.value; });
-    return Math.round((Date.UTC(+p.year, +p.month - 1, +p.day, (+p.hour) % 24, +p.minute) - Math.floor(ms / 60000) * 60000) / 60000); }
-  var wall = Date.UTC(y, mo - 1, dd, h, 0), off = at(wall); off = at(wall - off * 60000); return off / 60;
-}
-// 8am local on the chosen day, as a Julian Day in world time.
-function eightAm(zone) {
-  var v = document.getElementById('day').value.split('-').map(Number);
-  var off = zoneOffset(zone, v[0], v[1], v[2], 8);
-  var ms = Date.UTC(v[0], v[1] - 1, v[2], 8) - off * 3600000;
-  return { jd: ms / 86400000 + 2440587.5, tz: off, day: new Date(Date.UTC(v[0], v[1] - 1, v[2], 12)).toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' }) };
-}
+function glyph(f) { var g = G[f.transit]; return '<span class="g" aria-hidden="true">' + (g ? g + '\uFE0E' : '') + '</span>'; }
 function here() {
   return new Promise(function (ok, no) {
     navigator.geolocation.getCurrentPosition(function (p) { ok({ name: 'Here', lat: p.coords.latitude, lng: p.coords.longitude, zone: Intl.DateTimeFormat().resolvedOptions().timeZone }); },
       function () { no(new Error('Location was not allowed')); }, { timeout: 10000 });
   });
 }
+function dayName(iso) {
+  var v = iso.split('-').map(Number);
+  return new Date(Date.UTC(v[0], v[1] - 1, v[2], 12)).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', timeZone: 'UTC' });
+}
 
-document.getElementById('go').addEventListener('click', async function () {
-  var btn = this, out = document.getElementById('out');
-  btn.disabled = true; btn.textContent = 'Writing…'; out.innerHTML = '';
+function render(j, p) {
+  var R = j.reading, out = document.getElementById('out'), body = '';
+  SECTIONS[j.view].forEach(function (s) {
+    var items = R.influences.filter(function (f) { return !!f.exact_here === s[1]; });
+    if (!items.length) return;
+    body += '<div class="sec">' + esc(s[0]) + '</div>';
+    items.forEach(function (f) {
+      body += '<div class="inf">' + glyph(f) + '<span class="t">' + esc(f.title) + '</span>' +
+        (f.only_here ? '<span class="badge">Only here</span>' : '') +
+        (f.timing ? '<div class="tm">' + esc(f.timing) + '</div>' : '') + '<p>' + esc(f.text) + '</p></div>';
+    });
+  });
+  out.innerHTML =
+    (j.view === 'today' ? '<div class="notif"><b>ELSEWHERE · 8:00</b>' + esc(R.headline) + '</div>' : '') +
+    '<div class="card"><div class="place">' + esc(p.name + ' · ' + NAMES[j.view] + (j.view === 'today' || j.view === 'tomorrow' ? ' · ' + dayName(j.date) : '')) + '</div>' +
+    '<div class="head">' + esc(R.headline) + '</div>' + body +
+    '<div class="gf"><b>Good for:</b> ' + esc(R.good_for) + ' · <b>Go easy on:</b> ' + esc(R.go_easy_on) + '</div></div>' +
+    '<div class="meta">' + esc(j.model) + (j.usage ? ' · ' + j.usage.input_tokens + ' in / ' + j.usage.output_tokens + ' out tokens' : '') +
+    (j.house_system && j.house_system !== 'Placidus' ? ' · ' + esc(j.house_system) + ' houses (too far north/south for Placidus)' : '') + '</div>';
+}
+
+async function load() {
+  if (busy) return;
+  var btn = document.getElementById('go'), out = document.getElementById('out');
+  if (cache[view]) { render(cache[view].j, cache[view].p); return; }
+  busy = true; btn.disabled = true; btn.textContent = 'Writing…';
+  out.innerHTML = '<p class="hint">Writing ' + NAMES[view].toLowerCase() + '…</p>';
   try {
     var s = (await SB.auth.getSession()).data.session;
     if (!s) throw new Error('Sign in on elsewhereastro.com first, then come back to this page.');
     var p = chosen.here ? await here() : chosen;
-    var t = eightAm(p.zone);
     var r = await fetch('/api/daily-reading', { method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + s.access_token },
-      body: JSON.stringify({ lat: p.lat, lng: p.lng, place: p.name, day: t.day, at: t.jd, tz: t.tz }) });
+      body: JSON.stringify({ lat: p.lat, lng: p.lng, place: p.name, zone: p.zone, view: view, date: document.getElementById('day').value }) });
     var j = await r.json();
     if (!r.ok) {
-      if (j.raw) out.innerHTML = '<pre style="white-space:pre-wrap;font-size:12px;background:#fff;padding:12px;border:.5px solid #e8e0d2">' + esc(j.raw) + '</pre>';
-      throw new Error(j.error === 'not_a_tester' ? 'Your email is not in DAILY_TESTERS in Vercel yet.' : (j.error || ('status ' + r.status)));
+      out.innerHTML = j.raw ? '<pre style="white-space:pre-wrap;font-size:12px;background:#fff;padding:12px;border:.5px solid #e8e0d2">' + esc(j.raw) + '</pre>' : '';
+      throw new Error(j.error === 'not_a_tester' ? 'Your email is not in DAILY_TESTERS in Vercel yet.' : (j.message || j.error || ('status ' + r.status)));
     }
-    var R = j.reading;
-    var G = { Sun: '☉', Moon: '☽', Mercury: '☿', Venus: '♀', Mars: '♂', Jupiter: '♃', Saturn: '♄', Uranus: '♅', Neptune: '♆', Pluto: '♇' };
-    var LABEL = { 'today': 'Today', 'this week': 'This week', 'this month': 'This month', 'this season': 'This season' };
-    function glyph(title) { var m = String(title).match(/^(\w+)/); return G[m && m[1]] ? '<span class="g" aria-hidden="true">' + G[m[1]] + '\uFE0E</span>' : '<span class="g"></span>'; }
-    var prose = '', prevW = null;
-    R.influences.forEach(function (f, i) {
-      var w = f.when || f.lasts || '';
-      if (w !== prevW) prose += '<div class="sec">' + esc(LABEL[w] || w) + '</div>';
-      prevW = w;
-      prose += '<div class="inf" id="inf' + i + '">' + glyph(f.title) + '<span class="t">' + esc(f.title) + '</span>' +
-        (f.only_here ? '<span class="badge">Only here</span>' : '') +
-        (f.timing ? '<div class="tm">' + esc(f.timing) + '</div>' : '') + '<p>' + esc(f.text) + '</p></div>';
-    });
-    out.innerHTML =
-      '<div class="notif"><b>ELSEWHERE · 8:00</b>' + esc(R.headline) + '</div>' +
-      '<div class="card"><div class="place">' + esc(p.name + ' · ' + t.day) + '</div><div class="head">' + esc(R.headline) + '</div>' +
-      prose +
-      '<div class="gf"><b>Good for:</b> ' + esc(R.good_for) + ' · <b>Go easy on:</b> ' + esc(R.go_easy_on) + '</div></div>' +
-      '<div class="meta">' + esc(j.model) + (j.usage ? ' · ' + j.usage.input_tokens + ' in / ' + j.usage.output_tokens + ' out tokens' : '') + '</div>';
+    cache[view] = { j: j, p: p };
+    render(j, p);
   } catch (e) {
     out.innerHTML = '<p class="err">' + esc(e.message) + '</p>' + out.innerHTML;
   }
-  btn.disabled = false; btn.textContent = 'Write the reading';
+  busy = false; btn.disabled = false; btn.textContent = 'Write the reading';
+}
+
+document.getElementById('go').addEventListener('click', function () { cache = {}; load(); });
+document.getElementById('tabs').addEventListener('click', function (e) {
+  var b = e.target.closest('.tab'); if (!b || busy) return;
+  document.querySelectorAll('.tab').forEach(function (x) { x.classList.remove('on'); });
+  b.classList.add('on'); view = b.getAttribute('data-v');
+  if (Object.keys(cache).length || document.querySelector('.card')) load();
 });
 </script>
 </body>
