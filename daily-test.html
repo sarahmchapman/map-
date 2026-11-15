@@ -39,7 +39,8 @@ input[type=date]{font-family:'Jost',sans-serif;font-size:15px;padding:8px;border
 .inf p{font-family:'Cormorant Garamond',serif;font-size:18px;line-height:1.5;margin:4px 0 0 22px;color:#2e2b28}
 .sec{font-size:10px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:#8a6a35;margin:18px 0 10px;display:flex;align-items:center;gap:10px}
 .sec::after{content:'';flex:1;height:.5px;background:#e8e0d2}
-.gf{font-size:13px;color:#4a4540;border-top:.5px solid #e8e0d2;padding-top:12px}
+.gf{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:#4a4540;margin:-6px 0 6px;padding:10px 12px;background:#faf6ee;border-radius:6px}
+.gf b{font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#8a6a35;margin-right:6px}
 .err{color:#9b3535;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:17px}
 .meta{font-size:11px;color:#8f8577;margin-top:10px}
 .tabs{display:flex;gap:6px;margin:22px 0 0;border-bottom:.5px solid #d9cfbd}
@@ -121,8 +122,9 @@ function render(j, p) {
   out.innerHTML =
     (j.view === 'today' ? '<div class="notif"><b>ELSEWHERE · 8:00</b>' + esc(R.headline) + '</div>' : '') +
     '<div class="card"><div class="place">' + esc(p.name + ' · ' + NAMES[j.view] + (j.view === 'today' || j.view === 'tomorrow' ? ' · ' + dayName(j.date) : '')) + '</div>' +
-    '<div class="head">' + esc(R.headline) + '</div>' + body +
-    '<div class="gf"><b>Good for:</b> ' + esc(R.good_for) + ' · <b>Go easy on:</b> ' + esc(R.go_easy_on) + '</div></div>' +
+    '<div class="head">' + esc(R.headline) + '</div>' +
+    '<div class="gf"><span><b>Good for</b> ' + esc(R.good_for) + '</span><span><b>Go easy on</b> ' + esc(R.go_easy_on) + '</span></div>' +
+    body + '</div>' +
     '<div class="meta">' + esc(j.model) + (j.usage ? ' · ' + j.usage.input_tokens + ' in / ' + j.usage.output_tokens + ' out tokens' : '') +
     (j.house_system && j.house_system !== 'Placidus' ? ' · ' + esc(j.house_system) + ' houses (too far north/south for Placidus)' : '') + '</div>';
 }
