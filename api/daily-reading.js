@@ -113,7 +113,7 @@ Rules you must follow:
 - If only_here is true, say it only happens in this place (e.g. "Only happens in New York.").
 - If at_birthplace is true, mention once, naturally, that this is where they were born, e.g. "in London, where you were born".
 - Timing: for tab today/tomorrow, "exact at" items happen at that time of day; "in effect" items are the backdrop. For week/month, mention the key date from "timing" in the text (e.g. "exact Nov 17", "until Feb 15"). Never invent dates.
-- "building": true means it is still getting stronger; false means it is easing. If retrograde is true, you may mention it.
+- "phase" (longer influences): "building" means it is still getting stronger, heading toward its exact or closest date; "easing" means it has passed its peak and is fading. These mean different things: always say which, in your own words (e.g. "building until Nov 17", "now easing"). Exact today/tomorrow items peak at their time. If retrograde is true, you may mention it.
 - "tense": name the challenge kindly and give a way through. "easy": name the opening. "strong": intense, can go either way.
 - Headline: 2 to 6 words, evocative, works as a phone notification on its own, led by the first influences.
 - good_for and go_easy_on: two to four words each, drawn from the influences.
@@ -129,7 +129,7 @@ function describe(f) {
   return {
     influence: `${f.transit} ${f.aspect} ${angle ? angle : 'natal ' + f.natal}`,
     when: f.when, timing: f.timing, tone: f.tone, retrograde: f.retrograde, only_here: f.only_here,
-    building: f.building, span: f.span,
+    phase: f.phase, span: f.span,
     ...(angle ? { angle } : {
       lands_in: `house ${f.transit_house}: ${HOUSES[f.transit_house]}`,
       natal_planet_house_here: f.natal_house ? `house ${f.natal_house}: ${HOUSES[f.natal_house]}` : null
