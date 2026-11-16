@@ -2216,6 +2216,9 @@ function openCard(cityName,planet,ltype,_lat,_lng,powerZone){
   document.getElementById('rcCity').innerHTML=(cityName||'This location')+'<br><em>'+(pzData?'POWER ZONE':quality)+'</em>';
 
   if(pzData){
+    // A power zone is several lines at once, so the distance note is plural and
+    // says the figure is to the nearest of them.
+    var pzNote=distNote.replace('this line','these lines').replace('of these lines (~','of these lines (nearest ~');
     document.getElementById('rcBody').innerHTML=
       '<div class="rc-slbl">Lines active here</div>'
       +'<div style="display:flex;flex-direction:column;gap:.3rem;margin-bottom:.75rem">'
@@ -2229,7 +2232,7 @@ function openCard(cityName,planet,ltype,_lat,_lng,powerZone){
           +'</div>';
       }).join('')
       +'</div>'
-      +(distNote?'<div class="rc-rule"></div><div class="rc-prose" style="font-size:0.91rem">'+distNote+'</div>':'')
+      +(pzNote?'<div class="rc-rule"></div><div class="rc-prose" style="font-size:0.91rem">'+pzNote+'</div>':'')
       +'<div class="rc-rule"></div>'
       +'<div class="rc-slbl">What each line brings</div>'
       +powerZone.slice(0,3).map(function(x){
