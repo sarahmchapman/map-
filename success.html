@@ -3,46 +3,74 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>elsewhere — your Map Guide is ready</title>
+<title>elsewhereastro — your Map Guide is ready</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<script>
+// Dark mode: the visitor's saved choice, otherwise their device setting.
+(function(){var t=null;try{t=localStorage.getItem('ea_theme');}catch(e){}
+  var mq=window.matchMedia('(prefers-color-scheme: dark)');
+  function apply(){var d=t?t==='dark':mq.matches;document.documentElement.setAttribute('data-theme',d?'dark':'light');
+    var b=document.querySelectorAll('.theme-btn');for(var i=0;i<b.length;i++)b[i].textContent=d?'☀ Light':'☾ Dark';
+    try{document.dispatchEvent(new Event('ea-theme'));}catch(e){}}
+  apply();if(mq.addEventListener)mq.addEventListener('change',apply);document.addEventListener('DOMContentLoaded',apply);
+  window.toggleTheme=function(){t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';try{localStorage.setItem('ea_theme',t);}catch(e){}apply();};
+})();
+</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --ink:#1a1714; --ink-2:#2e2b28; --ink-3:#4a4540;
   --paper:#faf8f4; --paper-2:#f2ede5; --paper-3:#e8e0d2;
-  --gold:#b8955a; --gold-light:#d4b07a;
+  --gold:#8a6a35; --gold-light:#d4b07a; --gold-faint:rgba(184,149,90,.13);
+  --green:#3d7a52; --red-d:#8b3a3a;
   --serif:'Cormorant Garamond',Georgia,serif;
   --sans:'Jost',sans-serif;
 }
 html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margin:0;line-height:1.55;min-height:100vh}
 .site-header{width:100%;padding:.75rem 1.5rem;display:flex;align-items:center;justify-content:center;border-bottom:.5px solid var(--paper-3);background:var(--paper)}
-.site-wordmark{font-family:var(--serif);font-size:1.05rem;font-weight:300;letter-spacing:.35em;text-transform:lowercase;color:var(--ink);text-decoration:none}
+.site-wordmark{font-family:var(--serif);font-size:1.14rem;font-weight:400;letter-spacing:.2em;text-transform:lowercase;color:var(--ink);text-decoration:none}
 .wrap{max-width:520px;margin:0 auto;padding:4rem 1.5rem;text-align:center}
 .star{font-size:1.8rem;color:var(--gold);margin-bottom:1.2rem}
-.eyebrow{font-size:9px;font-weight:500;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem}
-h1{font-family:var(--serif);font-size:clamp(1.8rem,5vw,2.4rem);font-weight:300;line-height:1.2;margin-bottom:1.2rem}
+.eyebrow{font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem}
+h1{font-family:var(--serif);font-size:clamp(1.8rem,5vw,2.4rem);font-weight:400;line-height:1.2;margin-bottom:1.2rem}
 h1 em{font-style:italic;color:var(--gold)}
-.msg{font-family:var(--serif);font-size:1.05rem;color:var(--ink-2);line-height:1.75;margin-bottom:1rem}
+.msg{font-family:var(--serif);font-size:1.14rem;color:var(--ink-2);line-height:1.75;margin-bottom:1rem;font-weight:500}
 .msg strong{color:var(--ink);font-weight:500}
 .email-emph{color:var(--gold);font-style:italic}
-.sub{font-family:var(--serif);font-style:italic;font-size:.9rem;color:var(--ink-3);line-height:1.7;margin-top:1.5rem}
+.sub{font-family:var(--serif);font-style:italic;font-size:0.99rem;color:var(--ink-3);line-height:1.7;margin-top:1.5rem;font-weight:500}
 .retry{margin-top:2rem}
-.retry input{font-family:var(--sans);font-size:1rem;font-weight:300;color:var(--ink);background:transparent;border:none;border-bottom:.5px solid var(--paper-3);padding:.55rem 0;width:100%;max-width:300px;outline:none;text-align:center;margin-bottom:1.2rem}
+.retry input{font-family:var(--sans);font-size:1.09rem;font-weight:400;color:var(--ink);background:transparent;border:none;border-bottom:.5px solid var(--paper-3);padding:.55rem 0;width:100%;max-width:300px;outline:none;text-align:center;margin-bottom:1.2rem}
 .retry input:focus{border-bottom-color:var(--gold)}
-.btn{font-size:10px;font-weight:600;letter-spacing:.25em;text-transform:uppercase;color:var(--paper);background:var(--gold);border:none;padding:.9rem 2.2rem;cursor:pointer;transition:background .25s}
+.btn{font-size:12.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--paper);background:var(--gold);border:none;padding:.9rem 2.2rem;cursor:pointer;transition:background .25s}
 .btn:hover{background:var(--ink)}
 .btn:disabled{opacity:.5;cursor:wait}
-.err{font-family:var(--serif);font-style:italic;font-size:.9rem;color:#9b3535;margin-top:1rem}
+.err{font-family:var(--serif);font-style:italic;font-size:0.99rem;color:var(--red-d);margin-top:1rem;font-weight:500}
 #loadingState .sub,#openingState .sub{margin-top:.5rem}
-.linkbtn{background:none;border:none;font-family:var(--serif);font-style:italic;font-size:.9rem;color:var(--gold);cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:3px}
+.linkbtn{background:none;border:none;font-family:var(--serif);font-style:italic;font-size:0.99rem;color:var(--gold);cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:3px;font-weight:500}
+
+/* Dark mode: follows the device, or the visitor's choice (saved on their device) */
+.astro{color:var(--gold)}
+html[data-theme="dark"]{
+  --ink:#f6ecdc;--ink-2:#ead9c0;--ink-3:#cdb999;
+  --paper:#1c1712;--paper-2:#272019;--paper-3:#4a3e31;
+  --gold:#e0b773;--gold-light:#ecca8e;--gold-faint:rgba(224,183,115,.16);
+  --green:#8fcb9c;--red-d:#ec9a86;
+  color-scheme:dark;
+}
+.theme-btn{font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);border-radius:20px;padding:.3rem .8rem;cursor:pointer;flex-shrink:0}
+.theme-btn:hover{border-color:var(--gold);color:var(--gold)}
+.site-header{position:relative}
+.site-header .theme-btn{position:absolute;right:1rem;top:50%;transform:translateY(-50%)}
+@media(max-width:480px){.site-header .site-wordmark{letter-spacing:.2em}.site-header .theme-btn{right:.6rem;padding:.3rem .6rem}}
 </style>
 </head>
 <body>
 
 <header class="site-header">
-  <a class="site-wordmark" href="/">elsewhere</a>
+  <a class="site-wordmark" href="/">elsewhere<span class="astro">astro</span></a>
+  <button type="button" class="theme-btn" onclick="toggleTheme()" aria-label="Switch between light and dark">☾ Dark</button>
 </header>
 
 <div class="wrap">
@@ -81,7 +109,7 @@ h1 em{font-style:italic;color:var(--gold)}
     <div class="star">✦</div>
     <div class="eyebrow">purchase complete</div>
     <h1 class="ptitle">Your <em>Map Guide</em> is ready</h1>
-    <p class="msg">You already have an elsewhere account with <span class="email-emph buyerEmail"></span>. Enter your password to open it.</p>
+    <p class="msg">You already have an elsewhereastro account with <span class="email-emph buyerEmail"></span>. Enter your password to open it.</p>
     <div class="retry">
       <input type="password" id="signinPw" placeholder="your password" autocomplete="current-password" onkeydown="if(event.key==='Enter'){signIn();}">
       <br>
@@ -159,7 +187,7 @@ var INFO = {
   report_all:    { html: 'Your <em>Best Places</em> reports are ready', short: 'your Best Places reports', dest: '/my-report.html?theme=love',   theme: 'love' }
 };
 var W = INFO[PRODUCT] || INFO.map_guide;
-document.title = 'elsewhere — ' + W.short + (PRODUCT === 'report_all' ? ' are ready' : ' is ready');
+document.title = 'elsewhereastro — ' + W.short + (PRODUCT === 'report_all' ? ' are ready' : ' is ready');
 document.querySelectorAll('.ptitle').forEach(function(h){ h.innerHTML = W.html; });
 document.querySelectorAll('.pname').forEach(function(s){ s.textContent = W.short; });
 document.getElementById('delayBtn').href = W.dest;
