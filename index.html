@@ -3,19 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>elsewhere — where in the world will the stars find you?</title>
+<title>elsewhereastro — where in the world will the stars find you?</title>
 <meta name="description" content="Your personalised astrocartography map. Discover where in the world each planet's energy is strongest for you — and what it means when you get there.">
 
 <!-- Open Graph / social sharing -->
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://elsewhereastro.com">
-<meta property="og:title" content="elsewhere — where in the world will the stars find you?">
+<meta property="og:title" content="elsewhereastro — where in the world will the stars find you?">
 <meta property="og:description" content="Your personalised astrocartography map. Discover where in the world each planet's energy is strongest for you — and what it means when you get there.">
 <meta property="og:image" content="https://elsewhereastro.com/og-image.png">
 
 <!-- Twitter -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="elsewhere — where in the world will the stars find you?">
+<meta name="twitter:title" content="elsewhereastro — where in the world will the stars find you?">
 <meta name="twitter:description" content="Your personalised astrocartography map. Discover where in the world each planet's energy is strongest for you.">
 <meta name="twitter:image" content="https://elsewhereastro.com/og-image.png">
 
@@ -25,15 +25,16 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <meta name="description" content="Astrocartography — discover where in the world the stars find you. Enter your birth data to draw your planetary lines across the globe.">
 <meta name="theme-color" content="#faf8f4">
-<meta property="og:title" content="elsewhere — astrocartography">
+<meta name="theme-color" content="#1c1712" media="(prefers-color-scheme: dark)">
+<meta property="og:title" content="elsewhereastro — astrocartography">
 <meta property="og:description" content="Free astrocartography tool. Enter your birth data and see your planetary lines across the globe. Click any line for a reading.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://elsewhereastro.com">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="elsewhere — astrocartography">
+<meta name="twitter:title" content="elsewhereastro — astrocartography">
 <meta name="twitter:description" content="Free astrocartography tool. Enter your birth data and see your planetary lines across the globe.">
-<title>elsewhere — astrocartography</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<title>elsewhereastro — astrocartography</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 // Hide form instantly if coming from profile — prevents flash
@@ -41,37 +42,48 @@ if (window.location.search.indexOf('fromprofile=1') > -1) {
   document.documentElement.style.visibility = 'hidden';
 }
 </script>
+<script>
+// Dark mode: the visitor's saved choice, otherwise their device setting.
+(function(){var t=null;try{t=localStorage.getItem('ea_theme');}catch(e){}
+  var mq=window.matchMedia('(prefers-color-scheme: dark)');
+  function apply(){var d=t?t==='dark':mq.matches;document.documentElement.setAttribute('data-theme',d?'dark':'light');
+    var b=document.querySelectorAll('.theme-btn');for(var i=0;i<b.length;i++)b[i].textContent=d?'☀ Light':'☾ Dark';
+    try{document.dispatchEvent(new Event('ea-theme'));}catch(e){}}
+  apply();if(mq.addEventListener)mq.addEventListener('change',apply);document.addEventListener('DOMContentLoaded',apply);
+  window.toggleTheme=function(){t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';try{localStorage.setItem('ea_theme',t);}catch(e){}apply();};
+})();
+</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --ink:#1a1714;--ink-2:#2e2b28;--ink-3:#4a4540;
   --paper:#faf8f4;--paper-2:#f2ede5;--paper-3:#e8e0d2;
-  --gold:#b8955a;--gold-light:#d4b07a;--gold-faint:rgba(184,149,90,.13);
+  --gold:#8a6a35;--gold-light:#d4b07a;--gold-faint:rgba(184,149,90,.13);
   --serif:'Cormorant Garamond',Georgia,serif;--sans:'Jost',sans-serif;
   --green:#3d7a52;--red-d:#8b3a3a;
 }
-html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margin:0;font-size:16px}
+html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margin:0;font-size:17.5px}
 #formScreen{display:flex;align-items:flex-start;justify-content:center;padding:2.5rem 1.5rem 5rem;min-height:100vh;overflow-y:auto}
 #mapScreen{display:none;overflow-y:auto}
 .form-inner{width:100%;max-width:560px}
 .masthead{text-align:center;margin-bottom:2rem}
-.eyebrow{font-size:10px;font-weight:500;letter-spacing:.25em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem}
-.masthead h1{font-family:var(--serif);font-size:clamp(1.9rem,5vw,2.9rem);font-weight:300;line-height:1.1}
+.eyebrow{font-size:12.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem}
+.masthead h1{font-family:var(--serif);font-size:clamp(1.9rem,5vw,2.9rem);font-weight:400;line-height:1.1}
 .masthead h1 em{font-style:italic;color:var(--gold)}
 .rule{display:flex;align-items:center;gap:1rem;margin:1.1rem auto 0;max-width:180px}
 .rule-line{flex:1;height:.5px;background:var(--paper-3)}
 .rule-star{width:5px;height:5px;background:var(--gold);transform:rotate(45deg);flex-shrink:0}
-.subtitle{font-family:var(--serif);font-size:.93rem;font-style:italic;color:var(--ink-3);margin-top:.8rem;line-height:1.6;font-weight:300}
-.asterism{text-align:center;margin-bottom:2rem;color:var(--gold);font-family:var(--serif);font-size:.95rem;letter-spacing:.5em;opacity:.7}
-.slabel{font-size:12px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:.7rem;display:flex;align-items:center;gap:.6rem}
+.subtitle{font-family:var(--serif);font-size:1.02rem;font-style:italic;color:var(--ink-3);margin-top:.8rem;line-height:1.6;font-weight:400}
+.asterism{text-align:center;margin-bottom:2rem;color:var(--gold);font-family:var(--serif);font-size:1.04rem;letter-spacing:.2em;opacity:.7;font-weight:500}
+.slabel{font-size:13.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:.7rem;display:flex;align-items:center;gap:.6rem}
 .slabel::after{content:'';display:block;flex:1;height:.5px;background:var(--paper-3)}
-.opt{font-size:8px;letter-spacing:.1em;color:var(--ink-3);font-weight:400;text-transform:none}
+.opt{font-size:11px;letter-spacing:.1em;color:var(--ink-3);font-weight:400;text-transform:none}
 .fgroup{display:flex;flex-direction:column}
-.fgroup label{font-size:11px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.22rem}
+.fgroup label{font-size:12.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.22rem}
 .row3{display:grid;grid-template-columns:1fr 1.8fr 1fr;gap:1.1rem;margin-bottom:1.6rem}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:1.1rem;margin-bottom:1.6rem}
-input,select{font-family:var(--sans);font-size:1rem;font-weight:300;color:var(--ink);background:transparent;border:none;border-bottom:.5px solid var(--paper-3);border-radius:0;padding:.55rem 0;width:100%;outline:none;transition:border-color .2s;-webkit-appearance:none;appearance:none}
-input::placeholder{color:var(--ink-3);font-style:italic;font-family:var(--serif);font-size:.9rem}
+input,select{font-family:var(--sans);font-size:1.09rem;font-weight:400;color:var(--ink);background:transparent;border:none;border-bottom:.5px solid var(--paper-3);border-radius:0;padding:.55rem 0;width:100%;outline:none;transition:border-color .2s;-webkit-appearance:none;appearance:none}
+input::placeholder{color:var(--ink-3);font-style:italic;font-family:var(--serif);font-size:0.99rem;font-weight:500}
 input:focus,select:focus{border-bottom-color:var(--gold)}
 select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23b8955a'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 4px center;padding-right:20px;color:var(--ink-2)}
 .city-field{position:relative;margin-bottom:1.6rem}
@@ -81,34 +93,34 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 .city-item{padding:.65rem 1rem;cursor:pointer;border-bottom:.5px solid var(--paper-2)}
 .city-item:last-child{border-bottom:none}
 .city-item:hover,.city-item.hi{background:var(--gold-faint)}
-.ci-name{display:block;font-size:.85rem;color:var(--ink);font-weight:400}
-.ci-sub{display:block;font-size:.72rem;color:var(--ink-3);margin-top:.08rem}
+.ci-name{display:block;font-size:0.94rem;color:var(--ink);font-weight:400}
+.ci-sub{display:block;font-size:0.78rem;color:var(--ink-3);margin-top:.08rem}
 
 /* Coordinate fallback — for users whose birth city isn't in the dropdown. */
-.coord-toggle{font-family:var(--serif);font-style:italic;font-size:.78rem;color:var(--ink-3);background:none;border:none;cursor:pointer;padding:0;margin:-.6rem 0 1.2rem;display:inline-block;border-bottom:.5px dotted var(--paper-3);transition:color .2s,border-color .2s}
+.coord-toggle{font-family:var(--serif);font-style:italic;font-size:0.87rem;color:var(--ink-3);background:none;border:none;cursor:pointer;padding:0;margin:-.6rem 0 1.2rem;display:inline-block;border-bottom:.5px dotted var(--paper-3);transition:color .2s,border-color .2s;font-weight:500}
 .coord-toggle:hover{color:var(--gold);border-bottom-color:var(--gold)}
 .coord-panel{display:none;background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:6px;padding:1rem 1.1rem 1.1rem;margin-bottom:1.6rem}
 .coord-panel.show{display:block}
-.coord-panel .coord-hint{font-family:var(--serif);font-style:italic;font-size:.78rem;color:var(--ink-3);line-height:1.55;margin-bottom:.9rem}
+.coord-panel .coord-hint{font-family:var(--serif);font-style:italic;font-size:0.87rem;color:var(--ink-3);line-height:1.55;margin-bottom:.9rem;font-weight:500}
 .coord-panel .coord-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:.9rem}
 .coord-panel .fgroup{margin:0}
 .coord-panel input{background:var(--paper)}
 .coord-panel .err{margin:0 0 .4rem}
-.coord-applied{font-family:var(--serif);font-style:italic;font-size:.78rem;color:var(--gold);margin-top:.4rem;display:none}
+.coord-applied{font-family:var(--serif);font-style:italic;font-size:0.87rem;color:var(--gold);margin-top:.4rem;display:none;font-weight:500}
 .coord-applied.show{display:block}
 .submit-area{text-align:center;padding-bottom:2rem;margin-top:1.8rem}
-.submit-btn{font-size:10.5px;font-weight:500;letter-spacing:.28em;text-transform:uppercase;color:var(--paper);background:var(--ink);border:none;border-radius:0;padding:1rem 3rem;cursor:pointer;transition:background .25s;width:100%;max-width:300px}
+.submit-btn{font-size:12.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--paper);background:var(--ink);border:none;border-radius:0;padding:1rem 3rem;cursor:pointer;transition:background .25s;width:100%;max-width:300px}
 .submit-btn:hover{background:var(--gold)}
-.footer-note{font-family:var(--serif);font-style:italic;font-size:.76rem;color:var(--ink-3);margin-top:.9rem}
-.err{font-size:.8rem;color:var(--red-d);font-family:var(--serif);font-style:italic;margin-top:-.8rem;margin-bottom:.8rem;display:none}
+.footer-note{font-family:var(--serif);font-style:italic;font-size:0.85rem;color:var(--ink-3);margin-top:.9rem;font-weight:500}
+.err{font-size:0.89rem;color:var(--red-d);font-family:var(--serif);font-style:italic;margin-top:-.8rem;margin-bottom:.8rem;display:none;font-weight:500}
 .err.on{display:block}
 .top-bar{background:rgba(250,248,244,.97);border-bottom:.5px solid var(--paper-3);padding:.65rem 1.1rem;display:flex;align-items:center;gap:.9rem;flex-wrap:wrap;position:sticky;top:0;z-index:10}
-.bar-name{font-family:var(--serif);font-size:1.1rem;font-weight:300;color:var(--ink)}
+.bar-name{font-family:var(--serif);font-size:1.19rem;font-weight:400;color:var(--ink)}
 .bar-name em{font-style:italic;color:var(--gold)}
-.bar-meta{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);line-height:1.8}
-.new-btn{margin-left:auto;font-size:8px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);padding:.25rem .7rem;cursor:pointer;border-radius:20px;flex-shrink:0}
+.bar-meta{font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);line-height:1.8}
+.new-btn{margin-left:auto;font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);padding:.25rem .7rem;cursor:pointer;border-radius:20px;flex-shrink:0}
 .new-btn:hover{border-color:var(--gold);color:var(--gold)}
-  .mapguide-btn{margin-left:.5rem;font-size:8px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--paper);background:var(--gold);border:.5px solid var(--gold);padding:.3rem .85rem;cursor:pointer;border-radius:20px;flex-shrink:0;transition:all .2s}
+  .mapguide-btn{margin-left:.5rem;font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--paper);background:var(--gold);border:.5px solid var(--gold);padding:.3rem .85rem;cursor:pointer;border-radius:20px;flex-shrink:0;transition:all .2s}
 .mapguide-btn:hover{background:var(--gold-light);border-color:var(--gold-light)}
 .mapguide-btn:disabled{opacity:.5;cursor:wait}
 
@@ -117,68 +129,87 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 .filter-bar{background:var(--paper-2);border-top:.5px solid var(--paper-3);border-bottom:.5px solid var(--paper-3);padding:.55rem 1.2rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
 .filter-group{display:flex;align-items:center;gap:.3rem;flex-wrap:wrap}
 .filter-divider{width:.5px;height:18px;background:var(--paper-3);margin:0 .25rem;flex-shrink:0}
-.filter-lbl{font-size:8px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);flex-shrink:0;margin-right:.15rem}
+.filter-lbl{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);flex-shrink:0;margin-right:.15rem}
 .tog-btn{display:inline-flex;align-items:center;gap:2px;font-family:var(--serif);padding:.2rem .52rem;border-radius:20px;border:1.5px solid;cursor:pointer;transition:all .15s;background:transparent;line-height:1}
-.tog-btn .tg{font-size:.95rem;line-height:1}
-.tog-btn .tn{font-size:.52rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase}
+.tog-btn .tg{font-size:1.04rem;line-height:1}
+.tog-btn .tn{font-size:0.69rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase}
 .tog-btn.off{opacity:.2;filter:grayscale(.5)}
-.ltype-btn{font-size:.58rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;padding:.2rem .5rem;border-radius:20px;border:.5px solid var(--paper-3);cursor:pointer;background:transparent;color:var(--ink-3);transition:all .15s}
+.ltype-btn{font-size:0.74rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;padding:.2rem .5rem;border-radius:20px;border:.5px solid var(--paper-3);cursor:pointer;background:transparent;color:var(--ink-3);transition:all .15s}
 .ltype-btn.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
-.focus-filter-btn{font-size:.58rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;padding:.2rem .6rem;border-radius:20px;border:.5px solid var(--paper-3);cursor:pointer;background:transparent;color:var(--ink-3);transition:all .15s}
+.focus-filter-btn{font-size:0.74rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:.2rem .6rem;border-radius:20px;border:.5px solid var(--paper-3);cursor:pointer;background:transparent;color:var(--ink-3);transition:all .15s}
 .focus-filter-btn.on{background:var(--gold);color:var(--paper);border-color:var(--gold)}
 .place-search{position:relative;padding:.2rem 1.2rem .9rem;background:var(--paper)}
 .place-search-row{position:relative;max-width:520px}
 .place-search-row svg.ps-icon{position:absolute;left:.1rem;top:50%;transform:translateY(-50%);color:var(--gold);pointer-events:none}
-#placeSearch{padding:.55rem 2.4rem .55rem 1.6rem;font-size:.95rem}
-#placeSearchClear{display:none;position:absolute;right:0;top:50%;transform:translateY(-50%);width:44px;height:44px;align-items:center;justify-content:center;background:none;border:none;cursor:pointer;color:var(--ink-3);font-size:.9rem}
+#placeSearch{padding:.55rem 2.4rem .55rem 1.6rem;font-size:1.04rem}
+#placeSearchClear{display:none;position:absolute;right:0;top:50%;transform:translateY(-50%);width:44px;height:44px;align-items:center;justify-content:center;background:none;border:none;cursor:pointer;color:var(--ink-3);font-size:0.99rem}
 #placeSearchClear:hover{color:var(--ink)}
 #placeSuggestions{position:absolute;top:100%;left:0;right:0;z-index:9999;background:var(--paper);border:1px solid var(--paper-3);border-top:none;border-radius:0 0 6px 6px;box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:280px;overflow-y:auto;display:none}
 #placeSuggestions.show{display:block}
-#placeSearchMsg{display:none;font-family:var(--serif);font-style:italic;font-size:.82rem;color:var(--ink-3);margin-top:.35rem}
+#placeSearchMsg{display:none;font-family:var(--serif);font-style:italic;font-size:0.91rem;color:var(--ink-3);margin-top:.35rem;font-weight:500}
 #mapWrap{position:relative;overflow:hidden;border-top:.5px solid var(--paper-3);border-bottom:.5px solid var(--paper-3)}
 #mapTiles{display:block;width:100%;height:660px;cursor:crosshair;touch-action:none}
 #lineSvg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:all;cursor:crosshair;touch-action:none;z-index:2}
 .map-zoom-btns{position:absolute;top:.6rem;right:.6rem;display:flex;flex-direction:column;gap:2px;z-index:5}
-.map-zoom-btn{width:28px;height:28px;background:rgba(250,248,244,.92);border:.5px solid var(--paper-3);border-radius:3px;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;color:var(--ink-2);line-height:1;transition:background .15s}
+.map-zoom-btn{width:28px;height:28px;background:rgba(250,248,244,.92);border:.5px solid var(--paper-3);border-radius:3px;cursor:pointer;font-size:1.19rem;display:flex;align-items:center;justify-content:center;color:var(--ink-2);line-height:1;transition:background .15s}
 .map-zoom-btn:hover{background:var(--paper)}
-.map-reset-btn{width:28px;height:28px;background:rgba(250,248,244,.92);border:.5px solid var(--paper-3);border-radius:3px;cursor:pointer;font-size:.58rem;font-weight:500;letter-spacing:.05em;display:flex;align-items:center;justify-content:center;color:var(--ink-3);line-height:1;transition:background .15s;margin-top:4px}
+.map-reset-btn{width:28px;height:28px;background:rgba(250,248,244,.92);border:.5px solid var(--paper-3);border-radius:3px;cursor:pointer;font-size:0.74rem;font-weight:500;letter-spacing:.05em;display:flex;align-items:center;justify-content:center;color:var(--ink-3);line-height:1;transition:background .15s;margin-top:4px}
 .map-reset-btn:hover{background:var(--paper)}
-.map-coords{position:absolute;bottom:.4rem;left:.6rem;font-size:.6rem;color:rgba(74,69,64,.7);background:rgba(250,248,244,.8);padding:.1rem .35rem;border-radius:3px;pointer-events:none;font-family:var(--sans)}
-.map-legend{display:flex;flex-wrap:wrap;gap:.35rem .7rem;padding:.5rem 1.2rem;font-size:.7rem;font-family:var(--sans);border-bottom:.5px solid var(--paper-3);background:var(--paper-2)}
+.map-coords{position:absolute;bottom:.4rem;left:.6rem;font-size:0.76rem;color:rgba(74,69,64,.7);background:rgba(250,248,244,.8);padding:.1rem .35rem;border-radius:3px;pointer-events:none;font-family:var(--sans)}
+.map-legend{display:flex;flex-wrap:wrap;gap:.35rem .7rem;padding:.5rem 1.2rem;font-size:0.78rem;font-family:var(--sans);border-bottom:.5px solid var(--paper-3);background:var(--paper-2)}
 .leg-item{display:flex;align-items:center;gap:4px}
 .leg-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 #readingCard{display:none;background:var(--paper);border:.5px solid var(--paper-3);border-radius:6px;box-shadow:0 8px 32px rgba(0,0,0,.12);margin-top:1rem;overflow:hidden}
 #readingCard.open{display:block}
 .rc-accent{height:3px}
 .rc-hdr{display:flex;align-items:flex-start;justify-content:space-between;padding:1rem 1.2rem .4rem;gap:.5rem}
-.rc-close{font-size:8px;font-weight:500;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-3);cursor:pointer;background:transparent;border:.5px solid var(--paper-3);padding:.2rem .5rem;border-radius:20px}
+.rc-close{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);cursor:pointer;background:transparent;border:.5px solid var(--paper-3);padding:.2rem .5rem;border-radius:20px}
 .rc-close:hover{color:var(--ink)}
-.rc-city{font-family:var(--serif);font-size:1.35rem;font-weight:300;line-height:1.15;color:var(--ink)}
+.rc-city{font-family:var(--serif);font-size:1.35rem;font-weight:400;line-height:1.15;color:var(--ink)}
 .rc-city em{font-style:italic;color:var(--gold)}
 .rc-body{padding:0 1.2rem 1.2rem}
 .rc-planet-row{display:flex;align-items:center;gap:.5rem;margin:.4rem 0 .8rem}
 .rc-glyph{font-family:var(--serif);font-size:1.5rem;line-height:1}
-.rc-pname{font-size:.65rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase}
-.rc-ltype{font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.rc-pname{font-size:0.78rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase}
+.rc-ltype{font-size:0.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
 .rc-rule{height:.5px;background:var(--paper-3);margin:.7rem 0}
-.rc-slbl{font-size:8px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.28rem}
-.rc-feeling{font-family:var(--serif);font-size:.97rem;font-style:italic;color:var(--ink);line-height:1.55;margin-bottom:.75rem}
-.rc-prose{font-family:var(--serif);font-size:.86rem;color:var(--ink-2);line-height:1.65;margin-bottom:.75rem}
+.rc-slbl{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.28rem}
+.rc-feeling{font-family:var(--serif);font-size:1.06rem;font-style:italic;color:var(--ink);line-height:1.55;margin-bottom:.75rem;font-weight:500}
+.rc-prose{font-family:var(--serif);font-size:0.95rem;color:var(--ink-2);line-height:1.65;margin-bottom:.75rem;font-weight:500}
 .rc-irow{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.75rem}
 .rc-ibox{background:var(--paper-2);border-radius:4px;padding:.55rem .65rem}
-.rc-ilbl{font-size:7px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.25rem}
-.rc-itext{font-family:var(--serif);font-size:.8rem;font-style:italic;color:var(--ink-2);line-height:1.45}
+.rc-ilbl{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.25rem}
+.rc-itext{font-family:var(--serif);font-size:0.89rem;font-style:italic;color:var(--ink-2);line-height:1.45;font-weight:500}
 .site-header{width:100%;padding:.75rem 1.5rem;display:flex;align-items:center;justify-content:center;border-bottom:.5px solid var(--paper-3);background:var(--paper);position:sticky;top:0;z-index:20}
-.site-wordmark{font-family:var(--serif);font-size:1.05rem;font-weight:300;letter-spacing:.35em;text-transform:lowercase;color:var(--ink);text-decoration:none}
+.site-wordmark{font-family:var(--serif);font-size:1.14rem;font-weight:400;letter-spacing:.2em;text-transform:lowercase;color:var(--ink);text-decoration:none}
 .site-wordmark em{font-style:italic;color:var(--gold)}
 #mapScreen .top-bar{top:0}
+/* Dark mode: follows the device, or the visitor's choice (saved on their device) */
+.astro{color:var(--gold)}
+html[data-theme="dark"]{
+  --ink:#f6ecdc;--ink-2:#ead9c0;--ink-3:#cdb999;
+  --paper:#1c1712;--paper-2:#272019;--paper-3:#4a3e31;
+  --gold:#e0b773;--gold-light:#ecca8e;--gold-faint:rgba(224,183,115,.16);
+  --green:#8fcb9c;--red-d:#ec9a86;
+  color-scheme:dark;
+}
+html[data-theme="dark"] .top-bar{background:rgba(28,23,18,.97)}
+html[data-theme="dark"] .map-zoom-btn,html[data-theme="dark"] .map-reset-btn{background:rgba(39,32,25,.94)}
+html[data-theme="dark"] .map-coords{background:rgba(28,23,18,.8);color:var(--ink-3)}
+html[data-theme="dark"] #mapTiles{filter:invert(1) hue-rotate(180deg) sepia(.3) brightness(.92) contrast(.9)}
+html[data-theme="dark"] .pc .pt{filter:brightness(1.8) saturate(.85)}
+html[data-theme="dark"] #citySuggestions,html[data-theme="dark"] #placeSuggestions,html[data-theme="dark"] #readingCard{box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.theme-btn{font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);border-radius:20px;padding:.3rem .8rem;cursor:pointer;flex-shrink:0}
+.theme-btn:hover{border-color:var(--gold);color:var(--gold)}
+.site-header .theme-btn{position:absolute;right:1rem}
 </style>
 <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
 
 <header class="site-header">
-  <span class="site-wordmark">elsewhere</span>
+  <span class="site-wordmark">elsewhere<span class="astro">astro</span></span>
+  <button type="button" class="theme-btn" onclick="toggleTheme()" aria-label="Switch between light and dark">☾ Dark</button>
 </header>
 
 <div id="formScreen">
@@ -190,7 +221,7 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     <p class="subtitle">Enter your birth data to draw your planetary lines across the globe.</p>
   </header>
   <div style="text-align:center;margin-bottom:1.5rem">
-    <p style="font-family:var(--serif);font-style:italic;font-size:.85rem;color:var(--ink-3)">Have an account? <button onclick="openAuthModal()" style="background:none;border:none;font-family:var(--serif);font-style:italic;font-size:.85rem;color:var(--gold);cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:3px">Sign in</button> to load your chart.</p>
+    <p style="font-family:var(--serif);font-style:italic;font-size:0.94rem;color:var(--ink-3);font-weight:500">Have an account? <button onclick="openAuthModal()" style="background:none;border:none;font-family:var(--serif);font-style:italic;font-size:0.94rem;color:var(--gold);cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:3px;font-weight:500">Sign in</button> to load your chart.</p>
   </div>
   <div class="asterism">✦ &nbsp; ✦ &nbsp; ✦</div>
   <form id="chartForm" onsubmit="handleSubmit(event)">
@@ -245,25 +276,25 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
     <input type="text" id="inName" placeholder="What shall the chart call you?" style="margin-bottom:1.8rem">
     <label id="saveAsMineRow" style="display:none;align-items:flex-start;gap:.6rem;margin:-.6rem 0 1.4rem;cursor:pointer">
       <input type="checkbox" id="saveAsMine" style="-webkit-appearance:checkbox;appearance:auto;width:auto;margin:.2rem 0 0;padding:0;border:none;accent-color:var(--gold);flex-shrink:0">
-      <span style="font-family:var(--serif);font-style:italic;font-size:.88rem;color:var(--ink-3);line-height:1.5">This is my own birth chart. Save it to my profile.<br><span style="font-size:.8rem">Leave unticked to look at a friend's or family member's chart without changing your profile.</span></span>
+      <span style="font-family:var(--serif);font-style:italic;font-size:0.97rem;color:var(--ink-3);line-height:1.5;font-weight:500">This is my own birth chart. Save it to my profile.<br><span style="font-size:0.89rem">Leave unticked to look at a friend's or family member's chart without changing your profile.</span></span>
     </label>
     <div class="submit-area">
       <button type="submit" class="submit-btn" id="submitBtn">Reveal My Map</button>
       <p class="footer-note">Your chart is cast in silence and held in confidence.</p>
-      <p style="font-family:var(--serif);font-style:italic;font-size:.75rem;color:var(--ink-3);margin-top:1.2rem;line-height:1.7;max-width:380px;margin-left:auto;margin-right:auto;text-align:center">Astrocartography is a tool for reflection and exploration, not a prescription for where to live or travel. The lines on your map are invitations to consider — not instructions to follow. Major life decisions around relocation involve many factors beyond astrology. If you're working with a professional astrocartographer, this map can be a helpful starting point for that conversation. For entertainment purposes only.</p>
+      <p style="font-family:var(--serif);font-style:italic;font-size:0.84rem;color:var(--ink-3);margin-top:1.2rem;line-height:1.7;max-width:380px;margin-left:auto;margin-right:auto;text-align:center;font-weight:500">Astrocartography is a tool for reflection and exploration, not a prescription for where to live or travel. The lines on your map are invitations to consider — not instructions to follow. Major life decisions around relocation involve many factors beyond astrology. If you're working with a professional astrocartographer, this map can be a helpful starting point for that conversation. For entertainment purposes only.</p>
     </div>
   </form>
   <div style="text-align:center;padding:1.5rem 0 1rem;border-top:1px solid var(--paper-3);margin-top:1rem">
-    <a href="/cdn-cgi/l/email-protection#06636a7563716e637463677572746946616b676f6a2865696b397573646c6365723b636a7563716e63746326606363626467656d" style="font-family:var(--serif);font-size:.78rem;color:var(--ink-3);text-decoration:none;border-bottom:1px solid var(--paper-3)">share feedback</a>
+    <a href="mailto:elsewhereastro@gmail.com?subject=elsewhereastro%20feedback" style="font-family:var(--serif);font-size:0.87rem;color:var(--ink-3);text-decoration:none;border-bottom:1px solid var(--paper-3);font-weight:500">share feedback</a>
     <span style="color:var(--paper-3);margin:0 .8rem">·</span>
-    <span style="font-family:var(--serif);font-size:.78rem;color:var(--ink-3)">© 2025 elsewhere</span>
+    <span style="font-family:var(--serif);font-size:0.87rem;color:var(--ink-3);font-weight:500">© 2026 elsewhereastro</span>
   </div>
 </div>
 </div>
 
 <div id="mapScreen">
   <div class="top-bar">
-    <span class="site-wordmark" style="margin-right:.75rem;flex-shrink:0">elsewhere</span>
+    <span class="site-wordmark" style="margin-right:.75rem;flex-shrink:0">elsewhere<span class="astro">astro</span></span>
     <div style="flex:1;min-width:0"><div class="bar-name" id="barName">—</div><div class="bar-meta" id="barMeta">—</div></div>
   <a class="mapguide-btn" href="/map-guide.html" style="text-decoration:none">✦ Get your Map Guide</a> <a class="mapguide-btn" href="/reports.html" style="text-decoration:none">✦ Best Places reports</a> <button class="new-btn" onclick="resetToForm()">↩ New chart</button>
     <button class="new-btn" id="accountBtn" onclick="openAccountModal()" style="display:none">Profile</button>
@@ -271,7 +302,7 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
   </div>
   <div class="map-section">
     <div class="chart-heading" style="margin-top:1.8rem;margin-bottom:.5rem;padding:0 1.5rem;max-width:700px;margin-left:auto;margin-right:auto">Astrocartography Map</div>
-    <p style="font-family:var(--serif);font-style:italic;font-size:.88rem;color:var(--ink-3);line-height:1.7;padding:0 1.5rem .9rem;max-width:700px;margin:0 auto">Your map shows where each planet's energy is strongest for you around the world. Each planet creates four lines — tap any line to discover what it means for that place. Solid lines (MC + AC) show where a planet directly shapes your path and identity. Dashed lines (IC + DC) show where it influences your home life and relationships.</p>
+    <p style="font-family:var(--serif);font-style:italic;font-size:0.97rem;color:var(--ink-3);line-height:1.7;padding:0 1.5rem .9rem;max-width:700px;margin:0 auto;font-weight:500">Your map shows where each planet's energy is strongest for you around the world. Each planet creates four lines — tap any line to discover what it means for that place. Solid lines (MC + AC) show where a planet directly shapes your path and identity. Dashed lines (IC + DC) show where it influences your home life and relationships.</p>
     <div class="place-search">
       <div class="place-search-row">
         <svg class="ps-icon" width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>
@@ -323,39 +354,53 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
   </div>
 
   <div style="text-align:center;padding:1.5rem 0 1rem;border-top:1px solid var(--paper-3);margin-top:1rem">
-    <a href="/cdn-cgi/l/email-protection#f6939a8593819e9384939785828499b6919b979f9ad895999bc98583949c939582cb939a8593819e938493d6909393929497959d" style="font-family:var(--serif);font-size:.78rem;color:var(--ink-3);text-decoration:none;border-bottom:1px solid var(--paper-3)">share feedback</a>
+    <a href="mailto:elsewhereastro@gmail.com?subject=elsewhereastro%20feedback" style="font-family:var(--serif);font-size:0.87rem;color:var(--ink-3);text-decoration:none;border-bottom:1px solid var(--paper-3);font-weight:500">share feedback</a>
     <span style="color:var(--paper-3);margin:0 .8rem">·</span>
-    <span style="font-family:var(--serif);font-size:.78rem;color:var(--ink-3)">© 2025 elsewhere</span>
+    <span style="font-family:var(--serif);font-size:0.87rem;color:var(--ink-3);font-weight:500">© 2026 elsewhereastro</span>
   </div>
 </div>
 
 <!-- Auth Modal -->
 <div id="authModal" style="display:none;position:fixed;inset:0;background:rgba(26,23,20,.7);z-index:1000;align-items:center;justify-content:center;padding:1.5rem">
   <div style="background:var(--paper);max-width:400px;width:100%;padding:2.5rem 2rem;position:relative">
-    <button onclick="closeAuthModal()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--ink-3)">✕</button>
-    <p style="font-family:var(--serif);font-size:.75rem;font-weight:300;letter-spacing:.35em;text-transform:lowercase;color:var(--gold);margin-bottom:1.5rem">elsewhere</p>
-    <h2 style="font-family:var(--serif);font-size:1.6rem;font-weight:300;line-height:1.2;margin-bottom:.6rem">Sign in to elsewhere</h2>
-    <p style="font-family:var(--serif);font-style:italic;font-size:.88rem;color:var(--ink-3);line-height:1.7;margin-bottom:1.8rem">Sign in to load your chart, or create an account to save your birth data and get your own profile page.</p>
+    <button onclick="closeAuthModal()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.29rem;cursor:pointer;color:var(--ink-3)">✕</button>
+    <p style="font-family:var(--serif);font-size:0.84rem;font-weight:400;letter-spacing:.2em;text-transform:lowercase;color:var(--gold);margin-bottom:1.5rem">elsewhere<span class="astro">astro</span></p>
+    <h2 style="font-family:var(--serif);font-size:1.6rem;font-weight:400;line-height:1.2;margin-bottom:.6rem">Sign in to elsewhereastro</h2>
+    <p style="font-family:var(--serif);font-style:italic;font-size:0.97rem;color:var(--ink-3);line-height:1.7;margin-bottom:1.8rem;font-weight:500">Sign in to load your chart, or create an account to save your birth data and get your own profile page.</p>
     <div id="authForm">
-      <input type="email" id="authEmail" placeholder="your@email.com" autocomplete="email" style="font-family:var(--sans);font-size:1rem;font-weight:300;color:var(--ink);background:transparent;border:none;border-bottom:.5px solid var(--paper-3);padding:.55rem 0;width:100%;outline:none;margin-bottom:1.1rem">
-      <input type="password" id="authPassword" placeholder="password" autocomplete="current-password" onkeydown="if(event.key==='Enter'){signInWithPassword();}" style="font-family:var(--sans);font-size:1rem;font-weight:300;color:var(--ink);background:transparent;border:none;border-bottom:.5px solid var(--paper-3);padding:.55rem 0;width:100%;outline:none;margin-bottom:1.1rem">
-      <p id="authError" style="display:none;font-family:var(--serif);font-style:italic;font-size:.85rem;color:var(--red-d);line-height:1.55;margin-bottom:1rem"></p>
-      <button id="passwordSignInBtn" onclick="signInWithPassword()" style="font-size:10px;font-weight:500;letter-spacing:.25em;text-transform:uppercase;color:var(--paper);background:var(--ink);border:none;padding:.9rem 2rem;cursor:pointer;width:100%;transition:background .2s;margin-bottom:.6rem" onmouseover="this.style.background='var(--gold)'" onmouseout="this.style.background='var(--ink)'">Sign in</button>
-      <button id="createAccountBtn" onclick="signUpWithPassword()" style="font-size:10px;font-weight:500;letter-spacing:.25em;text-transform:uppercase;color:var(--ink);background:transparent;border:.5px solid var(--paper-3);padding:.9rem 2rem;cursor:pointer;width:100%;transition:all .2s" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--paper-3)';this.style.color='var(--ink)'">Create account</button>
-      <div style="display:flex;align-items:center;gap:.8rem;margin:1.4rem 0 1rem"><div style="flex:1;height:.5px;background:var(--paper-3)"></div><span style="font-family:var(--serif);font-style:italic;font-size:.8rem;color:var(--ink-3)">or</span><div style="flex:1;height:.5px;background:var(--paper-3)"></div></div>
-      <p style="font-family:var(--serif);font-style:italic;font-size:.82rem;color:var(--ink-3);text-align:center;line-height:1.6">Forgot your password, or never set one?<br><button id="magicLinkBtn" onclick="sendMagicLink()" style="background:none;border:none;font-family:var(--serif);font-style:italic;font-size:.88rem;color:var(--gold);cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:3px">Email me a sign-in link</button></p>
+      <input type="email" id="authEmail" placeholder="your@email.com" autocomplete="email" style="font-family:var(--sans);font-size:1.09rem;font-weight:400;color:var(--ink);background:transparent;border:none;border-bottom:.5px solid var(--paper-3);padding:.55rem 0;width:100%;outline:none;margin-bottom:1.1rem">
+      <input type="password" id="authPassword" placeholder="password" autocomplete="current-password" onkeydown="if(event.key==='Enter'){signInWithPassword();}" style="font-family:var(--sans);font-size:1.09rem;font-weight:400;color:var(--ink);background:transparent;border:none;border-bottom:.5px solid var(--paper-3);padding:.55rem 0;width:100%;outline:none;margin-bottom:1.1rem">
+      <p id="authError" style="display:none;font-family:var(--serif);font-style:italic;font-size:0.94rem;color:var(--red-d);line-height:1.55;margin-bottom:1rem;font-weight:500"></p>
+      <button id="passwordSignInBtn" onclick="signInWithPassword()" style="font-size:12.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--paper);background:var(--ink);border:none;padding:.9rem 2rem;cursor:pointer;width:100%;transition:background .2s;margin-bottom:.6rem" onmouseover="this.style.background='var(--gold)'" onmouseout="this.style.background='var(--ink)'">Sign in</button>
+      <button id="createAccountBtn" onclick="signUpWithPassword()" style="font-size:12.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink);background:transparent;border:.5px solid var(--paper-3);padding:.9rem 2rem;cursor:pointer;width:100%;transition:all .2s" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--paper-3)';this.style.color='var(--ink)'">Create account</button>
+      <div style="display:flex;align-items:center;gap:.8rem;margin:1.4rem 0 1rem"><div style="flex:1;height:.5px;background:var(--paper-3)"></div><span style="font-family:var(--serif);font-style:italic;font-size:0.89rem;color:var(--ink-3);font-weight:500">or</span><div style="flex:1;height:.5px;background:var(--paper-3)"></div></div>
+      <p style="font-family:var(--serif);font-style:italic;font-size:0.91rem;color:var(--ink-3);text-align:center;line-height:1.6;font-weight:500">Forgot your password, or never set one?<br><button id="magicLinkBtn" onclick="sendMagicLink()" style="background:none;border:none;font-family:var(--serif);font-style:italic;font-size:0.97rem;color:var(--gold);cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:3px;font-weight:500">Email me a sign-in link</button></p>
     </div>
     <div id="authSent" style="display:none;text-align:center">
       <div style="font-size:1.5rem;color:var(--gold);margin-bottom:.8rem">✦</div>
-      <p style="font-family:var(--serif);font-size:1rem;color:var(--ink);margin-bottom:.5rem">Check your email</p>
-      <p style="font-family:var(--serif);font-style:italic;font-size:.85rem;color:var(--ink-3);line-height:1.6" id="authSentMsg">We sent a sign-in link to <span id="authEmailSent" style="color:var(--ink)"></span>. Click it to sign in.</p>
+      <p style="font-family:var(--serif);font-size:1.09rem;color:var(--ink);margin-bottom:.5rem;font-weight:500">Check your email</p>
+      <p style="font-family:var(--serif);font-style:italic;font-size:0.94rem;color:var(--ink-3);line-height:1.6;font-weight:500" id="authSentMsg">We sent a sign-in link to <span id="authEmailSent" style="color:var(--ink)"></span>. Click it to sign in.</p>
     </div>
   </div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="/descriptions.js?v=5"></script>
+<script src="/descriptions.js?v=5"></script>
 <script src="/js/app.js?v=9"></script>
 <script src="/js/engine.js?v=2"></script>
+
+<script>
+// Dark mode planet colours: warmer and brighter so every line shows on the dark map.
+(function(){
+  var LIGHT={}, DARK={Sun:'#e8b866',Moon:'#a3b9dc',Mercury:'#84c4a0',Venus:'#e892a8',Mars:'#e8806e',Jupiter:'#d9a86a',Saturn:'#cbb89a',Uranus:'#74c2bb',Neptune:'#a5a3e6',Pluto:'#d29ac0',Chiron:'#e8dcc6',NNode:'#6fc395',SNode:'#9fd2b2'};
+  for(var k in PCOL) LIGHT[k]=PCOL[k];
+  function sync(){
+    var dark=document.documentElement.getAttribute('data-theme')==='dark', src=dark?DARK:LIGHT;
+    for(var k in src) PCOL[k]=src[k];
+    if(typeof activeChart!=='undefined'&&activeChart){ try{buildToggleBar();buildLegend();drawLines();}catch(e){} }
+  }
+  sync(); document.addEventListener('ea-theme',sync);
+})();
+</script>
 
 <script>
 // ── Coordinate fallback ─────────────────────────────────────────
