@@ -121,6 +121,11 @@ html[data-theme="dark"]{
 html[data-theme="dark"]{--line:#4a3e31}
 html[data-theme="dark"] a{color:var(--gold)}
 html[data-theme="dark"] a:hover{color:var(--ink)}
+html[data-theme="dark"] .wordmark{color:var(--ink)}
+html[data-theme="dark"] .pill,html[data-theme="dark"] .tab{color:var(--ink-3)}
+html[data-theme="dark"] .tab:hover,html[data-theme="dark"] .pill:hover{color:var(--gold)}
+html[data-theme="dark"] .tab.on{color:var(--paper)}
+html[data-theme="dark"] a.btn{color:var(--paper)}
 html[data-theme="dark"] .card,html[data-theme="dark"] .place,html[data-theme="dark"] .began,html[data-theme="dark"] .chip{background:var(--paper-2)}
 html[data-theme="dark"] .card.warm,html[data-theme="dark"] .care{background:#33291c;border-color:#55452f}
 html[data-theme="dark"] .care .chip{background:var(--paper)}
@@ -132,7 +137,7 @@ html[data-theme="dark"] .cross .x{color:var(--ink-3)}
 html[data-theme="dark"] .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) sepia(.3) brightness(.92) contrast(.9)}
 html[data-theme="dark"] .leaflet-container{background:#1c1712}
 .hdr-right{display:flex;align-items:center;gap:.5rem}
-.pill{white-space:nowrap}
+.pill{white-space:nowrap;gap:.35em}
 @media(max-width:480px){.hdr{padding:14px 16px}.wordmark{letter-spacing:.2em}.hdr-right .theme-btn,.hdr-right .pill{padding:0 10px}.bk-long{display:none}}
 </style>
 </head>
