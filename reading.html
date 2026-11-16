@@ -3,25 +3,36 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>elsewhere — your chart in this place</title>
+<title>elsewhereastro — your chart in this place</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&family=Noto+Sans+Symbols+2&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:wght@400;500;600&family=Noto+Sans+Symbols+2&display=swap" rel="stylesheet">
 
+<script>
+// Dark mode: the visitor's saved choice, otherwise their device setting.
+(function(){var t=null;try{t=localStorage.getItem('ea_theme');}catch(e){}
+  var mq=window.matchMedia('(prefers-color-scheme: dark)');
+  function apply(){var d=t?t==='dark':mq.matches;document.documentElement.setAttribute('data-theme',d?'dark':'light');
+    var b=document.querySelectorAll('.theme-btn');for(var i=0;i<b.length;i++)b[i].textContent=d?'☀ Light':'☾ Dark';
+    try{document.dispatchEvent(new Event('ea-theme'));}catch(e){}}
+  apply();if(mq.addEventListener)mq.addEventListener('change',apply);document.addEventListener('DOMContentLoaded',apply);
+  window.toggleTheme=function(){t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';try{localStorage.setItem('ea_theme',t);}catch(e){}apply();};
+})();
+</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --ink:#1a1714;--ink-2:#2e2b28;--ink-3:#4a4540;
   --paper:#faf8f4;--paper-2:#f2ede5;--paper-3:#e8e0d2;
-  --gold:#b8955a;--gold-light:#d4b07a;--gold-faint:rgba(184,149,90,.13);
+  --gold:#8a6a35;--gold-light:#d4b07a;--gold-faint:rgba(184,149,90,.13);
   --serif:'Cormorant Garamond',Georgia,serif;--sans:'Jost',sans-serif;
   --green:#3d7a52;--red-d:#8b3a3a;
 }
-html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margin:0;font-size:16px}
+html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margin:0;font-size:17.5px}
 
 /* ── Header ── */
 .site-header{width:100%;padding:.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;border-bottom:.5px solid var(--paper-3);background:var(--paper);position:sticky;top:0;z-index:20}
-.site-wordmark{font-family:var(--serif);font-size:1.05rem;font-weight:300;letter-spacing:.35em;text-transform:lowercase;color:var(--ink);text-decoration:none}
-.back-btn{font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);padding:.3rem .8rem;cursor:pointer;border-radius:20px;text-decoration:none;transition:all .2s}
+.site-wordmark{font-family:var(--serif);font-size:1.14rem;font-weight:400;letter-spacing:.2em;text-transform:lowercase;color:var(--ink);text-decoration:none}
+.back-btn{font-size:11.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);padding:.3rem .8rem;cursor:pointer;border-radius:20px;text-decoration:none;transition:all .2s}
 .back-btn:hover{border-color:var(--gold);color:var(--gold)}
 
 /* ── Page wrapper ── */
@@ -29,15 +40,15 @@ html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margi
 
 /* ── Did you know card ── */
 .dyk-card{background:var(--gold-faint);border:.5px solid var(--paper-3);border-radius:6px;padding:1.1rem 1.3rem;margin-bottom:2.5rem;display:flex;gap:.9rem;align-items:flex-start}
-.dyk-star{color:var(--gold);font-size:1.1rem;flex-shrink:0;margin-top:.1rem}
-.dyk-text{font-family:var(--serif);font-size:.9rem;color:var(--ink-2);line-height:1.7;font-style:italic}
+.dyk-star{color:var(--gold);font-size:1.19rem;flex-shrink:0;margin-top:.1rem}
+.dyk-text{font-family:var(--serif);font-size:0.99rem;color:var(--ink-2);line-height:1.7;font-style:italic;font-weight:500}
 
 /* ── City heading ── */
 .city-heading{text-align:center;margin-bottom:2rem}
-.city-eyebrow{font-size:9px;font-weight:500;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:.6rem}
-.city-title{font-family:var(--serif);font-size:clamp(1.8rem,5vw,2.6rem);font-weight:300;line-height:1.1;color:var(--ink)}
+.city-eyebrow{font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:.6rem}
+.city-title{font-family:var(--serif);font-size:clamp(1.8rem,5vw,2.6rem);font-weight:400;line-height:1.1;color:var(--ink)}
 .city-title em{font-style:italic;color:var(--gold)}
-.city-subtitle{font-family:var(--serif);font-size:.88rem;font-style:italic;color:var(--ink-3);margin-top:.5rem;line-height:1.6}
+.city-subtitle{font-family:var(--serif);font-size:0.97rem;font-style:italic;color:var(--ink-3);margin-top:.5rem;line-height:1.6;font-weight:500}
 
 /* ── Chart carousel / side by side ── */
 .charts-container{position:relative;margin-bottom:2rem}
@@ -45,8 +56,8 @@ html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margi
 /* Desktop: side by side */
 .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
 .chart-panel{background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:8px;padding:1rem;display:flex;flex-direction:column;align-items:center;width:100%}
-.chart-panel-label{font-size:8px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:.6rem;text-align:center}
-.chart-panel-city{font-family:var(--serif);font-size:1rem;font-weight:300;color:var(--ink);margin-bottom:1rem;text-align:center}
+.chart-panel-label{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:.6rem;text-align:center}
+.chart-panel-city{font-family:var(--serif);font-size:1.09rem;font-weight:400;color:var(--ink);margin-bottom:1rem;text-align:center}
 .chart-panel-city em{font-style:italic;color:var(--gold)}
 canvas.chart-wheel{display:block;width:100%;max-width:420px;aspect-ratio:1/1;height:auto}
 .wheel-wrap{width:100%;max-width:640px}
@@ -54,16 +65,16 @@ canvas.chart-wheel{display:block;width:100%;max-width:420px;aspect-ratio:1/1;hei
 .wheel-glyph{font-family:'Segoe UI Symbol','Apple Symbols','Noto Sans Symbols 2','Noto Sans Symbols',sans-serif;cursor:default}
 .wheel-wrap{position:relative}
 .wheel-pt{cursor:pointer;outline:none}
-.wheel-pt:focus-visible circle{stroke:#b8955a;stroke-width:1.5}
-.wheel-tip{position:absolute;left:0;top:0;transform:translate(-50%,calc(-100% - 10px));background:#1a1714;color:#faf8f4;font-family:var(--sans);font-size:.78rem;letter-spacing:.03em;line-height:1.3;padding:.45rem .7rem;border-radius:4px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .12s;z-index:5}
+.wheel-pt:focus-visible circle{stroke:#8a6a35;stroke-width:1.5}
+.wheel-tip{position:absolute;left:0;top:0;transform:translate(-50%,calc(-100% - 10px));background:#1a1714;color:#faf8f4;font-family:var(--sans);font-size:0.87rem;letter-spacing:.03em;line-height:1.3;padding:.45rem .7rem;border-radius:4px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .12s;z-index:5}
 .wheel-tip.on{opacity:1}
-.wheel-enlarge{display:inline-flex;align-items:center;gap:.5rem;min-height:44px;padding:0 1.1rem;margin-top:.5rem;font-family:var(--sans);font-size:9px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid #cfc4b0;border-radius:22px;cursor:pointer;transition:all .2s}
+.wheel-enlarge{display:inline-flex;align-items:center;gap:.5rem;min-height:44px;padding:0 1.1rem;margin-top:.5rem;font-family:var(--sans);font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid #cfc4b0;border-radius:22px;cursor:pointer;transition:all .2s}
 .wheel-enlarge:hover{border-color:var(--gold);color:var(--gold)}
-.wheel-note{font-family:var(--serif);font-style:italic;font-size:.85rem;color:var(--ink-3);line-height:1.6;text-align:center;max-width:520px;margin-top:.8rem}
+.wheel-note{font-family:var(--serif);font-style:italic;font-size:0.94rem;color:var(--ink-3);line-height:1.6;text-align:center;max-width:520px;margin-top:.8rem;font-weight:500}
 .wheel-modal{display:none;position:fixed;inset:0;z-index:1000;background:rgba(250,248,244,.98);overflow:auto;padding:3.5rem 1rem 2rem}
 .wheel-modal.open{display:block}
 .wheel-modal .wheel-wrap{max-width:min(96vw,94vh);margin:0 auto}
-.wheel-close{position:fixed;top:.9rem;right:.9rem;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:var(--paper);border:.5px solid var(--paper-3);border-radius:50%;cursor:pointer;color:var(--ink-3);font-size:1rem}
+.wheel-close{position:fixed;top:.9rem;right:.9rem;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:var(--paper);border:.5px solid var(--paper-3);border-radius:50%;cursor:pointer;color:var(--ink-3);font-size:1.09rem}
 .wheel-close:hover{color:var(--ink);border-color:var(--gold)}
 .chart-panel .wheel-wrap{max-width:440px}
 .chart-panel .wheel-enlarge{margin-top:.4rem}
@@ -76,7 +87,7 @@ canvas.chart-wheel{display:block;width:100%;max-width:420px;aspect-ratio:1/1;hei
   .carousel-nav{display:flex;justify-content:center;align-items:center;gap:1rem;margin-top:.8rem}
   .carousel-dot{width:7px;height:7px;border-radius:50%;background:var(--paper-3);cursor:pointer;transition:background .2s;border:none;padding:0}
   .carousel-dot.active{background:var(--gold)}
-  .carousel-hint{font-size:8px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);text-align:center;margin-bottom:.6rem}
+  .carousel-hint{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);text-align:center;margin-bottom:.6rem}
 }
 @media(min-width:601px){
   .carousel-nav{display:none}
@@ -86,11 +97,11 @@ canvas.chart-wheel{display:block;width:100%;max-width:420px;aspect-ratio:1/1;hei
 
 /* ── Summary line ── */
 .summary-section{text-align:center;margin:2rem 0 2.5rem;padding:1.2rem;border-top:.5px solid var(--paper-3);border-bottom:.5px solid var(--paper-3)}
-.summary-text{font-family:var(--serif);font-size:1.05rem;font-style:italic;color:var(--ink-2);line-height:1.6}
+.summary-text{font-family:var(--serif);font-size:1.14rem;font-style:italic;color:var(--ink-2);line-height:1.6;font-weight:500}
 .summary-count{color:var(--gold)}
 
 /* ── Section heading ── */
-.section-heading{font-size:10px;font-weight:500;letter-spacing:.25em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem;display:flex;align-items:center;gap:.6rem}
+.section-heading{font-size:12.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem;display:flex;align-items:center;gap:.6rem}
 .section-heading::after{content:'';flex:1;height:.5px;background:var(--paper-3)}
 
 /* ── Planet shift cards ── */
@@ -98,12 +109,12 @@ canvas.chart-wheel{display:block;width:100%;max-width:420px;aspect-ratio:1/1;hei
 .shift-card{border:.5px solid var(--paper-3);border-radius:6px;overflow:hidden}
 .shift-card-header{display:flex;align-items:center;gap:.7rem;padding:.7rem 1rem;background:var(--paper-2);border-bottom:.5px solid var(--paper-3)}
 .shift-glyph{font-family:var(--serif);font-size:1.4rem;line-height:1}
-.shift-planet-name{font-size:.65rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase}
-.shift-arrow{font-size:.75rem;color:var(--ink-3);margin:0 .2rem}
-.shift-houses{font-size:.65rem;color:var(--ink-3);letter-spacing:.08em}
+.shift-planet-name{font-size:0.78rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase}
+.shift-arrow{font-size:0.84rem;color:var(--ink-3);margin:0 .2rem}
+.shift-houses{font-size:0.78rem;color:var(--ink-3);letter-spacing:.08em}
 .shift-body{padding:1rem}
-.shift-label{font-size:7px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.25rem}
-.shift-prose{font-family:var(--serif);font-size:.88rem;color:var(--ink-2);line-height:1.7;margin-bottom:.85rem}
+.shift-label{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.25rem}
+.shift-prose{font-family:var(--serif);font-size:0.97rem;color:var(--ink-2);line-height:1.7;margin-bottom:.85rem;font-weight:500}
 .shift-prose:last-child{margin-bottom:0}
 .shift-rule{height:.5px;background:var(--paper-3);margin:.75rem 0}
 
@@ -118,13 +129,31 @@ canvas.chart-wheel{display:block;width:100%;max-width:420px;aspect-ratio:1/1;hei
 
 /* ── No-data state ── */
 #noDataState{display:none;text-align:center;padding:4rem 1.5rem}
+
+/* Dark mode: follows the device, or the visitor's choice (saved on their device) */
+.astro{color:var(--gold)}
+html[data-theme="dark"]{
+  --ink:#f6ecdc;--ink-2:#ead9c0;--ink-3:#cdb999;
+  --paper:#1c1712;--paper-2:#272019;--paper-3:#4a3e31;
+  --gold:#e0b773;--gold-light:#ecca8e;--gold-faint:rgba(224,183,115,.16);
+  --green:#8fcb9c;--red-d:#ec9a86;
+  color-scheme:dark;
+}
+.theme-btn{font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);border-radius:20px;padding:.3rem .8rem;cursor:pointer;flex-shrink:0}
+.theme-btn:hover{border-color:var(--gold);color:var(--gold)}
+html[data-theme="dark"] .wheel-modal{background:rgba(28,23,18,.98)}
+html[data-theme="dark"] .wheel-tip{background:#f6ecdc;color:#1c1712}
+.header-right{display:flex;align-items:center;gap:.5rem}
+.back-btn{white-space:nowrap}
+@media(max-width:480px){.site-header{padding:.75rem 1rem}.site-header .site-wordmark{letter-spacing:.2em}.header-right .theme-btn,.header-right .back-btn{padding:.3rem .6rem;letter-spacing:.1em}.bk-long{display:none}}
 </style>
 </head>
 <body>
 
 <header class="site-header">
-  <span class="site-wordmark">elsewhere</span>
-  <a href="#" class="back-btn" onclick="if(window.opener){window.close();}else{window.location.href='/';}return false;">← Back to map</a>
+  <span class="site-wordmark">elsewhere<span class="astro">astro</span></span>
+  <span class="header-right"><button type="button" class="theme-btn" onclick="toggleTheme()" aria-label="Switch between light and dark">☾ Dark</button>
+  <a href="#" class="back-btn" onclick="if(window.opener){window.close();}else{window.location.href='/';}return false;">← <span class="bk-long">Back to </span>map</a></span>
 </header>
 
 <div class="page">
@@ -203,9 +232,9 @@ canvas.chart-wheel{display:block;width:100%;max-width:420px;aspect-ratio:1/1;hei
 
 
     <div class="page-footer">
-      <a href="mailto:elsewhereastro@gmail.com" style="font-family:var(--serif);font-size:.78rem;color:var(--ink-3);text-decoration:none;border-bottom:1px solid var(--paper-3)">share feedback</a>
+      <a href="mailto:elsewhereastro@gmail.com" style="font-family:var(--serif);font-size:0.87rem;color:var(--ink-3);text-decoration:none;border-bottom:1px solid var(--paper-3);font-weight:500">share feedback</a>
       <span style="color:var(--paper-3);margin:0 .8rem">·</span>
-      <span style="font-family:var(--serif);font-size:.78rem;color:var(--ink-3)">© 2025 elsewhere</span>
+      <span style="font-family:var(--serif);font-size:0.87rem;color:var(--ink-3);font-weight:500">© 2026 elsewhereastro</span>
     </div>
 
   </div><!-- /mainContent -->
@@ -635,7 +664,7 @@ function drawChartWheel(canvasId, planets) {
     var zsyms = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
     var zSize = Math.round(size * 0.036);
     ctx.font = 'italic 300 ' + zSize + 'px \'Cormorant Garamond\', Georgia, serif';
-    ctx.fillStyle = '#b8955a';
+    ctx.fillStyle = '#8a6a35';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(zsyms[s], tx, ty);
@@ -648,7 +677,7 @@ function drawChartWheel(canvasId, planets) {
     var hAngle = lonToAngle(hLon);
     var isAngle = (h % 3 === 0);
 
-    ctx.strokeStyle = isAngle ? '#b8955a' : '#d4c9b8';
+    ctx.strokeStyle = isAngle ? '#8a6a35' : '#d4c9b8';
     ctx.lineWidth   = isAngle ? 1 : 0.5;
     ctx.beginPath();
     ctx.moveTo(cx + rCenter  * Math.cos(hAngle), cy + rCenter  * Math.sin(hAngle));
@@ -662,7 +691,7 @@ function drawChartWheel(canvasId, planets) {
     var numAngle = lonToAngle(numLon);
     var numR = (rHouse + rZodiac) / 2;
     ctx.font = Math.round(size * 0.028) + 'px Jost, sans-serif';
-    ctx.fillStyle = '#9a9080';
+    ctx.fillStyle = '#6b645b';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(String(h + 1), cx + numR * Math.cos(numAngle), cy + numR * Math.sin(numAngle));
@@ -685,7 +714,7 @@ function drawChartWheel(canvasId, planets) {
   ];
   angles.forEach(function(a) {
     var ang = lonToAngle(a.lon);
-    ctx.strokeStyle = '#b8955a';
+    ctx.strokeStyle = '#8a6a35';
     ctx.lineWidth = 1;
     ctx.setLineDash([3, 3]);
     ctx.beginPath();
@@ -697,7 +726,7 @@ function drawChartWheel(canvasId, planets) {
     // Labels just outside the house ring
     var lblR = rHouse + size * 0.025;
     ctx.font = '500 ' + Math.round(size * 0.032) + 'px Jost, sans-serif';
-    ctx.fillStyle = '#b8955a';
+    ctx.fillStyle = '#8a6a35';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(a.label, cx + lblR * Math.cos(ang), cy + lblR * Math.sin(ang));
@@ -1589,17 +1618,17 @@ function buildLineReading(list, cityName, data, relocPlanets) {
         + '<span class="shift-glyph" style="color:' + col + '">' + sym + '</span>'
         + '<div>'
           + '<div class="shift-planet-name" style="color:' + col + '">' + p + (sign ? ' in ' + sign : '') + '</div>'
-          + '<div style="font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)">' + ltLabel + '</div>'
+          + '<div style="font-size:0.74rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)">' + ltLabel + '</div>'
         + '</div>'
       + '</div>'
       + '<div class="shift-body">'
-        + '<div class="shift-prose" style="font-size:.8rem;color:var(--ink-3);margin-bottom:.6rem">' + proximity + '</div>'
+        + '<div class="shift-prose" style="font-size:0.89rem;color:var(--ink-3);margin-bottom:.6rem">' + proximity + '</div>'
         + (lineDesc ? '<div class="shift-label">What\'s activated</div><div class="shift-prose">' + lineDesc + ' ' + signMod + '</div>' : '')
         + (bestFor || watchFor
           ? '<div class="shift-rule"></div>'
             + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">'
-            + (bestFor ? '<div style="background:var(--paper-2);border-radius:4px;padding:.55rem .65rem"><div style="font-size:7px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.25rem">Best for</div><div style="font-family:var(--serif);font-size:.8rem;font-style:italic;color:var(--ink-2);line-height:1.45">' + bestFor + '</div></div>' : '')
-            + (watchFor ? '<div style="background:var(--paper-2);border-radius:4px;padding:.55rem .65rem"><div style="font-size:7px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.25rem">Watch for</div><div style="font-family:var(--serif);font-size:.8rem;font-style:italic;color:var(--ink-2);line-height:1.45">' + watchFor + '</div></div>' : '')
+            + (bestFor ? '<div style="background:var(--paper-2);border-radius:4px;padding:.55rem .65rem"><div style="font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.25rem">Best for</div><div style="font-family:var(--serif);font-size:0.89rem;font-style:italic;color:var(--ink-2);line-height:1.45;font-weight:500">' + bestFor + '</div></div>' : '')
+            + (watchFor ? '<div style="background:var(--paper-2);border-radius:4px;padding:.55rem .65rem"><div style="font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.25rem">Watch for</div><div style="font-family:var(--serif);font-size:0.89rem;font-style:italic;color:var(--ink-2);line-height:1.45;font-weight:500">' + watchFor + '</div></div>' : '')
             + '</div>'
           : '')
       + '</div>';
@@ -1638,7 +1667,10 @@ function buildWheelSvg(data) {
   var cusps = data.cusps, points = data.points, asc = cusps[0];
   var S = 640, cx = 320, cy = 320;
   var R_OUT = 300, R_ZOD = 258, R_GLYPH = 214, R_DEG = 181, R_IN = 112, R_HNUM = 128;
-  var LINE = '#cfc4b0', GOLD = '#b8955a', GOLD_D = '#8a6a35', INK = '#1a1714', INK3 = '#4a4540';
+  var LINE = '#cfc4b0', GOLD = '#8a6a35', GOLD_D = '#8a6a35', INK = '#1a1714', INK3 = '#4a4540';
+  var DK = document.documentElement.getAttribute('data-theme') === 'dark';
+  if (DK) { LINE = '#5a4c3c'; GOLD = '#e0b773'; GOLD_D = '#e0b773'; INK = '#f6ecdc'; INK3 = '#cdb999'; }
+  var RING = DK ? '#272019' : '#f2ede5', ZOD = DK ? '#1c1712' : '#faf8f4', HNUM = DK ? '#cdb999' : '#6b645b';
   var SERIF = "'Cormorant Garamond', Georgia, serif", SANS = 'Jost, sans-serif';
   function pt(lon, r) {
     var a = (180 + (lon - asc)) * Math.PI / 180;
@@ -1657,9 +1689,9 @@ function buildWheelSvg(data) {
   var o = [];
 
   // rings
-  o.push('<circle cx="320" cy="320" r="' + R_OUT + '" fill="#f2ede5" stroke="' + LINE + '"/>');
-  o.push('<circle cx="320" cy="320" r="' + R_ZOD + '" fill="#faf8f4" stroke="' + LINE + '"/>');
-  o.push('<circle cx="320" cy="320" r="' + R_IN + '" fill="#f2ede5" stroke="' + LINE + '" stroke-width="0.8"/>');
+  o.push('<circle cx="320" cy="320" r="' + R_OUT + '" fill="' + RING + '" stroke="' + LINE + '"/>');
+  o.push('<circle cx="320" cy="320" r="' + R_ZOD + '" fill="' + ZOD + '" stroke="' + LINE + '"/>');
+  o.push('<circle cx="320" cy="320" r="' + R_IN + '" fill="' + RING + '" stroke="' + LINE + '" stroke-width="0.8"/>');
 
   // degree ticks
   for (var deg = 0; deg < 360; deg++) {
@@ -1680,7 +1712,7 @@ function buildWheelSvg(data) {
     var c = cusps[i], isAng = (i in ANG), p = dm(c);
     o.push(line(c, R_IN, c, R_ZOD, isAng ? GOLD : LINE, isAng ? 1.6 : 0.9));
     var mid = c + n360p(cusps[(i + 1) % 12] - c) / 2, h = pt(mid, R_HNUM);
-    o.push('<text x="' + n(h[0]) + '" y="' + n(h[1]) + '" font-size="11" fill="#8f8577" text-anchor="middle" dominant-baseline="central" font-family="' + SANS + '">' + (i + 1) + '</text>');
+    o.push('<text x="' + n(h[0]) + '" y="' + n(h[1]) + '" font-size="11" fill="' + HNUM + '" text-anchor="middle" dominant-baseline="central" font-family="' + SANS + '">' + (i + 1) + '</text>');
     if (isAng) {
       o.push(line(c, R_OUT, c, R_OUT + 14, GOLD, 1.6));
       var l = pt(c, R_OUT + 30);
@@ -1815,6 +1847,24 @@ function closeWheel() {
   if (m) { m.classList.remove('open'); document.body.style.overflow = ''; }
 }
 document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeWheel(); });
+</script>
+<script>
+// Dark mode planet colours (same as the map page), and redraw the chart wheels when the theme changes.
+(function(){
+  var DARK={Sun:'#e8b866',Moon:'#a3b9dc',Mercury:'#84c4a0',Venus:'#e892a8',Mars:'#e8806e',Jupiter:'#d9a86a',Saturn:'#cbb89a',Uranus:'#74c2bb',Neptune:'#a5a3e6',Pluto:'#d29ac0',Chiron:'#e8dcc6',NNode:'#6fc395',SNode:'#9fd2b2'}, L1={}, L2={};
+  for(var k in PCOL) L1[k]=PCOL[k];
+  for(var k2 in PCOL_R) L2[k2]=PCOL_R[k2];
+  function sync(){
+    var dark=document.documentElement.getAttribute('data-theme')==='dark';
+    for(var k in L1) PCOL[k]=dark&&DARK[k]?DARK[k]:L1[k];
+    for(var k2 in L2) PCOL_R[k2]=dark&&DARK[k2]?DARK[k2]:L2[k2];
+    try{
+      if(window._relocPlanets&&document.getElementById('wheelRelocated')&&document.getElementById('wheelRelocated').firstChild) renderReadingWheel('wheelRelocated','reloc',window._relocPlanets);
+      if(window._natalPlanets&&document.getElementById('wheelNatal')&&document.getElementById('wheelNatal').firstChild) renderReadingWheel('wheelNatal','natal',window._natalPlanets);
+    }catch(e){}
+  }
+  sync(); document.addEventListener('ea-theme',sync);
+})();
 </script>
 </body>
 </html>
