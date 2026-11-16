@@ -3,81 +3,92 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>elsewhere — reading your lines</title>
+<title>elsewhereastro — reading your lines</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
   
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+// Dark mode: the visitor's saved choice, otherwise their device setting.
+(function(){var t=null;try{t=localStorage.getItem('ea_theme');}catch(e){}
+  var mq=window.matchMedia('(prefers-color-scheme: dark)');
+  function apply(){var d=t?t==='dark':mq.matches;document.documentElement.setAttribute('data-theme',d?'dark':'light');
+    var b=document.querySelectorAll('.theme-btn');for(var i=0;i<b.length;i++)b[i].textContent=d?'☀ Light':'☾ Dark';
+    try{document.dispatchEvent(new Event('ea-theme'));}catch(e){}}
+  apply();if(mq.addEventListener)mq.addEventListener('change',apply);document.addEventListener('DOMContentLoaded',apply);
+  window.toggleTheme=function(){t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';try{localStorage.setItem('ea_theme',t);}catch(e){}apply();};
+})();
+</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --ink:#1a1714; --ink-2:#2e2b28; --ink-3:#4a4540;
   --paper:#faf8f4; --paper-2:#f2ede5; --paper-3:#e8e0d2;
-  --gold:#b8955a;
+  --gold:#8a6a35;--gold-light:#d4b07a;--gold-faint:rgba(184,149,90,.13);--green:#3d7a52;--red-d:#8b3a3a;
   --serif:'Cormorant Garamond',Georgia,serif;
   --sans:'Jost',sans-serif;
 
   --harm:#5c8a5c;    /* moss green — harmonious */
-  --dyn:#b8955a;     /* gold — dynamic */
+  --dyn:#8a6a35;     /* gold — dynamic */
   --chal:#9b6555;    /* terracotta — challenging */
 }
 html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margin:0;line-height:1.55}
 
 /* ── Header ── */
 .site-header{width:100%;padding:.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;border-bottom:.5px solid var(--paper-3);background:var(--paper);position:sticky;top:0;z-index:20}
-.site-wordmark{font-family:var(--serif);font-size:1.05rem;font-weight:300;letter-spacing:.35em;text-transform:lowercase;color:var(--ink);text-decoration:none}
-.nav-btn{font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);padding:.3rem .8rem;cursor:pointer;border-radius:20px;text-decoration:none;transition:all .2s}
+.site-wordmark{font-family:var(--serif);font-size:1.14rem;font-weight:400;letter-spacing:.2em;text-transform:lowercase;color:var(--ink);text-decoration:none}
+.nav-btn{font-size:11.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);padding:.3rem .8rem;cursor:pointer;border-radius:20px;text-decoration:none;transition:all .2s}
 .nav-btn:hover{border-color:var(--gold);color:var(--gold)}
 
 /* ── Page ── */
 .page{max-width:720px;margin:0 auto;padding:3rem 1.5rem 5rem}
 
 /* ── Intro ── */
-.eyebrow{font-size:9px;font-weight:500;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem;text-align:center}
-.title{font-family:var(--serif);font-size:clamp(2rem,5vw,2.8rem);font-weight:300;line-height:1.2;text-align:center;margin-bottom:1rem}
+.eyebrow{font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem;text-align:center}
+.title{font-family:var(--serif);font-size:clamp(2rem,5vw,2.8rem);font-weight:400;line-height:1.2;text-align:center;margin-bottom:1rem}
 .title em{font-style:italic;color:var(--gold)}
-.subtitle{font-family:var(--serif);font-style:italic;font-size:1rem;color:var(--ink-3);line-height:1.7;text-align:center;max-width:520px;margin:0 auto 2.5rem}
+.subtitle{font-family:var(--serif);font-style:italic;font-size:1.09rem;color:var(--ink-3);line-height:1.7;text-align:center;max-width:520px;margin:0 auto 2.5rem;font-weight:500}
 
-.chart-tag{display:block;text-align:center;font-size:.78rem;color:var(--ink-3);margin-bottom:2.5rem;letter-spacing:.04em}
+.chart-tag{display:block;text-align:center;font-size:0.87rem;color:var(--ink-3);margin-bottom:2.5rem;letter-spacing:.04em}
 .chart-tag strong{color:var(--ink);font-weight:500}
 
 /* ── How to read intro section ── */
 .intro-card{background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:10px;padding:1.75rem 1.6rem;margin-bottom:2.5rem}
 .intro-card h3{font-family:var(--serif);font-size:1.3rem;font-weight:400;color:var(--ink);margin-bottom:.8rem}
-.intro-card p{font-family:var(--serif);font-size:.98rem;color:var(--ink-2);line-height:1.7;margin-bottom:.7rem}
+.intro-card p{font-family:var(--serif);font-size:1.07rem;color:var(--ink-2);line-height:1.7;margin-bottom:.7rem;font-weight:500}
 .intro-card p:last-child{margin-bottom:0}
 
 /* ── Category sections ── */
 .cat-section{margin-bottom:3rem}
 .cat-header{border-bottom:.5px solid var(--paper-3);padding-bottom:.6rem;margin-bottom:1.5rem}
-.cat-label{font-family:var(--serif);font-size:1.6rem;font-weight:300;letter-spacing:.02em}
+.cat-label{font-family:var(--serif);font-size:1.6rem;font-weight:400;letter-spacing:.02em}
 .cat-label.harm{color:var(--harm)}
 .cat-label.dyn{color:var(--dyn)}
 .cat-label.chal{color:var(--chal)}
-.cat-blurb{font-family:var(--serif);font-style:italic;font-size:.92rem;color:var(--ink-3);line-height:1.7;margin-top:.5rem}
+.cat-blurb{font-family:var(--serif);font-style:italic;font-size:1.01rem;color:var(--ink-3);line-height:1.7;margin-top:.5rem;font-weight:500}
 
 /* ── Planet cards ── */
 .planet-card{padding:1.25rem 0 1.5rem;border-bottom:.5px dashed var(--paper-3)}
 .planet-card:last-child{border-bottom:none}
 .planet-head{display:flex;align-items:flex-start;gap:.85rem;margin-bottom:.6rem}
 .planet-glyph{font-family:var(--serif);font-size:1.6rem;line-height:1;flex-shrink:0;margin-top:.1rem}
-.planet-name{font-family:var(--serif);font-size:1.15rem;font-weight:500;letter-spacing:.04em}
-.planet-summary{font-size:.82rem;color:var(--ink-3);margin-top:.15rem;line-height:1.55}
-.planet-themes{font-family:var(--serif);font-size:.98rem;color:var(--ink-2);line-height:1.7;margin-top:.7rem;padding-left:2.45rem}
+.planet-name{font-family:var(--serif);font-size:1.24rem;font-weight:500;letter-spacing:.04em}
+.planet-summary{font-size:0.91rem;color:var(--ink-3);margin-top:.15rem;line-height:1.55}
+.planet-themes{font-family:var(--serif);font-size:1.07rem;color:var(--ink-2);line-height:1.7;margin-top:.7rem;padding-left:2.45rem;font-weight:500}
 .aspect-section{margin-top:1.1rem;padding-left:2.45rem}
-.aspect-heading{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);opacity:.7;margin-bottom:.35rem}
-.planet-aspect{font-size:.85rem;letter-spacing:.04em;font-weight:600;margin-bottom:.45rem}
-.aspect-explain{font-family:var(--serif);font-size:.92rem;color:var(--ink-2);line-height:1.65}
+.aspect-heading{font-size:0.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);opacity:.7;margin-bottom:.35rem}
+.planet-aspect{font-size:0.94rem;letter-spacing:.04em;font-weight:600;margin-bottom:.45rem}
+.aspect-explain{font-family:var(--serif);font-size:1.01rem;color:var(--ink-2);line-height:1.65;font-weight:500}
 .aspect-explain em{color:var(--ink);font-style:italic}
 .aspect-explain.is-fallback{font-style:italic;color:var(--ink-3)}
 .planet-themes em{color:var(--ink);font-style:italic}
 
 /* ── States ── */
-.empty-bucket{font-family:var(--serif);font-style:italic;font-size:.92rem;color:var(--ink-3);padding:.5rem 0}
+.empty-bucket{font-family:var(--serif);font-style:italic;font-size:1.01rem;color:var(--ink-3);padding:.5rem 0;font-weight:500}
 .no-auth{text-align:center;padding:4rem 1.5rem}
-.no-auth h2{font-family:var(--serif);font-size:1.6rem;font-weight:300;margin-bottom:1rem}
-.no-auth p{font-family:var(--serif);font-size:1rem;color:var(--ink-3);line-height:1.7;margin-bottom:2rem;max-width:420px;margin-left:auto;margin-right:auto}
-.no-auth a{display:inline-block;font-size:10px;font-weight:500;letter-spacing:.25em;text-transform:uppercase;color:var(--paper);background:var(--ink);padding:.9rem 2rem;text-decoration:none}
+.no-auth h2{font-family:var(--serif);font-size:1.6rem;font-weight:400;margin-bottom:1rem}
+.no-auth p{font-family:var(--serif);font-size:1.09rem;color:var(--ink-3);line-height:1.7;margin-bottom:2rem;max-width:420px;margin-left:auto;margin-right:auto;font-weight:500}
+.no-auth a{display:inline-block;font-size:12.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--paper);background:var(--ink);padding:.9rem 2rem;text-decoration:none}
 .no-auth a:hover{background:var(--gold)}
 
 /* ── Loading state for paragraphs ── */
@@ -110,21 +121,40 @@ html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margi
 /* A small italic line above the buckets while paragraphs load, hidden
    once everything has arrived. */
 .generating-status{
-  font-family:var(--serif);font-style:italic;font-size:.88rem;
+  font-family:var(--serif);font-style:italic;font-size:0.97rem;
   color:var(--ink-3);text-align:center;margin:1.5rem 0 2rem;
-  transition:opacity .4s ease
-}
+  transition:opacity .4s ease;font-weight:500}
 .generating-status.hidden{opacity:0;pointer-events:none;height:0;margin:0;overflow:hidden}
 
 /* ── Fallback paragraph when a fetch fails ── */
 .planet-themes.is-fallback{font-style:italic;color:var(--ink-3)}
+
+/* Dark mode: follows the device, or the visitor's choice (saved on their device) */
+.astro{color:var(--gold)}
+html[data-theme="dark"]{
+  --ink:#f6ecdc;--ink-2:#ead9c0;--ink-3:#cdb999;
+  --paper:#1c1712;--paper-2:#272019;--paper-3:#4a3e31;
+  --gold:#e0b773;--gold-light:#ecca8e;--gold-faint:rgba(224,183,115,.16);
+  --green:#8fcb9c;--red-d:#ec9a86;
+  color-scheme:dark;
+}
+.theme-btn{font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);border-radius:20px;padding:.3rem .8rem;cursor:pointer;flex-shrink:0}
+.theme-btn:hover{border-color:var(--gold);color:var(--gold)}
+html[data-theme="dark"]{--harm:#8fcb9c;--dyn:#e0b773;--chal:#e8a894}
+html[data-theme="dark"] .intro-card{background:var(--paper-2)}
+html[data-theme="dark"] .no-auth a{color:var(--paper);background:var(--ink)}
+html[data-theme="dark"] .no-auth a:hover{background:var(--gold);color:var(--paper)}
+.hdr-right{display:flex;align-items:center;gap:.5rem}
+.nav-btn{white-space:nowrap}
+@media(max-width:480px){.site-header{padding-left:1rem;padding-right:1rem}.site-wordmark{letter-spacing:.2em}.hdr-right .theme-btn,.hdr-right .nav-btn{padding:.3rem .6rem;letter-spacing:.1em}.bk-long{display:none}}
 </style>
 </head>
 <body>
 
 <header class="site-header">
-  <a class="site-wordmark" href="/">elsewhere</a>
-<a class="nav-btn" href="/?fromprofile=1">← back to map</a>
+  <a class="site-wordmark" href="/">elsewhere<span class="astro">astro</span></a>
+<span class="hdr-right"><button type="button" class="theme-btn" onclick="toggleTheme()" aria-label="Switch between light and dark">☾ Dark</button>
+<a class="nav-btn" href="/?fromprofile=1">← <span class="bk-long">back to </span>map</a></span>
 </header>
 
 <main class="page">
@@ -140,10 +170,10 @@ html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margi
     <h2>Sign in to read your Map Guide</h2>
     <p>Enter the email you used when you purchased, and we'll send you a link to unlock your reading. No password needed.</p>
     <div style="max-width:320px;margin:0 auto">
-      <input type="email" id="gateEmail" placeholder="your@email.com" style="font-family:var(--sans);font-size:1rem;font-weight:300;color:var(--ink);background:transparent;border:none;border-bottom:.5px solid var(--paper-3);padding:.55rem 0;width:100%;outline:none;text-align:center;margin-bottom:1.4rem">
+      <input type="email" id="gateEmail" placeholder="your@email.com" style="font-family:var(--sans);font-size:1.09rem;font-weight:400;color:var(--ink);background:transparent;border:none;border-bottom:.5px solid var(--paper-3);padding:.55rem 0;width:100%;outline:none;text-align:center;margin-bottom:1.4rem">
       <br>
-      <button id="gateSendBtn" onclick="gateSendLink()" style="font-size:10px;font-weight:600;letter-spacing:.25em;text-transform:uppercase;color:var(--paper);background:var(--ink);border:none;padding:.9rem 2rem;cursor:pointer">Send my sign-in link</button>
-      <p id="gateSignInMsg" style="font-family:var(--serif);font-style:italic;font-size:.88rem;color:var(--gold);margin-top:1.2rem;display:none"></p>
+      <button id="gateSendBtn" onclick="gateSendLink()" style="font-size:12.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--paper);background:var(--ink);border:none;padding:.9rem 2rem;cursor:pointer">Send my sign-in link</button>
+      <p id="gateSignInMsg" style="font-family:var(--serif);font-style:italic;font-size:0.97rem;color:var(--gold);margin-top:1.2rem;display:none;font-weight:500"></p>
     </div>
   </div>
 
@@ -289,7 +319,7 @@ function renderPlanetCard(p) {
   }
 
   return ''
-    + '<div class="planet-card" data-cache-key="' + cacheKey + '">'
+    + '<div class="planet-card" data-planet="' + p.planet + '" data-cache-key="' + cacheKey + '">'
     +   '<div class="planet-head">'
     +     '<span class="planet-glyph" style="color:'+color+'">'+glyph+'</span>'
     +     '<div>'
@@ -685,7 +715,7 @@ function gateSendLink() {
   var email = (input.value || '').trim();
   if (!email || email.indexOf('@') === -1) {
     msg.style.display = 'block';
-    msg.style.color = '#9b3535';
+    msg.style.color = 'var(--red-d)';
     msg.textContent = 'Please enter a valid email address.';
     return;
   }
@@ -704,7 +734,7 @@ function gateSendLink() {
   })
   .catch(function(){
     msg.style.display = 'block';
-    msg.style.color = '#9b3535';
+    msg.style.color = 'var(--red-d)';
     msg.textContent = 'Something went wrong. Please try again.';
     btn.disabled = false; btn.textContent = 'Send my sign-in link';
   });
@@ -713,5 +743,23 @@ function gateSendLink() {
 runGate();
 </script>
 
+<script>
+// Dark mode: warmer planet colours on the cards, redrawn when the theme changes.
+(function () {
+  var L = {}, DARK = {Sun:'#e8b866',Moon:'#a3b9dc',Mercury:'#84c4a0',Venus:'#e892a8',Mars:'#e8806e',Jupiter:'#d9a86a',Saturn:'#cbb89a',Uranus:'#74c2bb',Neptune:'#a5a3e6',Pluto:'#d29ac0',Chiron:'#e8dcc6',NNode:'#6fc395',SNode:'#9fd2b2'};
+  for (var k in PCOL) L[k] = PCOL[k];
+  function sync() {
+    var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    for (var k in L) PCOL[k] = (dark && DARK[k]) ? DARK[k] : L[k];
+    var cards = document.querySelectorAll('.planet-card');
+    for (var i = 0; i < cards.length; i++) {
+      var p = cards[i].getAttribute('data-planet'); if (!p || !PCOL[p]) continue;
+      var bits = cards[i].querySelectorAll('.planet-glyph,.planet-name,.planet-aspect');
+      for (var j = 0; j < bits.length; j++) bits[j].style.color = PCOL[p];
+    }
+  }
+  sync(); document.addEventListener('ea-theme', sync);
+})();
+</script>
 </body>
 </html>
