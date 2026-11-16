@@ -945,7 +945,10 @@ function buildACG(planets,jd){
     var dr=R(dec);
 
     // MC longitude: where GMST equals RA → geographic longitude = GMST - RA
-    var mcL=n180(gmst-ra);
+    // Where a planet culminates: local sidereal time = RA, and LST = GMST + east
+    // longitude, so longitude = RA - GMST. (This was flipped, mirroring every line
+    // east-west. Only this offline backup was wrong; the server API had it right.)
+    var mcL=n180(ra-gmst);
     var icL=n180(mcL+180);
 
     var mc=[],ic=[],asc=[],dsc=[];
@@ -1295,10 +1298,11 @@ function _handleMapClick(lat,lng,placeName){
     ['MC','IC','ASC','DSC'].forEach(function(lt){
       if(!ltypeState[lt])return;
       var pts=acgData[p][lt];if(!pts)return;
-      var best=Infinity;
+      var best=Infinity,kLat=Math.cos(lat*Math.PI/180);
       for(var i=0;i<pts.length;i++){
         var dlat=pts[i][0]-lat,dlng=pts[i][1]-lng;
         if(dlng>180)dlng-=360;if(dlng<-180)dlng+=360;
+        dlng*=kLat;
         var d=Math.sqrt(dlat*dlat+dlng*dlng);
         if(d<best)best=d;
       }
@@ -1687,11 +1691,16 @@ var QUALITY={
   SNode:{MC:'gifted',IC:'ancestral',ASC:'familiar',DSC:'karmic'}
 };
 
+// Distance from a place to the nearest point of a line, in degrees.
+// A degree of longitude is shorter than a degree of latitude everywhere but the
+// equator, so east-west gaps are scaled by cos(latitude). Without this a line to
+// the east reads as further away than it really is.
 function _lineDistance(lat,lng,pts){
-  var best=Infinity;
+  var best=Infinity,k=Math.cos(lat*Math.PI/180);
   for(var i=0;i<pts.length;i++){
     var dlat=pts[i][0]-lat,dlng=pts[i][1]-lng;
     if(dlng>180)dlng-=360;if(dlng<-180)dlng+=360;
+    dlng*=k;
     var d=Math.sqrt(dlat*dlat+dlng*dlng);if(d<best)best=d;
   }
   return best;
@@ -1957,14 +1966,16 @@ function openCard(cityName,planet,ltype,_lat,_lng,powerZone){
   var PNAMES={NNode:'North Node',SNode:'South Node',Chiron:'Chiron'};
   var displayName=PNAMES[planet]||planet;
   var quality=((QUALITY[planet]||{})[ltype])||'transformed';
-  var distNote='';
+  // A line only counts as an influence within 3 degrees (about 330km): on the
+  // line under 1 degree (about 110km), within orb out to 3. Past that the energy
+  // isn't there, so the card says so rather than reading the planet.
+  var distNote='',farLine=null;
   if(_lat!=null&&_lng!=null&&acgData&&acgData[planet]&&acgData[planet][ltype]){
     var dist=_lineDistance(_lat,_lng,acgData[planet][ltype]);
     var kmDist=Math.round(dist*111);
-    if(dist<2)distNote='You are <strong>on or very near</strong> this line.';
-    else if(dist<6)distNote='You are <strong>within orb</strong> of this line (~'+kmDist+'km). Its influence is active.';
-    else if(dist<15)distNote='You are in the <strong>extended field</strong> (~'+kmDist+'km). The energy is present but subtle.';
-    else distNote='The nearest '+planet+' '+ltype+' line is approximately <strong>'+kmDist+'km</strong> away.';
+    if(dist<1)distNote='You are <strong>on or very near</strong> this line.';
+    else if(dist<3)distNote='You are <strong>within orb</strong> of this line (~'+kmDist+'km). Its influence is active.';
+    else farLine=kmDist;
   }
   var relA=chart.aspects.filter(function(a){return a.p1===planet||a.p2===planet;});
   var _aspG={
@@ -2179,6 +2190,22 @@ function openCard(cityName,planet,ltype,_lat,_lng,powerZone){
 
   var pzData=powerZone&&powerZone.length>=2?_buildPowerZoneHTML(powerZone):null;
   window._resolvedCityName=null; // reset on new card open
+
+  // No line within orb: name the place, say plainly that nothing runs near it,
+  // and show no planet reading. Parans still apply - they are set by latitude.
+  if(farLine&&!pzData){
+    var _s=ltype==='ASC'?'AC':ltype==='DSC'?'DC':ltype;
+    document.getElementById('rcAccent').style.background='var(--paper-3)';
+    document.getElementById('rcCity').innerHTML=(cityName||'This location')+'<br><em>no line here</em>';
+    document.getElementById('rcBody').innerHTML=
+      '<div class="rc-prose">No planetary line runs near this place. The nearest is your '
+      +displayName+' '+_s+' line, about <strong>'+farLine+'km</strong> away \u2014 too far to carry here.</div>'
+      +_paranCardHTML(_lat)
+      +_diveDeeperBtn(cityName,_lat,_lng);
+    document.getElementById('readingCard').classList.add('open');
+    document.getElementById('readingCard').scrollIntoView({behavior:'smooth',block:'nearest'});
+    return;
+  }
   document.getElementById('rcAccent').style.background=col;
   document.getElementById('rcCity').innerHTML=(cityName||'This location')+'<br><em>'+(pzData?'POWER ZONE':quality)+'</em>';
 
