@@ -1061,7 +1061,10 @@ function _renderOverlay(){
   var W=m.W,H=m.H;
   var lw=Math.max(1.2,Math.min(2.5,m.zoomF*0.45));
   var fs=Math.round(Math.max(9,Math.min(13,m.zoomF*2.2)));
-  var PALL=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode','SNode'];
+  // The twelve bodies the Filters row and the legend describe. The South Node
+  // was drawn here too, with no chip, no legend entry and no Focus filter, so it
+  // showed as an unexplained line nothing could turn off.
+  var PALL=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode'];
   var html='';
   var topLabels=[],botLabels=[],leftLabels=[],rightLabels=[];
 
@@ -1270,7 +1273,10 @@ function _handleMapClick(lat,lng,placeName){
   if(!acgData||!activeChart)return;
   // A plain map click clears any pin left by the place search.
   if(!placeName&&window._searchPin){window._searchPin=null;_redraw();}
-  var PALL=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode','SNode'];
+  // The twelve bodies the Filters row and the legend describe. The South Node
+  // was drawn here too, with no chip, no legend entry and no Focus filter, so it
+  // showed as an unexplained line nothing could turn off.
+  var PALL=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode'];
   var PALL_PZ=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode']; // SNode excluded from power zones
 
   // For each line, find its longitude at the CLICKED latitude
@@ -1507,7 +1513,7 @@ function _buildChart(day,month,year,hour,min,name,tz){
   var jd=jdFromDate(utY,utMo,utD,utH,min);
   var planets=computePlanets(jd,selectedGeo.lat,selectedGeo.lng);
   var aspects=computeAspects(planets);
-  ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode','SNode'].forEach(function(p){toggleState[p]=true;});
+  ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode'].forEach(function(p){toggleState[p]=true;});
   ltypeState={MC:true,IC:true,ASC:true,DSC:true};
   selectedFocus='Love';
   activeChart={name:name,_jd:jd,birthDate:day+' '+MONTH_NAMES[month-1]+' '+year,birthTime:pad(hour)+':'+pad(min)+' (UTC'+(tz>=0?'+':'')+tz+')',birthPlace:selectedGeo.display,geo:selectedGeo,planets:planets,aspects:aspects};
