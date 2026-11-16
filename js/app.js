@@ -1110,7 +1110,7 @@ function _renderOverlay(){
     var cw=text.length*fs*0.6+4;
     var bx=anchor==='start'?x:anchor==='end'?x-cw:x-cw/2;
     var tx=anchor==='start'?x+2:anchor==='end'?x-2:x;
-    return '<rect x="'+bx+'" y="'+(y-fs/2-2)+'" width="'+cw+'" height="'+(fs+4)+'" fill="rgba(250,248,244,0.9)" rx="2"/>'+
+    return '<rect x="'+bx+'" y="'+(y-fs/2-2)+'" width="'+cw+'" height="'+(fs+4)+'" style="fill:var(--paper);fill-opacity:.9" rx="2"/>'+
            '<text x="'+tx+'" y="'+y+'" fill="'+col+'" font-size="'+fs+'" font-family="Jost,sans-serif" font-weight="500" dominant-baseline="middle" text-anchor="'+(anchor||'middle')+'">'+text+'</text>';
   }
 
@@ -1126,9 +1126,9 @@ function _renderOverlay(){
   if(activeChart.geo&&activeChart.geo.lat!=null){
     var bp=_ll2px(activeChart.geo.lat,activeChart.geo.lng);
     if(bp.x>0&&bp.x<W&&bp.y>0&&bp.y<H){
-      html+='<circle cx="'+bp.x+'" cy="'+bp.y+'" r="8" fill="none" stroke="#b8955a" stroke-width="2.5"/>';
-      html+='<circle cx="'+bp.x+'" cy="'+bp.y+'" r="2" fill="#b8955a"/>';
-      html+='<text x="'+bp.x+'" y="'+(bp.y-13)+'" fill="#1a1714" font-size="10" font-family="Jost,sans-serif" font-weight="500" text-anchor="middle">Birth</text>';
+      html+='<circle cx="'+bp.x+'" cy="'+bp.y+'" r="8" fill="none" style="stroke:var(--gold)" stroke-width="2.5"/>';
+      html+='<circle cx="'+bp.x+'" cy="'+bp.y+'" r="2" style="fill:var(--gold)"/>';
+      html+='<text x="'+bp.x+'" y="'+(bp.y-13)+'" style="fill:var(--ink)" font-size="10" font-family="Jost,sans-serif" font-weight="500" text-anchor="middle">Birth</text>';
     }
   }
   // Pin for a place found with the search box.
@@ -1141,7 +1141,7 @@ function _renderOverlay(){
         +'<path d="M0,0 C-2,-7 -9,-11 -9,-18 A9,9 0 1 1 9,-18 C9,-11 2,-7 0,0 Z" fill="#1a1714" stroke="#faf8f4" stroke-width="1.5"/>'
         +'<circle cx="0" cy="-18" r="3.2" fill="#d4b07a"/></g>';
       var lbl=String(sp.label||'').split(',')[0].replace(/[<>&]/g,'');
-      html+='<text x="'+x+'" y="'+(pp.y-32).toFixed(1)+'" fill="#1a1714" stroke="#faf8f4" stroke-width="3" paint-order="stroke" font-size="11" font-family="Jost,sans-serif" font-weight="500" text-anchor="middle">'+lbl+'</text>';
+      html+='<text x="'+x+'" y="'+(pp.y-32).toFixed(1)+'" style="fill:var(--ink);stroke:var(--paper)" stroke-width="3" paint-order="stroke" font-size="11" font-family="Jost,sans-serif" font-weight="500" text-anchor="middle">'+lbl+'</text>';
     }
   }
   svg.innerHTML=html;
@@ -1626,9 +1626,9 @@ function buildLegend(){
   var allP=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode'];
   allP.forEach(function(p){
     if(!toggleState[p])return;
-    leg.innerHTML+='<span class="leg-item"><span class="leg-dot" style="background:'+PCOL[p]+'"></span><span style="font-size:.68rem;color:var(--ink-2)">'+PSYM[p]+' '+p+'</span></span>';
+    leg.innerHTML+='<span class="leg-item"><span class="leg-dot" style="background:'+PCOL[p]+'"></span><span style="font-size:0.78rem;color:var(--ink-2)">'+PSYM[p]+' '+p+'</span></span>';
   });
-  leg.innerHTML+='<span class="leg-item" style="margin-left:auto;color:var(--ink-3);font-size:.65rem">solid=MC/ASC &nbsp; dashed=IC/DSC</span>';
+  leg.innerHTML+='<span class="leg-item" style="margin-left:auto;color:var(--ink-3);font-size:0.78rem">solid=MC/ASC &nbsp; dashed=IC/DSC</span>';
 }
 function togglePlanet(p,btn){toggleState[p]=!toggleState[p];btn.classList.toggle('off',!toggleState[p]);drawLines();buildLegend();}
 function toggleLT(lt,btn){ltypeState[lt]=!ltypeState[lt];btn.classList.toggle('on',ltypeState[lt]);drawLines();}
@@ -1827,15 +1827,15 @@ function _paranStyles(){
   st.textContent='.pc{border-bottom:.5px solid var(--paper-3)}.pc:last-child{border-bottom:none}'
     +'.pc summary{list-style:none;display:flex;align-items:center;gap:.6rem;padding:.55rem 0;cursor:pointer}'
     +'.pc summary::-webkit-details-marker{display:none}'
-    +'.pc .pg{font-family:var(--serif);font-size:1.05rem;min-width:2.4rem}'
+    +'.pc .pg{font-family:var(--serif);font-size:1.14rem;min-width:2.4rem;font-weight:500}'
     +'.pc .pm{flex:1;display:flex;flex-direction:column}'
-    +'.pc .pn{font-size:.62rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase}'
-    +'.pc .ps{font-family:var(--serif);font-size:.86rem;color:var(--ink-2);margin-top:.1rem}'
-    +'.pc .pt{font-size:.52rem;letter-spacing:.14em;text-transform:uppercase;border:.5px solid;border-radius:20px;padding:.12rem .5rem;white-space:nowrap}'
-    +'.pc .pv{color:var(--ink-3);font-size:1rem;transition:transform .2s}.pc[open] .pv{transform:rotate(90deg)}'
+    +'.pc .pn{font-size:0.78rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase}'
+    +'.pc .ps{font-family:var(--serif);font-size:0.95rem;color:var(--ink-2);margin-top:.1rem;font-weight:500}'
+    +'.pc .pt{font-size:0.69rem;letter-spacing:.14em;text-transform:uppercase;border:.5px solid;border-radius:20px;padding:.12rem .5rem;white-space:nowrap}'
+    +'.pc .pv{color:var(--ink-3);font-size:1.09rem;transition:transform .2s}.pc[open] .pv{transform:rotate(90deg)}'
     +'.pc .pb{padding:0 0 .75rem 3rem}'
-    +'.pc .pl{font-family:var(--serif);font-style:italic;font-size:.78rem;color:var(--ink-3);margin-bottom:.25rem}'
-    +'.paran-what{font-family:var(--serif);font-style:italic;font-size:.78rem;color:var(--gold);cursor:pointer;text-decoration:underline;text-underline-offset:3px}';
+    +'.pc .pl{font-family:var(--serif);font-style:italic;font-size:0.87rem;color:var(--ink-3);margin-bottom:.25rem;font-weight:500}'
+    +'.paran-what{font-family:var(--serif);font-style:italic;font-size:0.87rem;color:var(--gold);cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-weight:500}';
   document.head.appendChild(st);
 }
 
@@ -1849,12 +1849,12 @@ function _paranCardHTML(lat){
     .filter(function(p){return Math.abs(p.lat-lat)<1.5;})
     .sort(function(a,b){return Math.abs(a.lat-lat)-Math.abs(b.lat-lat);});
   var NM={NNode:'North Node'},ANG={MC:'MC',IC:'IC',ASC:'AC',DSC:'DC'};
-  var TONE={Supportive:'#2c6e49',Mixed:'#b8955a',Challenging:'#9b3535'};
+  var TONE={Supportive:'#2c6e49',Mixed:'#8a6a35',Challenging:'#9b3535'};
   var html='<div class="rc-rule"></div>'
     +'<div style="display:flex;justify-content:space-between;align-items:baseline"><div class="rc-slbl">Parans on this latitude</div>'
     +'<span class="paran-what" onclick="var e=document.getElementById(\'paranWhat\');e.style.display=e.style.display===\'none\'?\'block\':\'none\'">What’s a paran?</span></div>'
-    +'<div id="paranWhat" class="rc-prose" style="display:none;font-size:.82rem;color:var(--ink-3);font-style:italic;margin-bottom:.4rem">A paran is a band of latitude where two of your planets sit on angles at the same moment. It runs right around the globe, so it adds to whatever lines are nearby. Your reports count these too.</div>';
-  if(!near.length)return html+'<div class="rc-prose" style="font-size:.82rem">No parans fall on this latitude.</div>';
+    +'<div id="paranWhat" class="rc-prose" style="display:none;font-size:0.91rem;color:var(--ink-3);font-style:italic;margin-bottom:.4rem">A paran is a band of latitude where two of your planets sit on angles at the same moment. It runs right around the globe, so it adds to whatever lines are nearby. Your reports count these too.</div>';
+  if(!near.length)return html+'<div class="rc-prose" style="font-size:0.91rem">No parans fall on this latitude.</div>';
   return html+near.map(function(p){
     var r=_paranRead(p),km=Math.round(Math.abs(p.lat-lat)*111);
     var nm=function(n,a){return '<span style="color:'+PCOL[n]+'">'+(NM[n]||n)+' '+ANG[a]+'</span>';};
@@ -1873,13 +1873,13 @@ function _diveDeeperBtn(cityName,lat,lng){
   if(!activeChart||lat==null||lng==null)return'';
   return '<div style="margin-top:1rem;padding-top:.75rem;border-top:.5px solid var(--paper-3);text-align:center">'
     +'<button onclick="_openReading('+lat+','+lng+')" '
-    +'style="font-size:9px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;'
+    +'style="font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;'
     +'color:var(--paper);background:var(--ink);border:none;padding:.65rem 1.8rem;cursor:pointer;'
     +'transition:background .2s;width:100%;max-width:260px"'
     +' onmouseover="this.style.background=\'var(--gold)\'" onmouseout="this.style.background=\'var(--ink)\'">'
     +'Dive Deeper ✶'
     +'</button>'
-    +'<p style="font-family:var(--serif);font-style:italic;font-size:.72rem;color:var(--ink-3);margin-top:.5rem">'
+    +'<p style="font-family:var(--serif);font-style:italic;font-size:0.78rem;color:var(--ink-3);margin-top:.5rem;font-weight:500">'
     +'See your full chart in this place</p>'
     +'</div>';
 }
@@ -2061,11 +2061,11 @@ function openCard(cityName,planet,ltype,_lat,_lng,powerZone){
     var gen=_aspG[key1]||_aspG[key2]||'';
     var angleCtx=(_aspAngle[a.type]||{})[lt]||'';
     if(!gen)return '';
-    return '<p style="margin:0 0 .7rem;font-family:var(--serif);font-size:.86rem;color:var(--ink-2);line-height:1.65">'+gen+' '+angleCtx+'</p>';
+    return '<p style="margin:0 0 .7rem;font-family:var(--serif);font-size:0.95rem;color:var(--ink-2);line-height:1.65;font-weight:500">'+gen+' '+angleCtx+'</p>';
   }
   var personText=relA.length
-    ?relA.slice(0,2).map(function(a){return _buildAspectText(a,planet,ltype);}).filter(Boolean).join('')||('<p style="margin:0;font-family:var(--serif);font-size:.86rem;color:var(--ink-2);line-height:1.65">'+PSYM[planet]+' '+(PNAMES[planet]||planet)+' connects with other planets in your chart — its influence here is part of a larger pattern.</p>')
-    :'<p style="margin:0;font-family:var(--serif);font-size:.86rem;color:var(--ink-2);line-height:1.65">Your '+(PNAMES[planet]||planet)+' stands alone in your chart — nothing softens or complicates it. In this place its energy arrives at full strength, unfiltered and pure.</p>';
+    ?relA.slice(0,2).map(function(a){return _buildAspectText(a,planet,ltype);}).filter(Boolean).join('')||('<p style="margin:0;font-family:var(--serif);font-size:0.95rem;color:var(--ink-2);line-height:1.65;font-weight:500">'+PSYM[planet]+' '+(PNAMES[planet]||planet)+' connects with other planets in your chart — its influence here is part of a larger pattern.</p>')
+    :'<p style="margin:0;font-family:var(--serif);font-size:0.95rem;color:var(--ink-2);line-height:1.65;font-weight:500">Your '+(PNAMES[planet]||planet)+' stands alone in your chart — nothing softens or complicates it. In this place its energy arrives at full strength, unfiltered and pure.</p>';
   // ── Power Zone reading ──────────────────────────────────
   var _pzRoles={
     Sun:{MC:'your identity and purpose become visible — you show up as yourself, fully',IC:'your core self roots deeply here — home and who you are become the same thing',ASC:'you arrive as you truly are — confident, present, impossible to overlook',DSC:'your sense of self is reflected through your closest relationships here'},
@@ -2191,12 +2191,12 @@ function openCard(cityName,planet,ltype,_lat,_lng,powerZone){
         var xpd=chart.planets[x.p];
         var xcol=PCOL[x.p];
         return '<div style="display:flex;align-items:center;gap:.5rem;padding:.3rem 0;border-bottom:.5px solid var(--paper-3)">'
-          +'<span style="color:'+xcol+';font-family:var(--serif);font-size:1.2rem">'+PSYM[x.p]+'</span>'
-          +'<span style="font-size:.65rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:'+xcol+'">'+(PNAMES[x.p]||x.p)+(xpd?' in '+xpd.sign:'')+' · '+s+'</span>'
+          +'<span style="color:'+xcol+';font-family:var(--serif);font-size:1.29rem;font-weight:500">'+PSYM[x.p]+'</span>'
+          +'<span style="font-size:0.78rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:'+xcol+'">'+(PNAMES[x.p]||x.p)+(xpd?' in '+xpd.sign:'')+' · '+s+'</span>'
           +'</div>';
       }).join('')
       +'</div>'
-      +(distNote?'<div class="rc-rule"></div><div class="rc-prose" style="font-size:.82rem">'+distNote+'</div>':'')
+      +(distNote?'<div class="rc-rule"></div><div class="rc-prose" style="font-size:0.91rem">'+distNote+'</div>':'')
       +'<div class="rc-rule"></div>'
       +'<div class="rc-slbl">What each line brings</div>'
       +powerZone.slice(0,3).map(function(x){
@@ -2206,8 +2206,8 @@ function openCard(cityName,planet,ltype,_lat,_lng,powerZone){
         var lineDesc=(LINE_ACTIVATED[x.p]&&LINE_ACTIVATED[x.p][x.lt])||'';
         return '<div style="margin-bottom:1rem">'
           +'<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem">'
-          +'<span style="color:'+xcol+';font-family:var(--serif);font-size:1.2rem">'+PSYM[x.p]+'</span>'
-          +'<span style="font-size:.65rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:'+xcol+'">'+(PNAMES[x.p]||x.p)+(xpd?' in '+xpd.sign:'')+' · '+s+'</span>'
+          +'<span style="color:'+xcol+';font-family:var(--serif);font-size:1.29rem;font-weight:500">'+PSYM[x.p]+'</span>'
+          +'<span style="font-size:0.78rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:'+xcol+'">'+(PNAMES[x.p]||x.p)+(xpd?' in '+xpd.sign:'')+' · '+s+'</span>'
           +'</div>'
           +(lineDesc?'<div class="rc-prose" style="margin:0">'+lineDesc+'</div>':'')
           +'</div>';
@@ -2219,7 +2219,7 @@ function openCard(cityName,planet,ltype,_lat,_lng,powerZone){
   } else {
     document.getElementById('rcBody').innerHTML=
       '<div class="rc-planet-row"><span class="rc-glyph" style="color:'+col+'">'+PSYM[planet]+'</span><div><div class="rc-pname" style="color:'+col+'">'+displayName+' in '+pd.sign+' '+pd.deg+'°'+pad(pd.min)+"'"+'</div><div class="rc-ltype">'+{MC:'MC — Midheaven',IC:'IC — Imum Coeli',ASC:'AC — Ascendant',DSC:'DC — Descendant'}[ltype]+' line</div></div></div>'
-      +(distNote?'<div class="rc-rule"></div><div class="rc-prose" style="font-size:.82rem">'+distNote+'</div>':'')
+      +(distNote?'<div class="rc-rule"></div><div class="rc-prose" style="font-size:0.91rem">'+distNote+'</div>':'')
       +'<div class="rc-rule"></div>'
       +'<div class="rc-slbl">In this place you feel</div><div class="rc-feeling">'+((FEELING[planet]||{})[focus]||'powerfully present')+'.</div>'
       +'<div class="rc-irow"><div class="rc-ibox"><div class="rc-ilbl">Best for</div><div class="rc-itext">'+((BEST_FOR[planet]&&BEST_FOR[planet][ltype])||'')+'</div></div><div class="rc-ibox"><div class="rc-ilbl">Watch for</div><div class="rc-itext">'+((WATCH_FOR[planet]&&WATCH_FOR[planet][ltype])||'')+'</div></div></div>'
