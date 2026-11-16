@@ -3,25 +3,36 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>elsewhere — your profile</title>
+<title>elsewhereastro — your profile</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+// Dark mode: the visitor's saved choice, otherwise their device setting.
+(function(){var t=null;try{t=localStorage.getItem('ea_theme');}catch(e){}
+  var mq=window.matchMedia('(prefers-color-scheme: dark)');
+  function apply(){var d=t?t==='dark':mq.matches;document.documentElement.setAttribute('data-theme',d?'dark':'light');
+    var b=document.querySelectorAll('.theme-btn');for(var i=0;i<b.length;i++)b[i].textContent=d?'☀ Light':'☾ Dark';
+    try{document.dispatchEvent(new Event('ea-theme'));}catch(e){}}
+  apply();if(mq.addEventListener)mq.addEventListener('change',apply);document.addEventListener('DOMContentLoaded',apply);
+  window.toggleTheme=function(){t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';try{localStorage.setItem('ea_theme',t);}catch(e){}apply();};
+})();
+</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --ink:#1a1714;--ink-2:#2e2b28;--ink-3:#4a4540;
   --paper:#faf8f4;--paper-2:#f2ede5;--paper-3:#e8e0d2;
-  --gold:#b8955a;--gold-light:#d4b07a;--gold-faint:rgba(184,149,90,.13);
+  --gold:#8a6a35;--gold-light:#d4b07a;--gold-faint:rgba(184,149,90,.13);
   --serif:'Cormorant Garamond',Georgia,serif;--sans:'Jost',sans-serif;
 }
-html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margin:0;font-size:16px}
+html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margin:0;font-size:17.5px}
 
 /* ── Header ── */
 .site-header{width:100%;padding:.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;border-bottom:.5px solid var(--paper-3);background:var(--paper);position:sticky;top:0;z-index:20}
-.site-wordmark{font-family:var(--serif);font-size:1.05rem;font-weight:300;letter-spacing:.35em;text-transform:lowercase;color:var(--ink);text-decoration:none}
+.site-wordmark{font-family:var(--serif);font-size:1.14rem;font-weight:400;letter-spacing:.2em;text-transform:lowercase;color:var(--ink);text-decoration:none}
 .header-actions{display:flex;align-items:center;gap:.75rem}
-.nav-btn{font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);padding:.3rem .8rem;cursor:pointer;border-radius:20px;text-decoration:none;transition:all .2s;display:inline-flex;align-items:center;gap:.3rem}
+.nav-btn{font-size:11.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);padding:.3rem .8rem;cursor:pointer;border-radius:20px;text-decoration:none;transition:all .2s;display:inline-flex;align-items:center;gap:.3rem}
 .nav-btn:hover{border-color:var(--gold);color:var(--gold)}
 .signed-in-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0}
 
@@ -34,13 +45,13 @@ html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margi
 #noAuthState{display:none;text-align:center;padding:4rem 1.5rem}
 
 /* ── Profile header ── */
-.profile-eyebrow{font-size:9px;font-weight:500;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:.6rem;text-align:center}
-.profile-name{font-family:var(--serif);font-size:clamp(2rem,6vw,3rem);font-weight:300;line-height:1.1;text-align:center;margin-bottom:.4rem}
+.profile-eyebrow{font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:.6rem;text-align:center}
+.profile-name{font-family:var(--serif);font-size:clamp(2rem,6vw,3rem);font-weight:400;line-height:1.1;text-align:center;margin-bottom:.4rem}
 .profile-name em{font-style:italic;color:var(--gold)}
-.profile-meta{font-family:var(--serif);font-style:italic;font-size:.85rem;color:var(--ink-3);text-align:center;margin-bottom:2.5rem;line-height:1.7}
+.profile-meta{font-family:var(--serif);font-style:italic;font-size:0.94rem;color:var(--ink-3);text-align:center;margin-bottom:2.5rem;line-height:1.7;font-weight:500}
 
 /* ── Section heading ── */
-.section-heading{font-size:10px;font-weight:500;letter-spacing:.25em;text-transform:uppercase;color:var(--gold);margin-bottom:1.2rem;display:flex;align-items:center;gap:.6rem}
+.section-heading{font-size:12.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:1.2rem;display:flex;align-items:center;gap:.6rem}
 .section-heading::after{content:'';flex:1;height:.5px;background:var(--paper-3)}
 
 /* ── Chart wheel ── */
@@ -50,16 +61,16 @@ html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margi
 .wheel-glyph{font-family:'Segoe UI Symbol','Apple Symbols','Noto Sans Symbols 2','Noto Sans Symbols',sans-serif;cursor:default}
 .wheel-wrap{position:relative}
 .wheel-pt{cursor:pointer;outline:none}
-.wheel-pt:focus-visible circle{stroke:#b8955a;stroke-width:1.5}
-.wheel-tip{position:absolute;left:0;top:0;transform:translate(-50%,calc(-100% - 10px));background:#1a1714;color:#faf8f4;font-family:var(--sans);font-size:.78rem;letter-spacing:.03em;line-height:1.3;padding:.45rem .7rem;border-radius:4px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .12s;z-index:5}
+.wheel-pt:focus-visible circle{stroke:#8a6a35;stroke-width:1.5}
+.wheel-tip{position:absolute;left:0;top:0;transform:translate(-50%,calc(-100% - 10px));background:#1a1714;color:#faf8f4;font-family:var(--sans);font-size:0.87rem;letter-spacing:.03em;line-height:1.3;padding:.45rem .7rem;border-radius:4px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .12s;z-index:5}
 .wheel-tip.on{opacity:1}
-.wheel-enlarge{display:inline-flex;align-items:center;gap:.5rem;min-height:44px;padding:0 1.1rem;margin-top:.5rem;font-family:var(--sans);font-size:9px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid #cfc4b0;border-radius:22px;cursor:pointer;transition:all .2s}
+.wheel-enlarge{display:inline-flex;align-items:center;gap:.5rem;min-height:44px;padding:0 1.1rem;margin-top:.5rem;font-family:var(--sans);font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid #cfc4b0;border-radius:22px;cursor:pointer;transition:all .2s}
 .wheel-enlarge:hover{border-color:var(--gold);color:var(--gold)}
-.wheel-note{font-family:var(--serif);font-style:italic;font-size:.85rem;color:var(--ink-3);line-height:1.6;text-align:center;max-width:520px;margin-top:.8rem}
+.wheel-note{font-family:var(--serif);font-style:italic;font-size:0.94rem;color:var(--ink-3);line-height:1.6;text-align:center;max-width:520px;margin-top:.8rem;font-weight:500}
 .wheel-modal{display:none;position:fixed;inset:0;z-index:1000;background:rgba(250,248,244,.98);overflow:auto;padding:3.5rem 1rem 2rem}
 .wheel-modal.open{display:block}
 .wheel-modal .wheel-wrap{max-width:min(96vw,94vh);margin:0 auto}
-.wheel-close{position:fixed;top:.9rem;right:.9rem;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:var(--paper);border:.5px solid var(--paper-3);border-radius:50%;cursor:pointer;color:var(--ink-3);font-size:1rem}
+.wheel-close{position:fixed;top:.9rem;right:.9rem;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:var(--paper);border:.5px solid var(--paper-3);border-radius:50%;cursor:pointer;color:var(--ink-3);font-size:1.09rem}
 .wheel-close:hover{color:var(--ink);border-color:var(--gold)}
 canvas.chart-wheel{display:block;width:100%;max-width:340px;aspect-ratio:1/1;height:auto}
 
@@ -67,97 +78,111 @@ canvas.chart-wheel{display:block;width:100%;max-width:340px;aspect-ratio:1/1;hei
 .chart-summary{margin-bottom:2.5rem}
 .summary-trio{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1.5rem}
 .trio-item{text-align:center;padding:1rem .75rem;background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:6px}
-.trio-label{font-size:8px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:.3rem}
-.trio-value{font-family:var(--serif);font-size:1rem;font-weight:300;color:var(--ink);margin-bottom:.3rem}
-.trio-desc{font-family:var(--serif);font-style:italic;font-size:.75rem;color:var(--ink-3);line-height:1.5}
+.trio-label{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:.3rem}
+.trio-value{font-family:var(--serif);font-size:1.09rem;font-weight:400;color:var(--ink);margin-bottom:.3rem}
+.trio-desc{font-family:var(--serif);font-style:italic;font-size:0.84rem;color:var(--ink-3);line-height:1.5;font-weight:500}
 
 /* ── Placements table + house cusps ── */
 .visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
-.placements-caption{font-family:var(--serif);font-style:italic;font-size:.9rem;color:var(--ink-3);line-height:1.55;margin:-.6rem 0 1rem}
+.placements-caption{font-family:var(--serif);font-style:italic;font-size:0.99rem;color:var(--ink-3);line-height:1.55;margin:-.6rem 0 1rem;font-weight:500}
 .placements{width:100%;border-collapse:collapse;margin-bottom:.7rem}
-.placements th{font-size:9px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);text-align:left;padding:0 .5rem .6rem;border-bottom:.5px solid #d9cfbd}
+.placements th{font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);text-align:left;padding:0 .5rem .6rem;border-bottom:.5px solid #d9cfbd}
 .placements td{padding:.7rem .5rem;border-bottom:.5px solid var(--paper-3);vertical-align:middle}
 .placements .num{text-align:right}
-.pl-glyph{width:34px;font-size:1.2rem;line-height:1}
-.pl-name{font-size:.72rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2)}
-.pl-pos{font-family:var(--serif);font-size:1.12rem;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
-.pl-house{font-family:var(--serif);font-size:1.12rem;color:var(--ink);width:56px}
-.retro{font-family:var(--sans);font-size:.68rem;font-weight:500;color:#9b3535;margin-left:.35rem}
-.retro-key{font-family:var(--serif);font-style:italic;font-size:.85rem;color:var(--ink-3);margin-bottom:2.5rem}
+.pl-glyph{width:34px;font-size:1.29rem;line-height:1}
+.pl-name{font-size:0.78rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2)}
+.pl-pos{font-family:var(--serif);font-size:1.21rem;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:500}
+.pl-house{font-family:var(--serif);font-size:1.21rem;color:var(--ink);width:56px;font-weight:500}
+.retro{font-family:var(--sans);font-size:0.78rem;font-weight:500;color:#9b3535;margin-left:.35rem}
+.retro-key{font-family:var(--serif);font-style:italic;font-size:0.94rem;color:var(--ink-3);margin-bottom:2.5rem;font-weight:500}
 .cusps-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:.5px solid #d9cfbd;border-left:.5px solid var(--paper-3);margin-bottom:2.5rem}
 .cusp{display:flex;align-items:baseline;gap:.75rem;padding:.75rem 1rem;border-right:.5px solid var(--paper-3);border-bottom:.5px solid var(--paper-3)}
 .cusp.angle{background:#ebdfc6;border-right-color:#d9c9a8;border-bottom-color:#d9c9a8}
-.cusp-label{width:1.5rem;font-size:.68rem;font-weight:500;letter-spacing:.06em;color:#8a6a35;flex-shrink:0}
+.cusp-label{width:1.5rem;font-size:0.78rem;font-weight:500;letter-spacing:.06em;color:#8a6a35;flex-shrink:0}
 .cusp.angle .cusp-label{color:#6e5226}
-.cusp-pos{font-family:var(--serif);font-size:1.1rem;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
+.cusp-pos{font-family:var(--serif);font-size:1.19rem;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:500}
 .cusp.angle .cusp-pos{font-weight:500}
 .cusp-pos .short{display:none}
 @media(max-width:560px){
   .placements th{padding:0 .35rem .55rem}
   .placements td{padding:.65rem .35rem}
   .pl-glyph{width:28px}
-  .pl-name{font-size:.66rem;letter-spacing:.1em}
-  .pl-pos{font-size:1.02rem}
-  .pl-house{width:44px;font-size:1.02rem}
+  .pl-name{font-size:0.78rem;letter-spacing:.1em}
+  .pl-pos{font-size:1.11rem}
+  .pl-house{width:44px;font-size:1.11rem}
   .cusp{flex-direction:column;gap:.15rem;padding:.6rem .55rem}
-  .cusp-pos{font-size:.98rem}
+  .cusp-pos{font-size:1.07rem}
   .cusp-pos .long{display:none}
   .cusp-pos .short{display:inline}
 }
 
-/* ── Places explored ── */
-.places-list{display:flex;flex-direction:column;gap:.75rem;margin-bottom:2.5rem}
-.place-card{display:flex;align-items:center;gap:1rem;padding:.9rem 1.1rem;background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:6px;text-decoration:none;transition:border-color .2s}
-.place-card:hover{border-color:var(--gold)}
-.place-name{font-family:var(--serif);font-size:1rem;color:var(--ink);flex:1}
-.place-date{font-size:.7rem;color:var(--ink-3);letter-spacing:.08em}
-.place-arrow{color:var(--gold);font-size:.8rem}
-.no-places{font-family:var(--serif);font-style:italic;font-size:.88rem;color:var(--ink-3);padding:.75rem 0}
 
 /* ── Sign out ── */
-.signout-btn{font-size:9px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);padding:.65rem 1.5rem;cursor:pointer;width:100%;max-width:200px;display:block;margin:0 auto;transition:all .2s}
+.signout-btn{font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);padding:.65rem 1.5rem;cursor:pointer;width:100%;max-width:200px;display:block;margin:0 auto;transition:all .2s}
 .signout-btn:hover{border-color:var(--gold);color:var(--gold)}
   .mapguide-section{margin-bottom:2.5rem}
 .mg-card{display:block;background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:8px;padding:1.4rem 1.5rem;text-decoration:none;transition:border-color .2s}
 .mg-card:hover{border-color:var(--gold)}
 .mg-owned{display:flex;align-items:center;justify-content:space-between;gap:1rem}
 .mg-owned-left{display:flex;flex-direction:column;gap:.2rem}
-.mg-title{font-family:var(--serif);font-size:1.15rem;font-weight:400;color:var(--ink)}
-.mg-status{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);font-weight:500}
-.mg-read{font-size:9px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--paper);background:var(--gold);padding:.6rem 1.2rem;border-radius:20px;flex-shrink:0}
-.mg-invite-title{font-family:var(--serif);font-size:1.1rem;font-weight:400;color:var(--ink);margin-bottom:.3rem}
-.mg-invite-desc{font-family:var(--serif);font-style:italic;font-size:.88rem;color:var(--ink-3);line-height:1.6;margin-bottom:.2rem}
-.mg-invite-link{font-size:.8rem;color:var(--gold);letter-spacing:.04em}
+.mg-title{font-family:var(--serif);font-size:1.24rem;font-weight:400;color:var(--ink)}
+.mg-status{font-size:0.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);font-weight:600}
+.mg-read{font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--paper);background:var(--gold);padding:.6rem 1.2rem;border-radius:20px;flex-shrink:0}
+.mg-invite-title{font-family:var(--serif);font-size:1.19rem;font-weight:400;color:var(--ink);margin-bottom:.3rem}
+.mg-invite-desc{font-family:var(--serif);font-style:italic;font-size:0.97rem;color:var(--ink-3);line-height:1.6;margin-bottom:.2rem;font-weight:500}
+.mg-invite-link{font-size:0.89rem;color:var(--gold);letter-spacing:.04em}
 
 /* ── Password ── */
 .pw-card{background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:8px;padding:1.3rem 1.5rem;margin-bottom:2.5rem}
 #pwPrompt{display:none;border-color:var(--gold)}
-.pw-title{font-family:var(--serif);font-size:1.15rem;font-weight:400;color:var(--ink);margin-bottom:.3rem}
-.pw-desc{font-family:var(--serif);font-style:italic;font-size:.88rem;color:var(--ink-3);line-height:1.6;margin-bottom:.9rem}
-.pw-card input{font-family:var(--sans);font-size:1rem;font-weight:300;color:var(--ink);background:transparent;border:none;border-bottom:.5px solid var(--paper-3);border-radius:0;padding:.55rem 0;width:100%;outline:none;margin-bottom:.9rem}
+.pw-title{font-family:var(--serif);font-size:1.24rem;font-weight:400;color:var(--ink);margin-bottom:.3rem}
+.pw-desc{font-family:var(--serif);font-style:italic;font-size:0.97rem;color:var(--ink-3);line-height:1.6;margin-bottom:.9rem;font-weight:500}
+.pw-card input{font-family:var(--sans);font-size:1.09rem;font-weight:400;color:var(--ink);background:transparent;border:none;border-bottom:.5px solid var(--paper-3);border-radius:0;padding:.55rem 0;width:100%;outline:none;margin-bottom:.9rem}
 .pw-card input:focus{border-bottom-color:var(--gold)}
-.pw-card input::placeholder{color:var(--ink-3);font-style:italic;font-family:var(--serif);font-size:.9rem}
-.pw-msg{font-family:var(--serif);font-style:italic;font-size:.85rem;line-height:1.5;margin-bottom:.8rem;display:none}
+.pw-card input::placeholder{color:var(--ink-3);font-style:italic;font-family:var(--serif);font-size:0.99rem;font-weight:500}
+.pw-msg{font-family:var(--serif);font-style:italic;font-size:0.94rem;line-height:1.5;margin-bottom:.8rem;display:none;font-weight:500}
 .pw-msg.err{display:block;color:#8b3a3a}
 .pw-msg.ok{display:block;color:var(--gold)}
 .pw-actions{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
-.pw-save{font-size:9px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--paper);background:var(--ink);border:none;padding:.7rem 1.4rem;cursor:pointer;transition:background .2s}
+.pw-save{font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--paper);background:var(--ink);border:none;padding:.7rem 1.4rem;cursor:pointer;transition:background .2s}
 .pw-save:hover{background:var(--gold)}
 .pw-save:disabled{opacity:.5;cursor:wait}
-.pw-later{font-family:var(--serif);font-style:italic;font-size:.85rem;color:var(--ink-3);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:3px}
+.pw-later{font-family:var(--serif);font-style:italic;font-size:0.94rem;color:var(--ink-3);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:3px;font-weight:500}
 
 /* ── Footer ── */
 .page-footer{text-align:center;padding:1.5rem 0 1rem;border-top:.5px solid var(--paper-3);margin-top:2rem}
+
+/* Dark mode: follows the device, or the visitor's choice (saved on their device) */
+.astro{color:var(--gold)}
+html[data-theme="dark"]{
+  --ink:#f6ecdc;--ink-2:#ead9c0;--ink-3:#cdb999;
+  --paper:#1c1712;--paper-2:#272019;--paper-3:#4a3e31;
+  --gold:#e0b773;--gold-light:#ecca8e;--gold-faint:rgba(224,183,115,.16);
+  --green:#8fcb9c;--red-d:#ec9a86;
+  color-scheme:dark;
+}
+.theme-btn{font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);border-radius:20px;padding:.3rem .8rem;cursor:pointer;flex-shrink:0}
+.theme-btn:hover{border-color:var(--gold);color:var(--gold)}
+html[data-theme="dark"] .wheel-modal{background:rgba(28,23,18,.98)}
+html[data-theme="dark"] .wheel-tip{background:#f6ecdc;color:#1c1712}
+html[data-theme="dark"] .placements th{border-bottom-color:var(--paper-3)}
+html[data-theme="dark"] .cusps-grid{border-top-color:var(--paper-3)}
+html[data-theme="dark"] .cusp.angle{background:#3a2f22;border-right-color:#5a4a36;border-bottom-color:#5a4a36}
+html[data-theme="dark"] .cusp.angle .cusp-label{color:var(--gold)}
+html[data-theme="dark"] .retro{color:var(--red-d)}
+.nav-btn{white-space:nowrap}
+@media(max-width:480px){.site-header{padding-left:1rem;padding-right:1rem}.site-header .site-wordmark{letter-spacing:.2em}#headerEmail,.signed-in-dot{display:none}.header-actions{gap:.4rem}.header-actions .theme-btn,.header-actions .nav-btn{padding:.3rem .6rem;letter-spacing:.1em}.bk-long{display:none}}
 </style>
 </head>
 <body>
 
 <header class="site-header">
-  <a href="/" class="site-wordmark">elsewhere</a>
+  <a href="/" class="site-wordmark">elsewhere<span class="astro">astro</span></a>
   <div class="header-actions">
-    <span style="font-size:.72rem;font-family:var(--serif);font-style:italic;color:var(--ink-3)" id="headerEmail"></span>
+    <span style="font-size:0.78rem;font-family:var(--serif);font-style:italic;color:var(--ink-3);font-weight:500" id="headerEmail"></span>
     <div class="signed-in-dot"></div>
-    <a href="/?fromprofile=1" class="nav-btn">← Back to map</a>
+    <button type="button" class="theme-btn" onclick="toggleTheme()" aria-label="Switch between light and dark">☾ Dark</button>
+    <a href="/?fromprofile=1" class="nav-btn">← <span class="bk-long">Back to </span>map</a>
   </div>
 </header>
 
@@ -178,7 +203,7 @@ canvas.chart-wheel{display:block;width:100%;max-width:340px;aspect-ratio:1/1;hei
 
   <div id="noAuthState">
     <p style="font-family:var(--serif);font-style:italic;color:var(--ink-3);margin-bottom:1.5rem">You need to be signed in to view your profile.</p>
-    <a href="/" class="nav-btn" style="display:inline-flex">Go to elsewhere</a>
+    <a href="/" class="nav-btn" style="display:inline-flex">Go to elsewhereastro</a>
   </div>
 
   <div id="mainContent">
@@ -246,9 +271,6 @@ canvas.chart-wheel{display:block;width:100%;max-width:340px;aspect-ratio:1/1;hei
     <p class="placements-caption">The four angles, shaded gold, start the 1st, 4th, 7th and 10th houses.</p>
     <div class="cusps-grid" id="cuspsGrid"></div>
 
-    <!-- Places explored -->
-    <div class="section-heading">Places explored</div>
-    <div class="places-list" id="placesList"></div>
 
     <!-- Password -->
     <div class="section-heading">Password</div>
@@ -265,9 +287,9 @@ canvas.chart-wheel{display:block;width:100%;max-width:340px;aspect-ratio:1/1;hei
     <button class="signout-btn" onclick="signOut()">Sign out</button>
 
     <div class="page-footer">
-      <a href="mailto:elsewhereastro@gmail.com" style="font-family:var(--serif);font-size:.78rem;color:var(--ink-3);text-decoration:none;border-bottom:1px solid var(--paper-3)">share feedback</a>
+      <a href="mailto:elsewhereastro@gmail.com" style="font-family:var(--serif);font-size:0.87rem;color:var(--ink-3);text-decoration:none;border-bottom:1px solid var(--paper-3);font-weight:500">share feedback</a>
       <span style="color:var(--paper-3);margin:0 .8rem">·</span>
-      <span style="font-family:var(--serif);font-size:.78rem;color:var(--ink-3)">© 2025 elsewhere</span>
+      <span style="font-family:var(--serif);font-size:0.87rem;color:var(--ink-3);font-weight:500">© 2026 elsewhereastro</span>
     </div>
 
   </div><!-- /mainContent -->
@@ -341,19 +363,19 @@ function drawNatalWheel(planets) {
     var midAngle = lonToAngle(s*30+15);
     var labelR = (rZodiac+rOuter)/2;
     ctx.font = 'italic 300 ' + Math.round(size*0.036)+'px Cormorant Garamond, Georgia, serif';
-    ctx.fillStyle = '#b8955a'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#8a6a35'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(SIGN_ABBR[s], cx+labelR*Math.cos(midAngle), cy+labelR*Math.sin(midAngle));
   }
 
   for (var h = 0; h < 12; h++) {
     var hAngle = lonToAngle(ascLon + h*30);
     var isAngle = (h % 3 === 0);
-    ctx.strokeStyle = isAngle ? '#b8955a' : '#d4c9b8'; ctx.lineWidth = isAngle ? 1 : 0.5;
+    ctx.strokeStyle = isAngle ? '#8a6a35' : '#d4c9b8'; ctx.lineWidth = isAngle ? 1 : 0.5;
     ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx+rZodiac*Math.cos(hAngle), cy+rZodiac*Math.sin(hAngle)); ctx.stroke();
     var numLon = ascLon + h*30+15;
     var numAngle = lonToAngle(numLon); var numR = (rHouse+rZodiac)/2;
     ctx.font = Math.round(size*0.028)+'px Jost, sans-serif';
-    ctx.fillStyle = '#9a9080'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#6b645b'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(String(h+1), cx+numR*Math.cos(numAngle), cy+numR*Math.sin(numAngle));
   }
 
@@ -363,12 +385,12 @@ function drawNatalWheel(planets) {
   var mcLon = planets.Midheaven ? planets.Midheaven.totalDeg : ascLon+90;
   [{lon:ascLon,label:'AC'},{lon:ascLon+180,label:'DC'},{lon:mcLon,label:'MC'},{lon:mcLon+180,label:'IC'}].forEach(function(a){
     var ang = lonToAngle(a.lon);
-    ctx.strokeStyle = '#b8955a'; ctx.lineWidth = 1; ctx.setLineDash([3,3]);
+    ctx.strokeStyle = '#8a6a35'; ctx.lineWidth = 1; ctx.setLineDash([3,3]);
     ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+rHouse*Math.cos(ang), cy+rHouse*Math.sin(ang)); ctx.stroke();
     ctx.setLineDash([]);
     var lblR = rHouse+size*0.025;
     ctx.font = '500 '+Math.round(size*0.032)+'px Jost, sans-serif';
-    ctx.fillStyle = '#b8955a'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#8a6a35'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(a.label, cx+lblR*Math.cos(ang), cy+lblR*Math.sin(ang));
   });
 
@@ -506,7 +528,7 @@ function renderPlacements(planets, server, jd, profile) {
       retro = (n360p(later[p].totalDeg - pt.lon + 180) - 180) < 0;
     }
     rows.push('<tr>'
-      + '<td class="pl-glyph" style="color:' + (PCOL[p] || '#888') + '" aria-hidden="true">' + (PSYM[p] || '') + '\uFE0E</td>'
+      + '<td class="pl-glyph" data-p="' + p + '" style="color:' + (PCOL[p] || '#888') + '" aria-hidden="true">' + (PSYM[p] || '') + '\uFE0E</td>'
       + '<td class="pl-name">' + (PLACEMENT_NAMES[p] || p) + '</td>'
       + '<td class="pl-pos">' + fmtPos(pt.lon) + (retro ? '<span class="retro" title="Retrograde">℞</span>' : '') + '</td>'
       + '<td class="pl-house num">' + houseOf(pt.lon, cusps) + '</td>'
@@ -543,7 +565,10 @@ function buildWheelSvg(data) {
   var cusps = data.cusps, points = data.points, asc = cusps[0];
   var S = 640, cx = 320, cy = 320;
   var R_OUT = 300, R_ZOD = 258, R_GLYPH = 214, R_DEG = 181, R_IN = 112, R_HNUM = 128;
-  var LINE = '#cfc4b0', GOLD = '#b8955a', GOLD_D = '#8a6a35', INK = '#1a1714', INK3 = '#4a4540';
+  var LINE = '#cfc4b0', GOLD = '#8a6a35', GOLD_D = '#8a6a35', INK = '#1a1714', INK3 = '#4a4540';
+  var DK = document.documentElement.getAttribute('data-theme') === 'dark';
+  if (DK) { LINE = '#5a4c3c'; GOLD = '#e0b773'; GOLD_D = '#e0b773'; INK = '#f6ecdc'; INK3 = '#cdb999'; }
+  var RING = DK ? '#272019' : '#f2ede5', ZOD = DK ? '#1c1712' : '#faf8f4', HNUM = DK ? '#cdb999' : '#6b645b';
   var SERIF = "'Cormorant Garamond', Georgia, serif", SANS = 'Jost, sans-serif';
   function pt(lon, r) {
     var a = (180 + (lon - asc)) * Math.PI / 180;
@@ -562,9 +587,9 @@ function buildWheelSvg(data) {
   var o = [];
 
   // rings
-  o.push('<circle cx="320" cy="320" r="' + R_OUT + '" fill="#f2ede5" stroke="' + LINE + '"/>');
-  o.push('<circle cx="320" cy="320" r="' + R_ZOD + '" fill="#faf8f4" stroke="' + LINE + '"/>');
-  o.push('<circle cx="320" cy="320" r="' + R_IN + '" fill="#f2ede5" stroke="' + LINE + '" stroke-width="0.8"/>');
+  o.push('<circle cx="320" cy="320" r="' + R_OUT + '" fill="' + RING + '" stroke="' + LINE + '"/>');
+  o.push('<circle cx="320" cy="320" r="' + R_ZOD + '" fill="' + ZOD + '" stroke="' + LINE + '"/>');
+  o.push('<circle cx="320" cy="320" r="' + R_IN + '" fill="' + RING + '" stroke="' + LINE + '" stroke-width="0.8"/>');
 
   // degree ticks
   for (var deg = 0; deg < 360; deg++) {
@@ -585,7 +610,7 @@ function buildWheelSvg(data) {
     var c = cusps[i], isAng = (i in ANG), p = dm(c);
     o.push(line(c, R_IN, c, R_ZOD, isAng ? GOLD : LINE, isAng ? 1.6 : 0.9));
     var mid = c + n360p(cusps[(i + 1) % 12] - c) / 2, h = pt(mid, R_HNUM);
-    o.push('<text x="' + n(h[0]) + '" y="' + n(h[1]) + '" font-size="11" fill="#8f8577" text-anchor="middle" dominant-baseline="central" font-family="' + SANS + '">' + (i + 1) + '</text>');
+    o.push('<text x="' + n(h[0]) + '" y="' + n(h[1]) + '" font-size="11" fill="' + HNUM + '" text-anchor="middle" dominant-baseline="central" font-family="' + SANS + '">' + (i + 1) + '</text>');
     if (isAng) {
       o.push(line(c, R_OUT, c, R_OUT + 14, GOLD, 1.6));
       var l = pt(c, R_OUT + 30);
@@ -640,7 +665,7 @@ function buildWheelSvg(data) {
       + '<circle cx="' + n(g[0]) + '" cy="' + n(g[1]) + '" r="17" fill="transparent" pointer-events="all"/>'
       + '<text class="wheel-glyph" x="' + n(g[0]) + '" y="' + n(g[1]) + '" font-size="23" fill="' + col + '" text-anchor="middle" dominant-baseline="central" style="cursor:pointer">' + (PSYM[it.name] || '') + '\uFE0E</text>'
       + '</g>');
-    o.push('<text x="' + n(t[0]) + '" y="' + n(t[1]) + '" text-anchor="middle" dominant-baseline="central" font-family="' + SERIF + '" fill="' + INK + '"><tspan font-size="13">' + p.d + '°</tspan><tspan font-size="9" dy="-4">' + mm(p.m) + '′</tspan>' + (it.retro ? '<tspan font-size="9" fill="#9b3535" font-family="' + SANS + '" dy="4">℞</tspan>' : '') + '</text>');
+    o.push('<text x="' + n(t[0]) + '" y="' + n(t[1]) + '" text-anchor="middle" dominant-baseline="central" font-family="' + SERIF + '" fill="' + INK + '"><tspan font-size="13">' + p.d + '°</tspan><tspan font-size="9" dy="-4">' + mm(p.m) + '′</tspan>' + (it.retro ? '<tspan font-size="9" fill="' + (DK ? '#ec9a86' : '#9b3535') + '" font-family="' + SANS + '" dy="4">℞</tspan>' : '') + '</text>');
   });
 
   return '<svg viewBox="-60 -60 760 760" role="img" aria-label="Natal chart wheel">' + o.join('') + '</svg>';
@@ -648,6 +673,7 @@ function buildWheelSvg(data) {
 
 function renderWheel(data) {
   if (!data) return;
+  window._wheelData = data;
   var svg = buildWheelSvg(data);
   ['natalWheelSvg', 'natalWheelLarge'].forEach(function(id) {
     var wrap = document.getElementById(id);
@@ -767,8 +793,6 @@ async function initProfile() {
       return;
     }
 
-    // Load readings
-    var { data: readings } = await _sb.from('readings').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
 
     // Compute natal chart. Birth time is local to the birthplace, so convert
     // it to universal time (daylight saving included) before calculating.
@@ -821,23 +845,6 @@ async function initProfile() {
     // Placements table + house cusps
     var chartData = renderPlacements(planets, server, jd, profile);
     renderWheel(chartData);
-
-    // Places explored
-    var list = document.getElementById('placesList');
-    if (!readings || readings.length === 0) {
-      list.innerHTML = '<p class="no-places">No cities explored yet. Go to your map and click Dive Deeper on any line.</p>';
-    } else {
-      readings.forEach(function(r) {
-        var date = new Date(r.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
-        var a = document.createElement('a');
-        a.className = 'place-card';
-        a.href = '#';
-        a.innerHTML = '<span class="place-name">'+r.city_name+'</span>'
-          + '<span class="place-date">'+date+'</span>'
-          + '<span class="place-arrow">→</span>';
-        list.appendChild(a);
-      });
-    }
 
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('mainContent').style.display = 'block';
@@ -1063,6 +1070,23 @@ window.addEventListener('resize', function() {
   var canvas = document.getElementById('natalWheel');
   if (canvas && window._profilePlanets) drawNatalWheel(window._profilePlanets);
 });
+</script>
+<script>
+// Dark mode planet colours (same as the map page); redraw the wheel and placements glyphs when the theme changes.
+(function(){
+  var DARK={Sun:'#e8b866',Moon:'#a3b9dc',Mercury:'#84c4a0',Venus:'#e892a8',Mars:'#e8806e',Jupiter:'#d9a86a',Saturn:'#cbb89a',Uranus:'#74c2bb',Neptune:'#a5a3e6',Pluto:'#d29ac0',Chiron:'#e8dcc6',NNode:'#6fc395',SNode:'#9fd2b2'}, L={};
+  for(var k in PCOL) L[k]=PCOL[k];
+  function sync(){
+    var dark=document.documentElement.getAttribute('data-theme')==='dark';
+    for(var k in L) PCOL[k]=dark&&DARK[k]?DARK[k]:L[k];
+    try{
+      if(window._wheelData) renderWheel(window._wheelData);
+      var g=document.querySelectorAll('.pl-glyph[data-p]');
+      for(var i=0;i<g.length;i++) g[i].style.color=PCOL[g[i].getAttribute('data-p')]||'';
+    }catch(e){}
+  }
+  sync(); document.addEventListener('ea-theme',sync);
+})();
 </script>
 </body>
 </html>
