@@ -39,8 +39,8 @@ const MAP_GUIDE_PRICE_ID = 'price_1TyLmg4mWfCuIJLWwIkCl3AQ'; // LIVE price
 //   Sandbox ids, for reference only (they do NOT work with the live key):
 //     one report  price_1UZbme4mWfCuIJLWQkXzz5sc
 //     all three   price_1UZbnk4mWfCuIJLWAzTv5gKc
-const REPORT_PRICE_ID     = 'price_1UZc854mWfCuIJLWXxEBZel9'; // LIVE price — one Best Places report ($22.22)
-const REPORT_ALL_PRICE_ID = 'price_1UZc944mWfCuIJLW3vOJiwog'; // LIVE price — all three reports ($44.44)
+const REPORT_PRICE_ID     = 'price_1UcvC34mWfCuIJLWRC9dLRMy'; // LIVE price — one Best Places report ($5.55)
+const REPORT_ALL_PRICE_ID = 'price_1UcvCh4mWfCuIJLW7vgoiZiK'; // LIVE price — all three reports ($11.11)
 
 // What a buy button can ask for. The label is saved on the purchase by
 // stripe-webhook.js, so the report page knows which report was paid for.
