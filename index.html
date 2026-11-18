@@ -141,7 +141,7 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 .place-search{position:relative;padding:.2rem 1.2rem .9rem;background:var(--paper)}
 .place-search-row{position:relative;max-width:520px}
 .place-search-row svg.ps-icon{position:absolute;left:.1rem;top:50%;transform:translateY(-50%);color:var(--gold);pointer-events:none}
-#placeSearch{padding:.55rem 2.4rem .55rem 1.6rem;font-size:1.04rem}
+#placeSearch{padding:.55rem 2.4rem .55rem 1.6rem;font-size:1.04rem;min-height:44px}
 #placeSearchClear{display:none;position:absolute;right:0;top:50%;transform:translateY(-50%);width:44px;height:44px;align-items:center;justify-content:center;background:none;border:none;cursor:pointer;color:var(--ink-3);font-size:0.99rem}
 #placeSearchClear:hover{color:var(--ink)}
 #placeSuggestions{position:absolute;top:100%;left:0;right:0;z-index:9999;background:var(--paper);border:1px solid var(--paper-3);border-top:none;border-radius:0 0 6px 6px;box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:280px;overflow-y:auto;display:none}
@@ -183,7 +183,39 @@ select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 .site-header{width:100%;padding:.75rem 1.5rem;display:flex;align-items:center;justify-content:center;border-bottom:.5px solid var(--paper-3);background:var(--paper);position:sticky;top:0;z-index:20}
 .site-wordmark{font-family:var(--serif);font-size:1.14rem;font-weight:400;letter-spacing:.2em;text-transform:lowercase;color:var(--ink);text-decoration:none}
 .site-wordmark em{font-style:italic;color:var(--gold)}
+/* Phones: filters and the guide open as sheets, so the map sits near the top
+   and every control is at least 44px. Desktop is unchanged. */
+.tool-btns{display:none;gap:.4rem;flex-shrink:0}
+.tool-btn{min-height:44px;min-width:44px;padding:0 1rem;font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);background:var(--paper);border:1px solid #b9ad97;border-radius:22px;cursor:pointer}
+.sheet-hd{display:none}
+@media(max-width:700px){
+  .place-search{display:flex;align-items:center;gap:.6rem}
+  .place-search-row{flex:1;min-width:0}
+  #placeSearchMsg{position:absolute;left:1.2rem;top:100%;background:var(--paper);padding:.2rem .5rem;z-index:6}
+  .tool-btns{display:flex}
+  .sheet{display:none;position:fixed;left:0;right:0;bottom:0;max-height:78vh;overflow-y:auto;background:var(--paper);border-top:1px solid var(--paper-3);border-radius:16px 16px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.18);z-index:40;padding-bottom:1rem}
+  .sheet.open{display:block}
+  .sheet-hd{display:flex;position:sticky;top:0;align-items:center;justify-content:space-between;padding:.6rem 1rem;background:var(--paper);border-bottom:1px solid var(--paper-3);z-index:2}
+  .sheet-hd span{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+  .sheet-done{min-height:44px;padding:0 1.1rem;font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--paper);background:var(--ink);border:none;border-radius:22px;cursor:pointer}
+  #filterSheet .filter-bar{background:transparent;border:none;padding:1rem;gap:.9rem;flex-direction:column;align-items:flex-start}
+  #filterSheet .filter-divider{display:none}
+  #filterSheet .filter-lbl{font-size:12px;width:100%}
+  #filterSheet .tog-btn,#filterSheet .ltype-btn,#filterSheet .focus-filter-btn{min-height:40px;padding:0 .9rem}
+  #filterSheet .tog-btn .tn,#filterSheet .ltype-btn,#filterSheet .focus-filter-btn{font-size:12px}
+  .map-zoom-btn,.map-reset-btn{width:44px;height:44px;border-radius:8px}
+  .map-zoom-btn{font-size:1.4rem}
+  .new-btn,.mapguide-btn{min-height:44px;display:inline-flex;align-items:center;padding:0 .8rem;margin-left:0}
+  .btn-long{display:none}
+  #mapScreen .top-bar{align-items:center;row-gap:.5rem}
+  #mapScreen .top-bar>.site-wordmark{order:1}
+  #mapScreen .top-bar>.bar-id{order:2;flex:0 0 100%}
+  #mapScreen .top-bar>a,#mapScreen .top-bar>button{order:3}
+  .page-footer a,.map-section + div a,#formScreen a[href^="mailto"]{display:inline-block;padding:.7rem 0}
+  #mapTiles{height:62vh}
+}
 #mapScreen .top-bar{top:0}
+.bar-id{flex:1;min-width:0}
 /* Dark mode: follows the device, or the visitor's choice (saved on their device) */
 .astro{color:var(--gold)}
 html[data-theme="dark"]{
@@ -199,11 +231,11 @@ html[data-theme="dark"] .map-coords{background:rgba(28,23,18,.8);color:var(--ink
 html[data-theme="dark"] #mapTiles{filter:invert(1) hue-rotate(180deg) sepia(.3) brightness(.92) contrast(.9)}
 html[data-theme="dark"] .pc .pt{filter:brightness(1.8) saturate(.85)}
 html[data-theme="dark"] #citySuggestions,html[data-theme="dark"] #placeSuggestions,html[data-theme="dark"] #readingCard{box-shadow:0 8px 32px rgba(0,0,0,.5)}
-.theme-btn{font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);border-radius:20px;padding:.3rem .8rem;cursor:pointer;flex-shrink:0}
+.theme-btn{font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);border-radius:22px;padding:0 .9rem;min-height:44px;display:inline-flex;align-items:center;cursor:pointer;flex-shrink:0}
 .theme-btn:hover{border-color:var(--gold);color:var(--gold)}
 .site-header .theme-btn{position:absolute;right:1rem}
 </style>
-<script defer src="/_vercel/insights/script.js"></script>
+
 </head>
 <body>
 
@@ -295,14 +327,16 @@ html[data-theme="dark"] #citySuggestions,html[data-theme="dark"] #placeSuggestio
 <div id="mapScreen">
   <div class="top-bar">
     <span class="site-wordmark" style="margin-right:.75rem;flex-shrink:0">elsewhere<span class="astro">astro</span></span>
-    <div style="flex:1;min-width:0"><div class="bar-name" id="barName">—</div><div class="bar-meta" id="barMeta">—</div></div>
-  <a class="mapguide-btn" href="/map-guide.html" style="text-decoration:none">✦ Get your Map Guide</a> <a class="mapguide-btn" href="/reports.html" style="text-decoration:none">✦ Best Places reports</a> <button class="new-btn" onclick="resetToForm()">↩ New chart</button>
+    <div class="bar-id"><div class="bar-name" id="barName">—</div><div class="bar-meta" id="barMeta">—</div></div>
+  <a class="mapguide-btn" href="/map-guide.html" style="text-decoration:none">✦ <span class="btn-long">Get your </span>Map Guide</a> <a class="mapguide-btn" href="/reports.html" style="text-decoration:none">✦ <span class="btn-long">Best Places </span>Reports</a> <button class="new-btn" onclick="resetToForm()">↩ New chart</button>
     <button class="new-btn" id="accountBtn" onclick="openAccountModal()" style="display:none">Profile</button>
     <button class="new-btn" id="signInBtn" onclick="openAuthModal()" style="display:none">Sign in</button>
   </div>
   <div class="map-section">
+    <div class="sheet" id="howSheet"><div class="sheet-hd"><span>How to read your map</span><button type="button" class="sheet-done" onclick="closeSheets()">Done</button></div>
     <div class="chart-heading" style="margin-top:1.8rem;margin-bottom:.5rem;padding:0 1.5rem;max-width:700px;margin-left:auto;margin-right:auto">Astrocartography Map</div>
     <p style="font-family:var(--serif);font-style:italic;font-size:0.97rem;color:var(--ink-3);line-height:1.7;padding:0 1.5rem .9rem;max-width:700px;margin:0 auto;font-weight:500">Your map shows where each planet's energy is strongest for you around the world. Each planet creates four lines — tap any line to discover what it means for that place. Solid lines (MC + AC) show where a planet directly shapes your path and identity. Dashed lines (IC + DC) show where it influences your home life and relationships.</p>
+    </div>
     <div class="place-search">
       <div class="place-search-row">
         <svg class="ps-icon" width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>
@@ -312,7 +346,12 @@ html[data-theme="dark"] #citySuggestions,html[data-theme="dark"] #placeSuggestio
         <div id="placeSuggestions" role="listbox"></div>
       </div>
       <p id="placeSearchMsg" role="status"></p>
+      <div class="tool-btns">
+        <button type="button" class="tool-btn" onclick="openSheet('filterSheet')">Filters</button>
+        <button type="button" class="tool-btn" onclick="openSheet('howSheet')" aria-label="How to read your map">?</button>
+      </div>
     </div>
+    <div class="sheet" id="filterSheet"><div class="sheet-hd"><span>Filters</span><button type="button" class="sheet-done" onclick="closeSheets()">Done</button></div>
     <div class="filter-bar">
       <span class="filter-lbl">Planets</span>
       <div class="filter-group" id="togBtns"></div>
@@ -332,6 +371,7 @@ html[data-theme="dark"] #citySuggestions,html[data-theme="dark"] #placeSuggestio
         <button class="focus-filter-btn" id="ff-Healing" onclick="setFocusFilter('Healing',this)">✦ Healing</button>
         <button class="focus-filter-btn" id="ff-Self"    onclick="setFocusFilter('Self',this)">◉ Self</button>
       </div>
+    </div>
     </div>
     <div id="mapWrap">
       <canvas id="mapTiles"></canvas>
@@ -384,9 +424,9 @@ html[data-theme="dark"] #citySuggestions,html[data-theme="dark"] #placeSuggestio
   </div>
 </div>
 
-<script src="/descriptions.js?v=5"></script>
-<script src="/js/app.js?v=9"></script>
-<script src="/js/engine.js?v=2"></script>
+<script src="descriptions.js?v=5"></script>
+<script src="js/app.js?v=9"></script>
+<script src="js/engine.js?v=2"></script>
 
 <script>
 // Dark mode planet colours: warmer and brighter so every line shows on the dark map.
@@ -547,5 +587,10 @@ function buyMapGuide() {
     if (btn) { btn.disabled = false; btn.textContent = '✦ Get your Map Guide'; }
   });
 }
+</script>
+<script>
+// Phones: the filters and the guide open as sheets over the map.
+function closeSheets(){var n=document.querySelectorAll('.sheet');for(var i=0;i<n.length;i++)n[i].classList.remove('open');}
+function openSheet(id){closeSheets();var el=document.getElementById(id);if(el)el.classList.add('open');}
 </script>
 </body>
