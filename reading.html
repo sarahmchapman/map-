@@ -32,7 +32,7 @@ html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margi
 /* ── Header ── */
 .site-header{width:100%;padding:.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;border-bottom:.5px solid var(--paper-3);background:var(--paper);position:sticky;top:0;z-index:20}
 .site-wordmark{font-family:var(--serif);font-size:1.14rem;font-weight:400;letter-spacing:.2em;text-transform:lowercase;color:var(--ink);text-decoration:none}
-.back-btn{font-size:11.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);padding:.3rem .8rem;cursor:pointer;border-radius:20px;text-decoration:none;transition:all .2s}
+.back-btn{font-size:11.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);padding:0 .8rem;min-height:44px;display:inline-flex;align-items:center;cursor:pointer;border-radius:22px;text-decoration:none;transition:all .2s}
 .back-btn:hover{border-color:var(--gold);color:var(--gold)}
 
 /* ── Page wrapper ── */
@@ -85,8 +85,10 @@ canvas.chart-wheel{display:block;width:100%;max-width:420px;aspect-ratio:1/1;hei
   .chart-panel{display:none;padding:1rem}
   .chart-panel.active{display:flex}
   .carousel-nav{display:flex;justify-content:center;align-items:center;gap:1rem;margin-top:.8rem}
-  .carousel-dot{width:7px;height:7px;border-radius:50%;background:var(--paper-3);cursor:pointer;transition:background .2s;border:none;padding:0}
-  .carousel-dot.active{background:var(--gold)}
+  /* The dot still looks 7px; the button around it is 44px so it can be tapped. */
+  .carousel-dot{width:44px;height:44px;border-radius:50%;background:transparent;cursor:pointer;border:none;padding:0;display:inline-flex;align-items:center;justify-content:center}
+  .carousel-dot::after{content:'';display:block;width:7px;height:7px;border-radius:50%;background:var(--paper-3);transition:background .2s}
+  .carousel-dot.active::after{background:var(--gold)}
   .carousel-hint{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);text-align:center;margin-bottom:.6rem}
 }
 @media(min-width:601px){
@@ -139,7 +141,7 @@ html[data-theme="dark"]{
   --green:#8fcb9c;--red-d:#ec9a86;
   color-scheme:dark;
 }
-.theme-btn{font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);border-radius:20px;padding:.3rem .8rem;cursor:pointer;flex-shrink:0}
+.theme-btn{font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);border-radius:22px;padding:0 .9rem;min-height:44px;display:inline-flex;align-items:center;cursor:pointer;flex-shrink:0}
 .theme-btn:hover{border-color:var(--gold);color:var(--gold)}
 html[data-theme="dark"] .wheel-modal{background:rgba(28,23,18,.98)}
 html[data-theme="dark"] .wheel-tip{background:#f6ecdc;color:#1c1712}
@@ -232,7 +234,7 @@ html[data-theme="dark"] .wheel-tip{background:#f6ecdc;color:#1c1712}
 
 
     <div class="page-footer">
-      <a href="mailto:elsewhereastro@gmail.com" style="font-family:var(--serif);font-size:0.87rem;color:var(--ink-3);text-decoration:none;border-bottom:1px solid var(--paper-3);font-weight:500">share feedback</a>
+      <a href="mailto:elsewhereastro@gmail.com" style="display:inline-block;padding:.8rem 0;font-family:var(--serif);font-size:0.87rem;color:var(--ink-3);text-decoration:none;border-bottom:1px solid var(--paper-3);font-weight:500">share feedback</a>
       <span style="color:var(--paper-3);margin:0 .8rem">·</span>
       <span style="font-family:var(--serif);font-size:0.87rem;color:var(--ink-3);font-weight:500">© 2026 elsewhereastro</span>
     </div>
