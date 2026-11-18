@@ -30,7 +30,7 @@
 }
 html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margin:0;line-height:1.55;min-height:100vh}
 .site-header{width:100%;padding:.75rem 1.5rem;display:flex;align-items:center;justify-content:center;border-bottom:.5px solid var(--paper-3);background:var(--paper)}
-.site-wordmark{font-family:var(--serif);font-size:1.14rem;font-weight:400;letter-spacing:.2em;text-transform:lowercase;color:var(--ink);text-decoration:none}
+.site-wordmark{font-family:var(--serif);font-size:1.14rem;font-weight:400;letter-spacing:.2em;text-transform:lowercase;color:var(--ink);text-decoration:none;display:inline-flex;align-items:center;min-height:44px}
 .wrap{max-width:520px;margin:0 auto;padding:4rem 1.5rem;text-align:center}
 .star{font-size:1.8rem;color:var(--gold);margin-bottom:1.2rem}
 .eyebrow{font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem}
@@ -41,14 +41,14 @@ h1 em{font-style:italic;color:var(--gold)}
 .email-emph{color:var(--gold);font-style:italic}
 .sub{font-family:var(--serif);font-style:italic;font-size:0.99rem;color:var(--ink-3);line-height:1.7;margin-top:1.5rem;font-weight:500}
 .retry{margin-top:2rem}
-.retry input{font-family:var(--sans);font-size:1.09rem;font-weight:400;color:var(--ink);background:transparent;border:none;border-bottom:.5px solid var(--paper-3);padding:.55rem 0;width:100%;max-width:300px;outline:none;text-align:center;margin-bottom:1.2rem}
+.retry input{font-family:var(--sans);font-size:1.09rem;font-weight:400;color:var(--ink);background:transparent;border:none;border-bottom:.5px solid var(--paper-3);padding:.8rem 0;min-height:44px;width:100%;max-width:300px;outline:none;text-align:center;margin-bottom:1.2rem}
 .retry input:focus{border-bottom-color:var(--gold)}
-.btn{font-size:12.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--paper);background:var(--gold);border:none;padding:.9rem 2.2rem;cursor:pointer;transition:background .25s}
+.btn{font-size:12.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--paper);background:var(--gold);border:none;padding:.9rem 2.2rem;min-height:44px;cursor:pointer;transition:background .25s}
 .btn:hover{background:var(--ink)}
 .btn:disabled{opacity:.5;cursor:wait}
 .err{font-family:var(--serif);font-style:italic;font-size:0.99rem;color:var(--red-d);margin-top:1rem;font-weight:500}
 #loadingState .sub,#openingState .sub{margin-top:.5rem}
-.linkbtn{background:none;border:none;font-family:var(--serif);font-style:italic;font-size:0.99rem;color:var(--gold);cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:3px;font-weight:500}
+.linkbtn{background:none;border:none;font-family:var(--serif);font-style:italic;font-size:0.99rem;color:var(--gold);cursor:pointer;padding:.85rem .15rem;min-height:44px;text-decoration:underline;text-underline-offset:3px;font-weight:500}
 
 /* Dark mode: follows the device, or the visitor's choice (saved on their device) */
 .astro{color:var(--gold)}
@@ -59,11 +59,11 @@ html[data-theme="dark"]{
   --green:#8fcb9c;--red-d:#ec9a86;
   color-scheme:dark;
 }
-.theme-btn{font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);border-radius:20px;padding:.3rem .8rem;cursor:pointer;flex-shrink:0}
+.theme-btn{font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);border-radius:22px;padding:0 .9rem;min-height:44px;display:inline-flex;align-items:center;cursor:pointer;flex-shrink:0}
 .theme-btn:hover{border-color:var(--gold);color:var(--gold)}
 .site-header{position:relative}
 .site-header .theme-btn{position:absolute;right:1rem;top:50%;transform:translateY(-50%)}
-@media(max-width:480px){.site-header .site-wordmark{letter-spacing:.2em}.site-header .theme-btn{right:.6rem;padding:.3rem .6rem}}
+@media(max-width:480px){.site-header .site-wordmark{letter-spacing:.2em}.site-header .theme-btn{right:.6rem;padding:0 .7rem}}
 </style>
 </head>
 <body>
