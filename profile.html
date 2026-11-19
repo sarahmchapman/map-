@@ -1167,7 +1167,11 @@ function runDelete() {
     return res.json().then(function (data) { return { ok: res.ok, data: data }; });
   }).then(function (out) {
     if (!out.ok || !out.data || !out.data.deleted) {
-      throw new Error((out.data && out.data.error) || 'Something went wrong. Please try again.');
+      var text = (out.data && out.data.error) || 'Something went wrong. Please try again.';
+      // The server sends the underlying database reason when there is one;
+      // showing it saves digging through logs to find out what went wrong.
+      if (out.data && out.data.reason) text += ' (' + out.data.reason + ')';
+      throw new Error(text);
     }
     // The account is gone; clear anything this browser was still holding.
     msg.textContent = 'Your account has been deleted. Taking you back to the map\u2026';
