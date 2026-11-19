@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>elsewhereastro — privacy policy</title>
+<meta name="description" content="How elsewhereastro collects, uses and stores your information.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<script>
+// Dark mode: the visitor's saved choice, otherwise their device setting.
+(function(){var t=null;try{t=localStorage.getItem('ea_theme');}catch(e){}
+  var mq=window.matchMedia('(prefers-color-scheme: dark)');
+  function apply(){var d=t?t==='dark':mq.matches;document.documentElement.setAttribute('data-theme',d?'dark':'light');
+    var b=document.querySelectorAll('.theme-btn');for(var i=0;i<b.length;i++)b[i].textContent=d?'☀ Light':'☾ Dark';
+    try{document.dispatchEvent(new Event('ea-theme'));}catch(e){}}
+  apply();if(mq.addEventListener)mq.addEventListener('change',apply);document.addEventListener('DOMContentLoaded',apply);
+  window.toggleTheme=function(){t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';try{localStorage.setItem('ea_theme',t);}catch(e){}apply();};
+})();
+</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#1a1714; --ink-2:#2e2b28; --ink-3:#4a4540;
+  --paper:#faf8f4; --paper-2:#f2ede5; --paper-3:#e8e0d2;
+  --gold:#8a6a35; --gold-light:#d4b07a;
+  --serif:'Cormorant Garamond',Georgia,serif;
+  --sans:'Jost',sans-serif;
+  --harm:#5c8a5c; --dyn:#8a6a35; --chal:#9b6555;
+}
+html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margin:0;line-height:1.55}
+
+/* ── Header ── */
+.site-header{width:100%;padding:.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;border-bottom:.5px solid var(--paper-3);background:var(--paper);position:sticky;top:0;z-index:20}
+.site-wordmark{font-family:var(--serif);font-size:1.14rem;font-weight:400;letter-spacing:.2em;text-transform:lowercase;color:var(--ink);text-decoration:none;display:inline-flex;align-items:center;min-height:44px}
+.nav-btn{font-size:11.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);padding:0 .9rem;min-height:44px;display:inline-flex;align-items:center;cursor:pointer;border-radius:22px;text-decoration:none;transition:all .2s}
+.nav-btn:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ── Page ── */
+.page{max-width:720px;margin:0 auto;padding:3rem 1.5rem 5rem}
+
+/* ── Intro ── */
+.eyebrow{font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem;text-align:center}
+.title{font-family:var(--serif);font-size:clamp(2rem,5vw,2.8rem);font-weight:400;line-height:1.2;text-align:center;margin-bottom:1rem}
+.title em{font-style:italic;color:var(--gold)}
+.subtitle{font-family:var(--serif);font-style:italic;font-size:1.14rem;color:var(--ink-3);line-height:1.7;text-align:center;max-width:540px;margin:0 auto 2.5rem;font-weight:500}
+
+/* ── Footer ── */
+.page-footer{text-align:center;padding:2.5rem 0 1rem;margin-top:2.5rem;border-top:.5px solid var(--paper-3)}
+.page-footer span{font-family:var(--serif);font-size:0.87rem;color:var(--ink-3);font-weight:500}
+
+/* Dark mode: follows the device, or the visitor's choice (saved on their device) */
+.astro{color:var(--gold)}
+html[data-theme="dark"]{
+  --ink:#f6ecdc;--ink-2:#ead9c0;--ink-3:#cdb999;
+  --paper:#1c1712;--paper-2:#272019;--paper-3:#4a3e31;
+  --gold:#e0b773;--gold-light:#ecca8e;--gold-faint:rgba(224,183,115,.16);
+  --green:#8fcb9c;--red-d:#ec9a86;
+  color-scheme:dark;
+}
+.theme-btn{font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);border-radius:22px;padding:0 .9rem;min-height:44px;display:inline-flex;align-items:center;cursor:pointer;flex-shrink:0}
+.theme-btn:hover{border-color:var(--gold);color:var(--gold)}
+html[data-theme="dark"]{--harm:#8fcb9c;--dyn:#e0b773;--chal:#e8a894}
+.hdr-right{display:flex;align-items:center;gap:.5rem}
+.nav-btn{white-space:nowrap}
+@media(max-width:480px){.site-header{padding-left:1rem;padding-right:1rem}.site-wordmark{letter-spacing:.2em}.hdr-right .theme-btn,.hdr-right .nav-btn{padding:0 .7rem;letter-spacing:.1em}.bk-long{display:none}}
+
+/* ── Policy text ── */
+.policy{max-width:720px;margin:0 auto;padding:2.5rem 1.5rem 5rem}
+.policy h1{font-family:var(--serif);font-size:clamp(1.9rem,5vw,2.5rem);font-weight:400;line-height:1.2;margin-bottom:.6rem;text-align:center}
+.policy h1 em{font-style:italic;color:var(--gold)}
+.updated{font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);text-align:center;margin-bottom:2.2rem}
+.lede{font-family:var(--serif);font-style:italic;font-size:1.14rem;color:var(--ink-3);line-height:1.7;text-align:center;max-width:560px;margin:0 auto 2.5rem;font-weight:500}
+.policy h2{font-family:var(--serif);font-size:1.45rem;font-weight:400;color:var(--ink);margin:2.4rem 0 .7rem;padding-bottom:.4rem;border-bottom:.5px solid var(--paper-3)}
+.policy h3{font-family:var(--serif);font-size:1.16rem;font-weight:500;color:var(--ink);margin:1.5rem 0 .4rem}
+.policy p{font-family:var(--serif);font-size:1.09rem;color:var(--ink-2);line-height:1.75;margin-bottom:1rem;font-weight:500}
+.policy ul{list-style:none;margin:0 0 1.2rem}
+.policy li{font-family:var(--serif);font-size:1.07rem;color:var(--ink-2);line-height:1.7;margin-bottom:.6rem;padding-left:1.4rem;position:relative;font-weight:500}
+.policy li::before{content:'\2726';position:absolute;left:0;color:var(--gold);font-size:.95rem}
+.policy strong{color:var(--ink);font-weight:500}
+.policy a{color:var(--gold);text-decoration:underline;text-decoration-color:var(--paper-3);text-underline-offset:3px;display:inline-block;padding:.65rem 0;min-height:44px}
+.note{background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:10px;padding:1.4rem 1.5rem;margin:1.4rem 0}
+.note p:last-child{margin-bottom:0}
+.who{width:100%;border-collapse:collapse;margin:0 0 1.4rem}
+.who td{font-family:var(--serif);font-size:1.01rem;color:var(--ink-2);line-height:1.6;padding:.75rem .6rem .75rem 0;border-bottom:.5px solid var(--paper-3);vertical-align:top;font-weight:500}
+.who td:first-child{color:var(--ink);white-space:nowrap;width:9.5rem}
+@media(max-width:560px){.who td:first-child{width:7rem}.who td{font-size:0.97rem}}
+/* ── Footer ── */
+.page-footer{text-align:center;padding:2.5rem 0 1rem;margin-top:3rem;border-top:.5px solid var(--paper-3)}
+.page-footer span{font-family:var(--serif);font-size:0.87rem;color:var(--ink-3);font-weight:500}
+.foot-links{margin-bottom:.6rem}
+.foot-links a{font-family:var(--serif);font-size:0.87rem;color:var(--ink-3);text-decoration:underline;text-decoration-color:var(--paper-3);text-underline-offset:3px;display:inline-block;padding:.8rem .5rem;min-height:44px}
+</style>
+</head>
+
+<body>
+
+<header class="site-header">
+  <a class="site-wordmark" href="/">elsewhere<span class="astro">astro</span></a>
+  <span class="hdr-right"><button type="button" class="theme-btn" onclick="toggleTheme()" aria-label="Switch between light and dark">&#9790; Dark</button>
+  <a class="nav-btn" href="/">&larr; <span class="bk-long">back to </span>map</a></span>
+</header>
+
+<main class="policy">
+
+  <h1>Privacy <em>policy</em></h1>
+  <div class="updated">last updated 18 November 2026</div>
+
+  <p class="lede">elsewhereastro reads your birth chart against the map of the world. To do that it needs your birth details &mdash; so this page sets out exactly what we hold, who else sees it, and how to get it back or have it deleted.</p>
+
+  <h2>Who we are</h2>
+  <p>elsewhereastro ("we", "us") operates the website at <strong>elsewhereastro.com</strong> and the elsewhereastro iPhone app. For any question about your information, or to exercise any right described below, write to <a href="mailto:elsewhereastro@gmail.com">elsewhereastro@gmail.com</a>.</p>
+
+  <h2>What we collect</h2>
+
+  <h3>What you give us</h3>
+  <ul>
+    <li><strong>Your email address</strong>, when you create an account or buy something.</li>
+    <li><strong>A password</strong>, if you set one. It is stored encrypted by our sign-in provider and we never see it. You can also sign in by email link instead, without a password.</li>
+    <li><strong>Your birth details</strong> &mdash; date, time, and place of birth, which we store as a city name and its coordinates. These are what the whole service is calculated from.</li>
+    <li><strong>Your name</strong>, if you choose to give one. It is optional and used only to address your readings.</li>
+  </ul>
+
+  <h3>What we create about you</h3>
+  <ul>
+    <li><strong>Your charts and readings</strong>, worked out from your birth details.</li>
+    <li><strong>Your purchases</strong> &mdash; which reports you bought and when, so you can open them again.</li>
+  </ul>
+
+  <h3>What is collected automatically</h3>
+  <ul>
+    <li><strong>Standard server logs</strong> from our host, including your IP address, browser and the pages requested. These are ordinary web-server records used to keep the service running and secure.</li>
+    <li><strong>Your device's location</strong>, in the app only, and only if you allow it. The app asks your phone for your coordinates so it can work out which city you are in and read your chart for that place. You can refuse, and you can turn it off later in your phone's settings; the rest of the app keeps working.</li>
+  </ul>
+
+  <h2>What we do not collect</h2>
+  <ul>
+    <li>We never see or store your card details. Payments are handled entirely by Stripe.</li>
+    <li>We do not use advertising trackers, and we do not sell or rent your information to anyone.</li>
+    <li>We do not build profiles of you for marketing, or share your information with data brokers.</li>
+  </ul>
+
+  <h2>Why we hold it</h2>
+  <p>Your birth details and email exist for one reason: to calculate and deliver what you asked for, and to let you sign back in and find it again. Purchase records exist so that what you paid for stays available to you. Server logs exist to keep the service working and to investigate problems and abuse.</p>
+  <p>Where the law requires a legal basis, ours is the performance of our agreement with you &mdash; providing the service you signed up for &mdash; and our legitimate interest in keeping that service secure and working.</p>
+
+  <h2>Who else receives information</h2>
+  <p>We use a small number of outside services to run elsewhereastro. Each receives only what it needs:</p>
+  <table class="who">
+    <tr><td>Supabase</td><td>Stores your account, birth details, purchases and saved readings.</td></tr>
+    <tr><td>Stripe</td><td>Takes payment. Stripe receives your payment details directly; we receive only your email and a record that the purchase succeeded.</td></tr>
+    <tr><td>Vercel</td><td>Hosts the site and runs our server code. Keeps standard access logs.</td></tr>
+    <tr><td>MapTiler</td><td>Supplies the map images. Receives the requests your browser makes for map tiles, which include your IP address.</td></tr>
+    <tr><td>GeoNames</td><td>Turns a place into coordinates. Receives the city you search for, and &mdash; in the app, if you allow location &mdash; your coordinates, to name the city you are in.</td></tr>
+    <tr><td>Anthropic</td><td>Writes some of the interpretive text. See below for exactly what is sent.</td></tr>
+    <tr><td>Google Fonts, jsDelivr, unpkg</td><td>Serve the fonts and code libraries the pages use. Receive your IP address as part of the request.</td></tr>
+  </table>
+  <p>We may also disclose information if the law requires it, or to protect our rights or someone's safety.</p>
+
+  <h2>How we use AI</h2>
+  <p>Some of the writing in your readings is generated by an AI model run by Anthropic. We are specific about what reaches it:</p>
+  <ul>
+    <li><strong>Planet, aspect and house descriptions</strong> send only general astrology &mdash; for example "Venus in Libra" or "fifth house to seventh house". No name, no email, no birth details. Each description is written once and reused for everyone, so nothing about you is involved.</li>
+    <li><strong>Best Places reports</strong> involve no AI at all. They are calculated by our own engine on our own servers.</li>
+    <li><strong>The daily reading</strong>, in the app, sends the name of the city you are in and the astrological influences worked out for that day. It does not send your name, your email, or your date, time or place of birth.</li>
+  </ul>
+  <p>Your information is not used to train AI models.</p>
+
+  <h2>What is kept on your device</h2>
+  <p>We store a few things in your browser or app so the service works without reloading everything each time: your current chart, whether you chose light or dark mode, and whether you are signed in. These are not advertising cookies, and we do not use any. Clearing your browser data, or deleting the app, removes them.</p>
+
+  <h2>How long we keep it</h2>
+  <p>We keep your account and birth details for as long as your account exists, because they are what your readings are built from. Purchase records are kept for as long as we need them for tax and accounting purposes, which is generally seven years, even after an account is deleted. Server logs are kept for a short period in the ordinary course of hosting.</p>
+  <p>If you ask us to delete your account, we delete your account, birth details, charts and saved readings.</p>
+
+  <h2>Your rights</h2>
+  <p>Wherever you live, you can ask us to:</p>
+  <ul>
+    <li><strong>Show you</strong> what we hold about you.</li>
+    <li><strong>Correct</strong> anything that is wrong &mdash; you can change your birth details yourself at any time on your profile.</li>
+    <li><strong>Delete</strong> your account and the information attached to it.</li>
+    <li><strong>Send you a copy</strong> of your information in a portable form.</li>
+  </ul>
+  <p>Write to <a href="mailto:elsewhereastro@gmail.com">elsewhereastro@gmail.com</a> and we will deal with it. We will not charge you, and we will not treat you differently for asking.</p>
+  <div class="note">
+    <p><strong>If you are in California:</strong> we do not sell or share your personal information as those terms are used in California law, and we have not done so in the past twelve months. You have the rights listed above, and the right not to be discriminated against for using them.</p>
+    <p><strong>If you are in the UK or EU:</strong> you also have the right to object to or restrict our use of your information, and the right to complain to your local data protection authority. Our services are hosted in the United States, so your information is processed there.</p>
+  </div>
+
+  <h2>Children</h2>
+  <p>elsewhereastro is not for children under 13, and we do not knowingly collect information from anyone under 13. If you believe a child has given us their information, write to us and we will delete it.</p>
+
+  <h2>Security</h2>
+  <p>Accounts are protected by the sign-in system described above, connections are encrypted, and access to the database is restricted. No service can promise perfect security, but we do not hold payment details, which is the most sensitive thing we could otherwise have.</p>
+
+  <h2>Changes to this policy</h2>
+  <p>If we change how we handle your information, we will update this page and change the date at the top. Significant changes will be made clear to you in the app or on the site.</p>
+
+  <h2>Contact</h2>
+  <p>Questions, requests or complaints: <a href="mailto:elsewhereastro@gmail.com">elsewhereastro@gmail.com</a>.</p>
+
+  <div class="page-footer">
+    <div class="foot-links"><a href="/terms.html">Terms of use</a> &middot; <a href="/">Back to the map</a></div>
+    <span>&copy; 2026 elsewhereastro</span>
+  </div>
+
+</main>
+
+</body>
+</html>
