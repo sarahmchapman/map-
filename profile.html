@@ -1174,7 +1174,7 @@ function runDelete() {
       throw new Error(text);
     }
     // The account is gone; clear anything this browser was still holding.
-    msg.textContent = 'Your account has been deleted. Taking you back to the map\u2026';
+    msg.textContent = 'Your account has been deleted. Taking you back to the start\u2026';
     try {
       localStorage.removeItem('elsewhere_reading');
       localStorage.removeItem('elsewhere_user');
