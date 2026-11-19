@@ -23,6 +23,14 @@ const supabase = createClient(
   }
 );
 
+// A table that doesn't exist in this project can hold no rows, so a delete
+// against it is nothing to worry about. Postgres reports that as 42P01.
+function isMissingTable(err) {
+  if (!err) return false;
+  if (err.code === '42P01') return true;
+  return /does not exist|could not find the table|schema cache/i.test(err.message || '');
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -196,31 +204,35 @@ export default async function handler(req, res) {
       // 1. Saved Best Places reports (keyed by email).
       if (email) {
         const { error: repErr } = await supabase.from('place_reports').delete().eq('email', email);
-        if (repErr) {
+        if (repErr && !isMissingTable(repErr)) {
           console.error('delete_account place_reports:', repErr.message);
-          return res.status(500).json({ error: 'Could not delete your saved reports. Nothing was removed; please try again.' });
+          return res.status(500).json({ error: 'Could not delete your saved reports. Nothing was removed; please try again.', reason: repErr.message });
         }
+        if (repErr) console.log('delete_account: no place_reports table, skipping');
       }
 
       // 2. Saved readings (keyed by user id).
+      // If this table doesn't exist in this project, there is nothing to
+      // delete and no reason to block the account deletion over it.
       const { error: readErr } = await supabase.from('readings').delete().eq('user_id', userId);
-      if (readErr) {
+      if (readErr && !isMissingTable(readErr)) {
         console.error('delete_account readings:', readErr.message);
-        return res.status(500).json({ error: 'Could not delete your saved readings. Your account is still here; please try again.' });
+        return res.status(500).json({ error: 'Could not delete your saved readings. Your account is still here; please try again.', reason: readErr.message });
       }
+      if (readErr) console.log('delete_account: no readings table, skipping');
 
       // 3. The profile itself: name and birth details.
       const { error: profErr } = await supabase.from('profiles').delete().eq('id', userId);
       if (profErr) {
         console.error('delete_account profiles:', profErr.message);
-        return res.status(500).json({ error: 'Could not delete your birth details. Your account is still here; please try again.' });
+        return res.status(500).json({ error: 'Could not delete your birth details. Your account is still here; please try again.', reason: profErr.message });
       }
 
       // 4. The sign-in account, last.
       const { error: authErr } = await supabase.auth.admin.deleteUser(userId);
       if (authErr) {
         console.error('delete_account auth user:', authErr.message);
-        return res.status(500).json({ error: 'Your details were removed, but the account itself could not be closed. Please write to elsewhereastro@gmail.com and we will finish it.' });
+        return res.status(500).json({ error: 'Your details were removed, but the account itself could not be closed. Please write to elsewhereastro@gmail.com and we will finish it.', reason: authErr.message });
       }
 
       console.log('delete_account completed for', userId);
