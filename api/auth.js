@@ -157,6 +157,76 @@ export default async function handler(req, res) {
       return res.json({ success: true });
     }
 
+    // ── Delete account ───────────────────────────────────────
+    // Apple requires an in-app way to delete an account, and our privacy
+    // policy promises it. Unlike the actions above, this one does NOT trust
+    // a user_id sent by the browser: anyone could post someone else's id and
+    // erase their account. Instead we work out who is asking from their
+    // sign-in token, the same way api/generate-report.js does.
+    //
+    // Purchase records are deliberately kept. They are the sales record we
+    // need for tax, and the privacy policy says so. A person who deletes
+    // their account and later signs up again with the same email will find
+    // what they bought still unlocked.
+    //
+    // Order matters. Rows that depend on the account go first and the auth
+    // record goes last, so a failure partway leaves the account intact and
+    // the person can simply try again. Deleting the auth record first would
+    // strand the remaining rows with no signed-in user able to reach them.
+    if (action === 'delete_account') {
+      const { confirm } = req.body;
+
+      // A second, independent guard: even a valid token cannot delete an
+      // account unless the request plainly says so.
+      if (confirm !== 'DELETE') {
+        return res.status(400).json({ error: 'Please type DELETE to confirm.' });
+      }
+
+      const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+      if (!token) return res.status(401).json({ error: 'Please sign in again and retry.' });
+
+      const { data: u, error: uErr } = await supabase.auth.getUser(token);
+      if (uErr || !u || !u.user || !u.user.id) {
+        return res.status(401).json({ error: 'Please sign in again and retry.' });
+      }
+
+      const userId = u.user.id;
+      const email = (u.user.email || '').toLowerCase();
+
+      // 1. Saved Best Places reports (keyed by email).
+      if (email) {
+        const { error: repErr } = await supabase.from('place_reports').delete().eq('email', email);
+        if (repErr) {
+          console.error('delete_account place_reports:', repErr.message);
+          return res.status(500).json({ error: 'Could not delete your saved reports. Nothing was removed; please try again.' });
+        }
+      }
+
+      // 2. Saved readings (keyed by user id).
+      const { error: readErr } = await supabase.from('readings').delete().eq('user_id', userId);
+      if (readErr) {
+        console.error('delete_account readings:', readErr.message);
+        return res.status(500).json({ error: 'Could not delete your saved readings. Your account is still here; please try again.' });
+      }
+
+      // 3. The profile itself: name and birth details.
+      const { error: profErr } = await supabase.from('profiles').delete().eq('id', userId);
+      if (profErr) {
+        console.error('delete_account profiles:', profErr.message);
+        return res.status(500).json({ error: 'Could not delete your birth details. Your account is still here; please try again.' });
+      }
+
+      // 4. The sign-in account, last.
+      const { error: authErr } = await supabase.auth.admin.deleteUser(userId);
+      if (authErr) {
+        console.error('delete_account auth user:', authErr.message);
+        return res.status(500).json({ error: 'Your details were removed, but the account itself could not be closed. Please write to elsewhereastro@gmail.com and we will finish it.' });
+      }
+
+      console.log('delete_account completed for', userId);
+      return res.json({ deleted: true });
+    }
+
     return res.status(400).json({ error: 'Unknown action' });
 
   } catch (err) {
