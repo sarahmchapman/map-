@@ -88,6 +88,9 @@ html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margi
 /* ── Footer ── */
 .page-footer{text-align:center;padding:2.5rem 0 1rem;margin-top:2.5rem;border-top:.5px solid var(--paper-3)}
 .page-footer span{font-family:var(--serif);font-size:0.87rem;color:var(--ink-3);font-weight:500}
+.foot-links{margin-bottom:.2rem}
+.foot-links a{font-family:var(--serif);font-size:0.87rem;color:var(--ink-3);text-decoration:underline;text-decoration-color:var(--paper-3);text-underline-offset:3px;display:inline-block;padding:.8rem .15rem;min-height:44px}
+.foot-links span{color:var(--paper-3);margin:0 .45rem}
 
 /* Dark mode: follows the device, or the visitor's choice (saved on their device) */
 .astro{color:var(--gold)}
@@ -186,6 +189,7 @@ html[data-theme="dark"]{--harm:#8fcb9c;--dyn:#e0b773;--chal:#e8a894}
   <p class="coming-sub" style="margin:1.2rem auto 0">All three together for $11.11. <a class="textlink" href="/reports.html">Choose your report →</a></p>
 
   <div class="page-footer">
+    <div class="foot-links"><a href="/privacy.html">privacy</a><span>·</span><a href="/terms.html">terms</a></div>
     <span>© 2026 elsewhereastro</span>
   </div>
 
