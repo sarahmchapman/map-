@@ -120,6 +120,28 @@ canvas.chart-wheel{display:block;width:100%;max-width:340px;aspect-ratio:1/1;hei
 /* ── Sign out ── */
 .signout-btn{font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:.5px solid var(--paper-3);padding:0 1.5rem;min-height:44px;cursor:pointer;width:100%;max-width:200px;display:block;margin:0 auto;transition:all .2s}
 .signout-btn:hover{border-color:var(--gold);color:var(--gold)}
+
+/* Deleting an account cannot be undone, so it is kept quiet until asked for:
+   a plain link, which opens the real thing. */
+.danger{text-align:center;margin-top:2.5rem;padding-top:1.8rem;border-top:.5px solid var(--paper-3)}
+.danger-link{font-family:var(--serif);font-style:italic;font-size:0.91rem;color:var(--ink-3);background:none;border:none;cursor:pointer;display:inline-block;padding:.8rem .15rem;min-height:44px;text-decoration:underline;text-decoration-color:var(--paper-3);text-underline-offset:3px;font-weight:500}
+.danger-link:hover{color:var(--red-d)}
+.danger-card{display:none;background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:8px;padding:1.5rem 1.5rem 1.6rem;margin-top:.6rem;text-align:left}
+.danger-card h3{font-family:var(--serif);font-size:1.24rem;font-weight:500;color:var(--ink);margin-bottom:.6rem}
+.danger-card p{font-family:var(--serif);font-size:1.01rem;color:var(--ink-2);line-height:1.7;margin-bottom:.8rem;font-weight:500}
+.danger-card a{color:var(--gold);text-decoration:underline;text-decoration-color:var(--paper-3);text-underline-offset:3px;display:inline-block;padding:.65rem 0;min-height:44px}
+.danger-card ul{list-style:none;margin:0 0 .9rem}
+.danger-card li{font-family:var(--serif);font-size:0.99rem;color:var(--ink-2);line-height:1.65;margin-bottom:.35rem;padding-left:1.2rem;position:relative;font-weight:500}
+.danger-card li::before{content:'\2022';position:absolute;left:.2rem;color:var(--ink-3)}
+.danger-card input{font-family:var(--sans);font-size:1.09rem;font-weight:400;letter-spacing:.1em;color:var(--ink);background:transparent;border:none;border-bottom:.5px solid var(--paper-3);border-radius:0;padding:.7rem 0;min-height:44px;width:100%;outline:none;margin-bottom:1rem}
+.danger-card input:focus{border-bottom-color:var(--red-d)}
+.danger-card input::placeholder{color:var(--ink-3);font-style:italic;font-family:var(--serif);font-size:0.99rem;letter-spacing:0;font-weight:500}
+.danger-actions{display:flex;gap:.8rem;align-items:center;flex-wrap:wrap}
+.danger-go{font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--paper);background:var(--red-d);border:none;padding:0 1.4rem;min-height:44px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:opacity .2s}
+.danger-go:disabled{background:var(--paper-3);color:var(--ink-3);cursor:not-allowed}
+.danger-cancel{font-family:var(--serif);font-style:italic;font-size:0.97rem;color:var(--ink-3);background:none;border:none;cursor:pointer;padding:.8rem .15rem;min-height:44px;text-decoration:underline;text-decoration-color:var(--paper-3);text-underline-offset:3px;font-weight:500}
+.danger-msg{font-family:var(--serif);font-style:italic;font-size:0.97rem;margin-top:.9rem;line-height:1.6;font-weight:500;min-height:1.2rem}
+.danger-msg.err{color:var(--red-d)}
   .mapguide-section{margin-bottom:2.5rem}
 .mg-card{display:block;background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:8px;padding:1.4rem 1.5rem;text-decoration:none;transition:border-color .2s}
 .mg-card:hover{border-color:var(--gold)}
@@ -147,7 +169,7 @@ canvas.chart-wheel{display:block;width:100%;max-width:340px;aspect-ratio:1/1;hei
 .pw-save{font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--paper);background:var(--ink);border:none;padding:0 1.4rem;min-height:44px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:background .2s}
 .pw-save:hover{background:var(--gold)}
 .pw-save:disabled{opacity:.5;cursor:wait}
-.pw-later{font-family:var(--serif);font-style:italic;font-size:0.94rem;color:var(--ink-3);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:3px;font-weight:500}
+.pw-later{font-family:var(--serif);font-style:italic;font-size:0.94rem;color:var(--ink-3);background:none;border:none;cursor:pointer;padding:.8rem .15rem;text-decoration:underline;text-underline-offset:3px;font-weight:500;min-height:44px;display:inline-block}
 
 /* ── Footer ── */
 .page-footer{text-align:center;padding:1.5rem 0 1rem;border-top:.5px solid var(--paper-3);margin-top:2rem}
@@ -285,6 +307,30 @@ html[data-theme="dark"] .retro{color:var(--red-d)}
 
     <!-- Sign out -->
     <button class="signout-btn" onclick="signOut()">Sign out</button>
+
+    <!-- Delete account -->
+    <div class="danger">
+      <button class="danger-link" id="deleteOpen" onclick="openDelete()">Delete my account</button>
+
+      <div class="danger-card" id="deleteCard">
+        <h3>Delete your account</h3>
+        <p>This cannot be undone. Deleting your account removes:</p>
+        <ul>
+          <li>your birth details and your name</li>
+          <li>your saved charts and readings</li>
+          <li>any Best Places reports saved to your account</li>
+          <li>your sign-in and password</li>
+        </ul>
+        <p>Your purchase records are kept, as our <a href="/privacy.html">privacy policy</a> explains. If you ever sign up again with the same email, anything you paid for will still be there.</p>
+        <p>To confirm, type <strong>DELETE</strong> below.</p>
+        <input type="text" id="deleteConfirm" placeholder="DELETE" autocomplete="off" autocapitalize="characters" spellcheck="false" oninput="deleteTyped()" onkeydown="if(event.key==='Enter'){runDelete();}">
+        <div class="danger-actions">
+          <button class="danger-go" id="deleteGo" onclick="runDelete()" disabled>Delete my account</button>
+          <button class="danger-cancel" onclick="closeDelete()">Keep my account</button>
+        </div>
+        <p class="danger-msg" id="deleteMsg"></p>
+      </div>
+    </div>
 
     <div class="page-footer">
       <a href="mailto:elsewhereastro@gmail.com" style="display:inline-block;padding:.8rem .15rem;min-height:44px;font-family:var(--serif);font-size:0.87rem;color:var(--ink-3);text-decoration:underline;text-decoration-color:var(--paper-3);text-underline-offset:3px;font-weight:500">share feedback</a>
@@ -1061,6 +1107,86 @@ function savePasswordFrom(prefix) {
 }
 
   // ── Sign out ──────────────────────────────────────────────────
+// ── Delete account ──────────────────────────────────────────────
+// The button stays disabled until DELETE is typed, so the confirmation is
+// a deliberate act rather than one more thing to click past. The server
+// checks the same word again, and works out whose account it is from the
+// sign-in token rather than anything this page sends.
+function openDelete() {
+  var card = document.getElementById('deleteCard');
+  var link = document.getElementById('deleteOpen');
+  if (card) card.style.display = 'block';
+  if (link) link.style.display = 'none';
+  var input = document.getElementById('deleteConfirm');
+  if (input) input.focus();
+}
+
+function closeDelete() {
+  var card = document.getElementById('deleteCard');
+  var link = document.getElementById('deleteOpen');
+  var input = document.getElementById('deleteConfirm');
+  var msg = document.getElementById('deleteMsg');
+  if (card) card.style.display = 'none';
+  if (link) link.style.display = 'inline-block';
+  if (input) input.value = '';
+  if (msg) { msg.textContent = ''; msg.className = 'danger-msg'; }
+  deleteTyped();
+}
+
+function deleteTyped() {
+  var input = document.getElementById('deleteConfirm');
+  var btn = document.getElementById('deleteGo');
+  if (!input || !btn) return;
+  btn.disabled = (input.value || '').trim().toUpperCase() !== 'DELETE';
+}
+
+function runDelete() {
+  var input = document.getElementById('deleteConfirm');
+  var btn = document.getElementById('deleteGo');
+  var msg = document.getElementById('deleteMsg');
+  if (!input || !btn || !msg) return;
+  if ((input.value || '').trim().toUpperCase() !== 'DELETE') return;
+
+  msg.textContent = '';
+  msg.className = 'danger-msg';
+  btn.disabled = true;
+  btn.textContent = 'Deleting\u2026';
+
+  _sb.auth.getSession().then(function (r) {
+    var session = r && r.data && r.data.session;
+    if (!session) throw new Error('Please sign in again and retry.');
+    return fetch('/api/auth', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + session.access_token
+      },
+      body: JSON.stringify({ action: 'delete_account', confirm: 'DELETE' })
+    });
+  }).then(function (res) {
+    return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+  }).then(function (out) {
+    if (!out.ok || !out.data || !out.data.deleted) {
+      throw new Error((out.data && out.data.error) || 'Something went wrong. Please try again.');
+    }
+    // The account is gone; clear anything this browser was still holding.
+    msg.textContent = 'Your account has been deleted. Taking you back to the map\u2026';
+    try {
+      localStorage.removeItem('elsewhere_reading');
+      localStorage.removeItem('elsewhere_user');
+      localStorage.removeItem('elsewhere_autologin');
+    } catch (e) {}
+    _sb.auth.signOut().catch(function () {}).then(function () {
+      setTimeout(function () { window.location.href = '/'; }, 1500);
+    });
+  }).catch(function (err) {
+    msg.textContent = err.message || 'Something went wrong. Please try again.';
+    msg.className = 'danger-msg err';
+    btn.disabled = false;
+    btn.textContent = 'Delete my account';
+  });
+}
+
 function signOut() {
   _sb.auth.signOut().then(function() {
     window.location.href = '/';
