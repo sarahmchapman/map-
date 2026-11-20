@@ -82,6 +82,9 @@ html,body{font-family:var(--sans);background:var(--paper);color:var(--ink);margi
 .aspect-explain em{color:var(--ink);font-style:italic}
 .aspect-explain.is-fallback{font-style:italic;color:var(--ink-3)}
 .planet-themes em{color:var(--ink);font-style:italic}
+/* Nov 20: notes on how a planet reads on the AC / DC / angles (same look as the aspect block) */
+.angle-note{font-family:var(--serif);font-size:1.01rem;color:var(--ink-2);line-height:1.65;font-weight:500;margin-bottom:.45rem}
+.angle-note strong{font-family:var(--sans);font-size:0.86rem;letter-spacing:.04em;font-weight:600}
 
 /* ── States ── */
 .empty-bucket{font-family:var(--serif);font-style:italic;font-size:1.01rem;color:var(--ink-3);padding:.5rem 0;font-weight:500}
@@ -282,6 +285,36 @@ function displayPlanetName(name){
   return name;
 }
 
+// ── Angle notes (Nov 20) ────────────────────────────────────────
+// The Map Guide judges each planet as a whole. These notes add what the
+// Best Places reports also weigh: how some planets feel on particular
+// angles, whatever their overall verdict. Based on Sarah's own lived
+// places (New York, Amsterdam, Milan, Seville, Gonder).
+function angleNotes(p) {
+  var weak = p.category !== 'harmonious';
+  var n = [];
+  if (p.planet === 'Mars') {
+    n.push(['AC line', 'You arrive with more edge here. People can meet you bluntly, and small things can turn into friction.']);
+    n.push(['DC line', 'The friction comes through other people: partners and collaborators can be combative or competitive.']);
+  }
+  if (p.planet === 'Moon' && weak) {
+    n.push(['AC line', 'You can feel emotionally unsettled here, more exposed than you would at home.']);
+    n.push(['DC line', 'Relationships can stir up insecurity; you may lean on others more than feels good.']);
+  }
+  if (p.planet === 'Saturn' && weak) {
+    n.push(['AC line', 'People can feel cold or distant, and things take longer to get going.']);
+    n.push(['DC line', 'Partnerships ask for commitment and patience here: love is serious rather than light.']);
+  }
+  if (p.planet === 'Pluto') {
+    n.push(['DC line', 'Relationships run intense. Watch for power struggles, with partners and with business partners.']);
+    n.push(['AC line', 'You come across as intense here, and others may test you.']);
+  }
+  if (p.planet === 'Chiron') {
+    n.push(['Any line', 'Old wounds tend to surface near your Chiron lines. It can be tender, but it is often where healing starts.']);
+  }
+  return n;
+}
+
 // ── Render a planet card ────────────────────────────────────────
 // Each card carries data-cache-key so fetchAllDescriptions can find
 // and fill the right card when its paragraph returns.
@@ -318,6 +351,13 @@ function renderPlanetCard(p) {
       + '</div>';
   }
 
+  var notes = angleNotes(p), angleBlock = '';
+  if (notes.length) {
+    angleBlock = '<div class="aspect-section"><div class="aspect-heading">On the angles</div>'
+      + notes.map(function (x) { return '<p class="angle-note"><strong style="color:' + color + '">' + x[0] + '</strong> · ' + x[1] + '</p>'; }).join('')
+      + '</div>';
+  }
+
   return ''
     + '<div class="planet-card" data-planet="' + p.planet + '" data-cache-key="' + cacheKey + '">'
     +   '<div class="planet-head">'
@@ -328,6 +368,7 @@ function renderPlanetCard(p) {
     +     '</div>'
     +   '</div>'
     +   '<div class="planet-themes is-loading">'+emptyThemesSlot()+'</div>'
+    +   angleBlock
     +   aspectBlock
     + '</div>';
 }
