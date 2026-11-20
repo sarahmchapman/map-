@@ -672,8 +672,9 @@
     });
     if (!mine.length) return empty;
 
-    // Jupiter–Pluto fusion (Sarah's call): when Jupiter and Pluto sit within 5° of each other, a planet
-    // squaring either one takes on their intensity — the square is not counted as a penalty.
+    // Jupiter–Pluto fusion: when Jupiter and Pluto sit within 5° of each other, a planet squaring either
+    // one takes on their intensity. Nov 20 (Sarah: "Mars is negative"; Amsterdam, Milan): the square now
+    // counts like any other square (the Nov 8 exception is removed); it is still marked as intense.
     var fused = false;
     if (planets.Jupiter && planets.Pluto && typeof planets.Jupiter.totalDeg === 'number' && typeof planets.Pluto.totalDeg === 'number') {
       var jp = Math.abs(planets.Jupiter.totalDeg - planets.Pluto.totalDeg) % 360;
@@ -684,7 +685,7 @@
     var total = 0;
     mine.forEach(function (m) {
       if (fused && m.type === 'square' && (m.other === 'Jupiter' || m.other === 'Pluto') &&
-          planetName !== 'Jupiter' && planetName !== 'Pluto') { m.intensity = true; return; }
+          planetName !== 'Jupiter' && planetName !== 'Pluto') m.intensity = true;
       var base = ASPECT_BASE[m.type];
       var dir  = base.dir;
       var ow   = ASPECT_PLANET_WEIGHT[m.other];
