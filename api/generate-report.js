@@ -47,7 +47,7 @@ function filesSeen() {
            inLib: list(path.join(process.cwd(), 'api', '_lib', 'reports')) };
 }
 
-export const ENGINE_VERSION = 'reports engine approved Nov 1, 2026 (speed fix Nov 8)';
+export const ENGINE_VERSION = 'reports engine approved Nov 20, 2026';
 const THEMES = ['love', 'career', 'home'];
 const SLICES = 8;   // the city list is fetched in 8 parts so each stays under Vercel's 4.5 MB limit
 const GEONAMES_USER = 'sarahmchapman';   // same account the map uses
