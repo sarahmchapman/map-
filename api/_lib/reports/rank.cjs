@@ -201,6 +201,7 @@ function rank(chart, themeKey, allowed, careAllowed) {
         if (MALEFIC.includes(voice(p)) && v.category === 'dynamic' && !['MC', 'ASC'].includes(ang)) continue;
         if (p === 'Saturn' && ang === 'MC' && v.category !== 'harmonious') continue;
         if (p === 'Mars' && (ang === 'ASC' || ang === 'DSC') && !T.companionCounts) continue;   // Nov 20: Mars on the AC/DC is friction, not a plus, for love and home
+        if (p === 'Mars' && ang === 'IC' && T.label === 'Home') continue;   // Nov 20 (Sarah, Mom's Boston and Santiago): Mars at the IC can help, but not enough to make a Home pick
         let c = closeness(p, ang, city, chart);
         if (p === 'NNode') { const o = angleOrb(chart.planets[p].lon, city, ang); c = { f: Math.max(0, 1 - o / 4), label: o.toFixed(1) + '° from the ' + ANG[ang] }; }
         if (!c.f) continue;
@@ -327,6 +328,7 @@ function rank(chart, themeKey, allowed, careAllowed) {
         for (const [ang, aw] of Object.entries(T.angles)) {
           if (T.icOnly && ang === 'IC' && !T.icOnly.includes(p)) continue;
           if (p === 'Mars' && (ang === 'ASC' || ang === 'DSC') && !T.companionCounts) continue;   // Nov 20: see above
+          if (p === 'Mars' && ang === 'IC' && T.label === 'Home') continue;   // Nov 20: see above
           const c = closeness(p, ang, city, chart); if (!c.f) continue;
           best.push({ s: 0.5 * w * aw * c.f, why: `${NAME[p] || p} ${ANG[ang]} · ${c.label} (harmonious)`, line: p + ang });
         }
@@ -456,6 +458,7 @@ function rank(chart, themeKey, allowed, careAllowed) {
       for (const [p, w] of Object.entries(weights)) {
         const v = verdict[p]; if (!v) continue;
         const h = houseOf(chart.planets[p].lon, city.cusps);
+        if (p === 'Mars' && T.label === 'Home' && h === 4) continue;   // Nov 20: Mars in the relocated 4th is no Home plus either
         if (T.houses.includes(h)) {
           const val = valueFor(voice(p), verdict[voice(p)].category, T) * w * 0.2 * ((T.houseWeight || {})[h] || 1);
           (val > 0 ? best : care).push({ s: Math.abs(val), why: `${NAME[p] || p} in relocated ${h}${h===1?'st':h===2?'nd':h===3?'rd':'th'} house (${v.category})`, reloc: true });
@@ -475,6 +478,7 @@ function rank(chart, themeKey, allowed, careAllowed) {
           // relocated 7th is a wound in partnership, not an activation.
           if (p === 'Chiron' && CHIRONLINE && T.pairMatters && +h === 7) { care.push({ s: 0.2, why: 'Chiron inside the relocated 7th: partnership touches old wounds', reloc: true }); continue; }
           // Nov 1 (Sarah, Zagreb): a planet the chart makes challenging fills the house with friction, not comfort.
+          if (p === 'Mars' && T.label === 'Home') continue;   // Nov 20: see above
           if (verdict[p].category === 'challenging') { care.push({ s: w, why: `${NAME[p] || p} inside the relocated ${h}${h==1?'st':h==2?'nd':h==3?'rd':'th'} (challenging)`, reloc: true }); continue; }
           best.push({ s: w * Math.pow(0.5, k++), why: `${NAME[p] || p} inside the relocated ${h}${h==1?'st':h==2?'nd':h==3?'rd':'th'}`, line: 'house' });
         }
