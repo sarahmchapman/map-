@@ -68,6 +68,11 @@ const CUSP = process.env.CUSP !== '0';
 const SOFTMC = process.env.SOFTMC !== '0';
 const CHIRONLINE = process.env.CHIRONLINE !== '0';
 const CHIRON_W = +(process.env.CHIRON_W || 0.6);
+// Nov 20 (Sarah, after Neutrino's recalculation; checked against places she has lived: New York, Amsterdam, Milan, Seville):
+// the AC/DC is where people meet you. Mars, or a Moon/Saturn the Map Guide doesn't call harmonious, there brings friction
+// or coldness with people. Pluto on the DC brings power struggles in partnership (New York). Jupiter and Pluto, born together,
+// each count by their own line in love. Venus on the DC/AC crossed with Uranus or Neptune is exciting or dreamy, hard to make last.
+const HZ_FULL = 3, HZ_GONE = 8;   // AC/DC caution: full within 3°, gone by 8°
 if (process.env.CHIRON) HARD.Chiron = +process.env.CHIRON;   // test: Chiron lines as a hard planet
 const VALUE = { harmonious: 1.0, dynamic: 0.4, challenging: -0.8 };
 const MALEFIC = ['Mars', 'Saturn', 'Pluto'];
@@ -176,7 +181,7 @@ function rank(chart, themeKey, allowed, careAllowed) {
   const noLines = {};
   const voice = p => (T.companionCounts && companion[p]) ? companion[p] : p;
   if (T.companionCounts) for (const [p, q] of Object.entries(companion)) weights[p] = Math.max(weights[p] || 0, 0.8 * weights[q]);
-  else if (T.pairMatters) for (const q of Object.values(companion)) { weights[q] *= 0.5; noLines[q] = true; }
+  // Nov 20 (Sarah, New York / Miami / Chicago): in love, Jupiter and Pluto each count by their own line (was: Jupiter halved, its lines off).
   const W0 = Object.assign({}, weights);   // the planet weights this report uses (for "your top lines")
 
   const chironFused = Object.keys(chart.planets).some(q => q !== 'Chiron' && verdict[q] && verdict[q].category === 'challenging' &&
@@ -195,6 +200,7 @@ function rank(chart, themeKey, allowed, careAllowed) {
         if (T.icOnly && ang === 'IC' && !T.icOnly.includes(p)) continue;
         if (MALEFIC.includes(voice(p)) && v.category === 'dynamic' && !['MC', 'ASC'].includes(ang)) continue;
         if (p === 'Saturn' && ang === 'MC' && v.category !== 'harmonious') continue;
+        if (p === 'Mars' && (ang === 'ASC' || ang === 'DSC') && !T.companionCounts) continue;   // Nov 20: Mars on the AC/DC is friction, not a plus, for love and home
         let c = closeness(p, ang, city, chart);
         if (p === 'NNode') { const o = angleOrb(chart.planets[p].lon, city, ang); c = { f: Math.max(0, 1 - o / 4), label: o.toFixed(1) + '° from the ' + ANG[ang] }; }
         if (!c.f) continue;
@@ -228,6 +234,13 @@ function rank(chart, themeKey, allowed, careAllowed) {
       if (T.pairMatters && [pr.p1, pr.p2].includes('Sun') && [pr.p1, pr.p2].includes('Chiron') && chironFused) {
         const fz = Math.max(0, 1 - Math.abs(city.lat - pr.lat) / 1.5) * Math.min(1, Math.max(0, (66 - Math.abs(pr.lat)) / 11));
         if (fz) care.push({ s: 0.5 * fz, why: `Paran: ${NAME[pr.p1] || pr.p1} ${ANG[pr.a1]} with ${NAME[pr.p2] || pr.p2} ${ANG[pr.a2]} (${Math.abs(pr.lat).toFixed(1)}°${pr.lat >= 0 ? 'N' : 'S'}) — Sun with Chiron: old wounds in partnership`, line: 'paran' });
+        continue;
+      }
+      // Nov 20 (Sarah: Charlotte, Venus DC × Uranus MC): Venus on the DC or AC crossed with Uranus or Neptune is not a love plus.
+      if (T.pairMatters && [[pr.p1, pr.a1], [pr.p2, pr.a2]].some(([q, a]) => q === 'Venus' && (a === 'DSC' || a === 'ASC')) && [pr.p1, pr.p2].some(q => q === 'Uranus' || q === 'Neptune')) {
+        const fz = Math.max(0, 1 - Math.abs(city.lat - pr.lat) / 1.5) * Math.min(1, Math.max(0, (66 - Math.abs(pr.lat)) / 11));
+        const o = [pr.p1, pr.p2].find(q => q === 'Uranus' || q === 'Neptune');
+        if (fz) care.push({ s: 0.3 * fz, why: `Paran: ${NAME[pr.p1] || pr.p1} ${ANG[pr.a1]} with ${NAME[pr.p2] || pr.p2} ${ANG[pr.a2]} (${Math.abs(pr.lat).toFixed(1)}°${pr.lat >= 0 ? 'N' : 'S'}) — Venus with ${o}: ${o === 'Neptune' ? 'dreamy, hard to make real' : 'exciting, hard to make last'}`, line: 'paran' });
         continue;
       }
       // Oct 26 (Sarah, Chihuahua: Jupiter AC × Saturn IC): career crossings without a
@@ -313,6 +326,7 @@ function rank(chart, themeKey, allowed, careAllowed) {
       if (v.category === 'harmonious') {
         for (const [ang, aw] of Object.entries(T.angles)) {
           if (T.icOnly && ang === 'IC' && !T.icOnly.includes(p)) continue;
+          if (p === 'Mars' && (ang === 'ASC' || ang === 'DSC') && !T.companionCounts) continue;   // Nov 20: see above
           const c = closeness(p, ang, city, chart); if (!c.f) continue;
           best.push({ s: 0.5 * w * aw * c.f, why: `${NAME[p] || p} ${ANG[ang]} · ${c.label} (harmonious)`, line: p + ang });
         }
@@ -331,9 +345,31 @@ function rank(chart, themeKey, allowed, careAllowed) {
     //     recognised in every report. Chiron on an angle brings old wounds to the
     //     surface there, whatever its Map Guide verdict: a caution, weighted by how
     //     much that angle matters to the report. Full within 2°, gone by 6°.
+    // Nov 20 (Sarah: Amsterdam "people were rude", Milan "don't get along with people", Seville): on the AC or DC,
+    // Mars (any strength), or a Moon or Saturn the Map Guide doesn't call harmonious, is a caution for love and home.
+    // A weak Moon or Saturn there also weighs on career (Hanalei); Mars there is still drive for career.
+    // Sarah's rule stands: in love, Saturn on the DC is commitment, not coldness.
+    for (const p of ['Mars', 'Moon', 'Saturn']) {
+      const v = verdict[p]; if (!v) continue;
+      if (p !== 'Mars' && v.category === 'harmonious') continue;
+      if (T.companionCounts && p === 'Mars') continue;
+      for (const ang of ['ASC', 'DSC']) {
+        if (T.pairMatters && p === 'Saturn' && ang === 'DSC') continue;
+        const o = angleOrb(chart.planets[p].lon, city, ang); if (o >= HZ_GONE) continue;
+        const f = o <= HZ_FULL ? 1 : 1 - (o - HZ_FULL) / (HZ_GONE - HZ_FULL);
+        const word = p === 'Mars' ? 'friction with people' : p === 'Moon' ? 'emotionally unsettled with people' : 'people feel cold or distant';
+        care.push({ s: 0.5 * f, why: `${p} ${ANG[ang]} · ${o.toFixed(1)}° from the ${ANG[ang]}: ${word}`, line: p + ang, pa: p + '|' + ang });
+      }
+    }
+    // Nov 20 (Sarah, New York: "100% power struggles in love"): Pluto on the DC (or, lighter, the AC) is a love caution.
+    if (T.pairMatters) for (const ang of ['DSC', 'ASC']) {
+      const o = angleOrb(chart.planets.Pluto.lon, city, ang); if (o >= 5) continue;
+      care.push({ s: 0.5 * (ang === 'DSC' ? 1 : 0.6) * (o <= 2 ? 1 : 1 - (o - 2) / 3), why: `Pluto ${ANG[ang]} · ${o.toFixed(1)}° from the ${ANG[ang]}: intense, power struggles in partnership`, line: 'Pluto' + ang, pa: 'Pluto|' + ang });
+    }
     if (CHIRONLINE) for (const [ang, aw] of Object.entries(T.angles)) {
       const o = angleOrb(chart.planets.Chiron.lon, city, ang);
-      const f = o <= 2 ? 1 : Math.max(0, 1 - (o - 2) / 4); if (!f) continue;
+      // Nov 20 (Sarah, Gonder: Chiron 7.6° from the AC): Chiron's lines reach further: full within 3°, gone by 10° (was 2° / 6°).
+      const f = o <= 3 ? 1 : Math.max(0, 1 - (o - 3) / 7); if (!f) continue;
       // Healing (Oct 26, as Neutrino reads it): Chiron on the IC is challenging but
       // supportive for healing, a small plus; on the other angles it is neutral there.
       // (Oct 30: the Healing exception, Chiron on the IC as a small plus, ended with the Home report: at home it is family wounds.)
@@ -553,7 +589,9 @@ function rank(chart, themeKey, allowed, careAllowed) {
       T.blockAt.some(a => !(T.pairMatters && p === 'Saturn' && a === 'DSC') && closeness(p, a, city, chart).f >= 0.85));
   };
   results.forEach(r => { r.blocked = blocked(r); });
-  const byScore = results.filter(r => r.linePlus >= 0.4 && !r.blocked && (!allowed || allowed(r.name + '|' + r.lat + '|' + r.lng))).sort((a, b) => b.score - a.score);
+  // Nov 20 (Sarah, Winnipeg): a love pick needs a Venus, Sun or North Node line or crossing, not Jupiter alone.
+  const core = r => !T.pairMatters || r.best.some(x => !x.reloc && x.s >= 0.2 && /^(Venus|Sun|North Node)\b|Paran: (Venus|Sun|North Node)\b|with (Venus|Sun|North Node)\b|both lights/.test(x.why));
+  const byScore = results.filter(r => r.linePlus >= 0.4 && core(r) && !r.blocked && (!allowed || allowed(r.name + '|' + r.lat + '|' + r.lng))).sort((a, b) => b.score - a.score);
   const eligible = r => !r.blocked && (!allowed || allowed(r.name + '|' + r.lat + '|' + r.lng));
   const cand = byScore.filter(r => r.notable);
   const N = +(process.env.N || 7);
@@ -640,7 +678,10 @@ function rankAll(chart) {
     if (Object.values(chosen).flat().some(o => kmAll(o.r, c.r) < 40)) continue;   // same metro (Giza shows as Cairo)
     used.add(c.key); chosen[c.t].push(c);
   }
-  for (const t in raw) { const keys = new Set(chosen[t].map(c => c.key)); out[t] = rank(chart, t, n => !home[n] || home[n].t === t, k => keys.has(k)); }
+  // Nov 20 (Sarah, Hanalei): a pick can't be a hard place to live: not below −0.5 in both other reports.
+  const sc = {}; for (const t in raw) for (const r of raw[t].results) { const k = r.name + '|' + r.lat + '|' + r.lng; (sc[k] = sc[k] || {})[t] = r.score; }
+  const livable = (k, t) => !sc[k] || Object.keys(sc[k]).filter(u => u !== t).some(u => sc[k][u] > -0.5);
+  for (const t in raw) { const keys = new Set(chosen[t].map(c => c.key)); out[t] = rank(chart, t, n => (!home[n] || home[n].t === t) && livable(n, t), k => keys.has(k)); }
   const LABEL = { love: 'love', career: 'career', home: 'home' };
   for (const t in out) for (const p of out[t].best) {
     const also = Object.keys(raw).filter(u => u !== t).filter(u => {
