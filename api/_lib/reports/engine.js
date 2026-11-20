@@ -272,9 +272,11 @@
       fused = jp <= 5;
     }
     var total = 0;
+    // Nov 20 (Sarah: "Mars is negative"; Amsterdam, Milan): a square to the fused Jupiter–Pluto pair counts again
+    // (Nov 8 exception removed). The square is still marked as intense, but it is scored like any other square.
     mine.forEach(function (m) {
       if (fused && m.type === 'square' && (m.other === 'Jupiter' || m.other === 'Pluto') &&
-          planetName !== 'Jupiter' && planetName !== 'Pluto') { m.intensity = true; return; }
+          planetName !== 'Jupiter' && planetName !== 'Pluto') m.intensity = true;
       var base = ASPECT_BASE[m.type];
       var dir  = base.dir;
       var ow   = ASPECT_PLANET_WEIGHT[m.other];
