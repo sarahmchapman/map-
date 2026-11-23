@@ -954,6 +954,43 @@ var REPORT_INFO = {
   home:   { title: 'Home',   desc: 'Where you can rest, heal and feel rooted.' }
 };
 
+// ── Best Places reports as icons (Nov 22, 2026) ──────────────
+// One row of three icons: Love (heart), Career (briefcase), Home (house).
+// Owned: opens the report. Not owned: greyed with a lock; opens the
+// report's page, where it can be bought (same link as before).
+var RP_ICON = {
+  love: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7.5-4.6-9.2-9.3C1.6 7.3 4 4.5 7.1 4.5c2 0 3.6 1.1 4.9 2.9 1.3-1.8 2.9-2.9 4.9-2.9 3.1 0 5.5 2.8 4.3 6.2C19.5 15.4 12 20 12 20z"/></svg>',
+  career: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7.5" width="18" height="12" rx="2"/><path d="M8.5 7.5V5.8A1.8 1.8 0 0 1 10.3 4h3.4a1.8 1.8 0 0 1 1.8 1.8v1.7"/><path d="M3 12.5h18"/><path d="M11 12.5v1.5h2v-1.5"/></svg>',
+  home: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 11 12 4l8.5 7"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5.5h4V20"/></svg>'
+};
+var RP_LOCK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+
+(function () {
+  if (document.getElementById('rpStyles')) return;
+  var st = document.createElement('style'); st.id = 'rpStyles';
+  st.textContent =
+    '.rp-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}'
+    + '.rp-tile:hover{border-color:var(--gold)}'
+    + '.rp-tile{position:relative;min-height:132px;border-radius:16px;padding:16px 6px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;font-family:var(--sans);text-decoration:none;box-sizing:border-box;width:100%}'
+    + '.rp-own{background:var(--paper);border:1px solid var(--gold-light)}'
+    + '.rp-locked{background:var(--paper-2);border:1px solid var(--paper-3)}'
+    + '.rp-disc{width:56px;height:56px;border-radius:28px;display:flex;align-items:center;justify-content:center}'
+    + '.rp-own .rp-disc{background:#1a1714;color:#e0b773}'
+    + '.rp-locked .rp-disc{background:var(--paper-3);color:var(--ink-3)}'
+    + '.rp-lock{position:absolute;top:10px;right:10px;width:26px;height:26px;border-radius:13px;background:#1a1714;color:#faf8f4;display:flex;align-items:center;justify-content:center}'
+    + '.rp-name{font-family:var(--serif);font-size:1.15rem;font-weight:600;color:var(--ink)}'
+    + '.rp-status{font-size:10.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}'
+    + '.rp-own .rp-status{color:var(--gold)}'
+    + '.rp-sheet{position:fixed;inset:0;background:rgba(26,23,20,.45);display:flex;flex-direction:column;justify-content:flex-end;z-index:100}'
+    + '.rp-sheet[hidden]{display:none}'
+    + '.rp-sheet-box{background:var(--paper);border-radius:20px 20px 0 0;padding:22px 22px 34px;display:flex;flex-direction:column;gap:12px;max-width:560px;width:100%;margin:0 auto;box-sizing:border-box}'
+    + '.rp-sheet-eyebrow{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}'
+    + '.rp-sheet-title{font-family:var(--serif);font-size:1.6rem;font-weight:500;line-height:1.1;color:var(--ink)}'
+    + '.rp-sheet-desc{margin:0;font-family:var(--serif);font-size:1.05rem;font-weight:500;line-height:1.5;color:var(--ink-2)}'
+    + '.rp-sheet-close{min-height:50px;border:none;border-radius:25px;background:var(--ink);color:var(--paper);font-family:var(--sans);font-size:12.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;cursor:pointer}';
+  document.head.appendChild(st);
+})();
+
 async function renderReportsSection() {
   var el = document.getElementById('reportsSection');
   if (!el) return;
@@ -968,27 +1005,18 @@ async function renderReportsSection() {
     });
     var data = await r.json();
     var owned = (data && data.owned) || [];
-    var html = '<div class="section-heading">Your Best Places reports</div>';
-    ['love', 'career', 'home'].forEach(function(t) {
-      var info = REPORT_INFO[t];
-      if (owned.indexOf(t) !== -1) {
-        html += '<a class="mg-card" style="margin-bottom:.75rem" href="/my-report.html?theme=' + t + '">'
-          + '<div class="mg-owned">'
-          +   '<div class="mg-owned-left">'
-          +     '<span class="mg-title">Best Places for ' + info.title + '</span>'
-          +     '<span class="mg-status">✦ Purchased</span>'
-          +   '</div>'
-          +   '<span class="mg-read">Read it →</span>'
-          + '</div>'
-          + '</a>';
-      } else {
-        html += '<a class="mg-card" style="margin-bottom:.75rem" href="/my-report.html?theme=' + t + '">'
-          + '<div class="mg-invite-title">Best Places for ' + info.title + '</div>'
-          + '<div class="mg-invite-desc">' + info.desc + '</div>'
-          + '<div class="mg-invite-link">Get your ' + info.title + ' report →</div>'
-          + '</a>';
-      }
+    var html = '<div class="section-heading">Your Best Places reports</div><div class="rp-row">';
+    ['love', 'career', 'home'].forEach(function (t) {
+      var info = REPORT_INFO[t], own = owned.indexOf(t) !== -1;
+      var inner = '<span class="rp-disc">' + RP_ICON[t] + '</span>'
+        + (own ? '' : '<span class="rp-lock">' + RP_LOCK + '</span>')
+        + '<span class="rp-name">' + info.title + '</span>'
+        + '<span class="rp-status">' + (own ? 'Read' : 'Locked') + '</span>';
+      html += own
+        ? '<a class="rp-tile rp-own" href="/my-report.html?theme=' + t + '" aria-label="Best Places for ' + info.title + ', open report">' + inner + '</a>'
+        : '<a class="rp-tile rp-locked" href="/my-report.html?theme=' + t + '" aria-label="Best Places for ' + info.title + ', locked. Get this report">' + inner + '</a>';
     });
+    html += '</div>';
     el.innerHTML = html;
   } catch (err) {
     console.warn('reports check failed:', err.message);
