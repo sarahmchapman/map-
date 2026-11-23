@@ -120,6 +120,25 @@ canvas.chart-wheel{display:block;width:100%;max-width:420px;aspect-ratio:1/1;hei
 .shift-prose:last-child{margin-bottom:0}
 .shift-rule{height:.5px;background:var(--paper-3);margin:.75rem 0}
 
+/* ── Your angles here ── */
+.angles-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.6rem}
+.angle-tile{background:var(--paper-2);border:.5px solid var(--paper-3);border-radius:6px;padding:1rem 1.1rem}
+.angle-label{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.3rem}
+.angle-sign{font-family:var(--serif);font-size:1.5rem;font-weight:500;color:var(--ink);line-height:1.2}
+.angle-note{font-family:var(--serif);font-style:italic;font-size:0.97rem;color:var(--ink-3);margin-top:.2rem;font-weight:500}
+.angle-cards{display:flex;flex-direction:column;gap:1.2rem;margin-bottom:2rem}
+.angle-dist{font-size:0.78rem;color:var(--ink-3);letter-spacing:.08em}
+
+/* ── Your aspects here ── */
+.aspects-intro{font-family:var(--serif);font-style:italic;font-size:0.97rem;color:var(--ink-3);line-height:1.6;margin:-.4rem 0 1rem;font-weight:500}
+.aspects-list{margin-bottom:2rem}
+.aspect-row{padding:.9rem 0;border-bottom:.5px solid var(--paper-3)}
+.aspect-top{display:flex;align-items:baseline;justify-content:space-between;gap:.8rem}
+.aspect-name{font-family:var(--serif);font-size:1.14rem;font-weight:600;color:var(--ink)}
+.aspect-kind{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;flex-shrink:0}
+.aspect-houses{font-size:0.78rem;font-weight:600;letter-spacing:.06em;color:var(--gold);margin-top:.2rem}
+.aspect-text{font-family:var(--serif);font-size:0.97rem;color:var(--ink-2);line-height:1.65;margin-top:.4rem;font-weight:500}
+
 
 
 /* ── Footer ── */
@@ -223,6 +242,16 @@ html[data-theme="dark"] .wheel-tip{background:#f6ecdc;color:#1c1712}
       <div class="wheel-wrap" id="wheelLarge"></div>
     </div>
 
+    <!-- Your angles here: Rising and Midheaven, then planets sitting on an angle -->
+    <div id="anglesSection" style="display:none">
+      <div class="section-heading">Your angles here</div>
+      <div class="angles-grid" id="anglesGrid"></div>
+      <div id="onAnglesWrap" style="display:none">
+        <div class="section-heading">On your angles here</div>
+        <div class="angle-cards" id="onAngles"></div>
+      </div>
+    </div>
+
     <!-- Summary -->
     <div class="summary-section">
       <p class="summary-text" id="summaryText">—</p>
@@ -231,6 +260,13 @@ html[data-theme="dark"] .wheel-tip{background:#f6ecdc;color:#1c1712}
     <!-- Planet shifts -->
     <div class="section-heading">What changes</div>
     <div class="shifts-list" id="shiftsList"></div>
+
+    <!-- Your aspects here -->
+    <div id="aspectsSection" style="display:none">
+      <div class="section-heading">Your aspects here</div>
+      <p class="aspects-intro">Your aspects are the same everywhere. What changes is the houses they play out in.</p>
+      <div class="aspects-list" id="aspectsList"></div>
+    </div>
 
 
 
@@ -929,6 +965,141 @@ function initPage() {
   });
 }
 
+// ─── Your angles here ────────────────────────────────────────
+function signOf(lon) { return SIGN_NAMES[Math.floor(n360p(lon) / 30)]; }
+function degOf(lon) { return Math.floor(n360p(lon) % 30); }
+function lonOf(ch, key) { return ch && ch[key] && ch[key].totalDeg != null ? ch[key].totalDeg : null; }
+function sepOf(a, b) { var d = Math.abs(n360p(a) - n360p(b)); return d > 180 ? 360 - d : d; }
+
+// Rising and Midheaven here, with the sign each was in at birth.
+function renderAngles(natal, reloc) {
+  var html = '';
+  [['Rising', 'Ascendant'], ['Midheaven', 'Midheaven']].forEach(function(r) {
+    var here = lonOf(reloc, r[1]), born = lonOf(natal, r[1]);
+    if (here == null) return;
+    var note = born == null ? '' : (signOf(born) === signOf(here) ? 'Same sign as at birth' : signOf(born) + ' at birth');
+    html += '<div class="angle-tile"><div class="angle-label">' + r[0] + '</div>'
+      + '<div class="angle-sign">' + degOf(here) + '° ' + signOf(here) + '</div>'
+      + (note ? '<div class="angle-note">' + note + '</div>' : '') + '</div>';
+  });
+  if (!html) return;
+  document.getElementById('anglesGrid').innerHTML = html;
+  document.getElementById('anglesSection').style.display = '';
+}
+
+// Planets within 5° of the AC, DC, MC or IC here. The text is the same
+// line reading the map shows for that planet on that angle.
+var ON_ANGLE_ORB = 5;
+function renderOnAngles(reloc, cityName) {
+  var asc = lonOf(reloc, 'Ascendant'), mc = lonOf(reloc, 'Midheaven');
+  if (asc == null) return;
+  var angles = [{ lt: 'ASC', lon: asc, name: 'Ascendant (AC)' }, { lt: 'DSC', lon: asc + 180, name: 'Descendant (DC)' }];
+  if (mc != null) angles.push({ lt: 'MC', lon: mc, name: 'Midheaven (MC)' }, { lt: 'IC', lon: mc + 180, name: 'IC' });
+  var hits = [];
+  PLACEMENT_ORDER.forEach(function(p) {
+    var lon = lonOf(reloc, p); if (lon == null) return;
+    angles.forEach(function(a) {
+      var d = sepOf(lon, a.lon);
+      if (d <= ON_ANGLE_ORB) hits.push({ p: p, a: a, d: d });
+    });
+  });
+  if (!hits.length) return;
+  hits.sort(function(x, y) { return x.d - y.d; });
+  var box = document.getElementById('onAngles');
+  hits.forEach(function(h) {
+    var p = h.p, lt = h.a.lt, col = PCOL_R[p] || '#888', sym = PSYM_R[p] || p;
+    var sign = (reloc[p] && reloc[p].sign) || signOf(lonOf(reloc, p));
+    var lineDesc = (typeof LINE_ACTIVATED !== 'undefined' && LINE_ACTIVATED[p] && LINE_ACTIVATED[p][lt]) || '';
+    var signMod = (typeof SIGN_MODIFIERS !== 'undefined' && SIGN_MODIFIERS[p] && sign && SIGN_MODIFIERS[p][sign]) || '';
+    var bestFor = (typeof BEST_FOR !== 'undefined' && BEST_FOR[p] && BEST_FOR[p][lt]) || '';
+    var watchFor = (typeof WATCH_FOR !== 'undefined' && WATCH_FOR[p] && WATCH_FOR[p][lt]) || '';
+    var card = document.createElement('div');
+    card.className = 'shift-card';
+    card.innerHTML =
+      '<div class="shift-card-header">'
+        + '<span class="shift-glyph" style="color:' + col + '">' + sym + '</span>'
+        + '<div>'
+          + '<div class="shift-planet-name" style="color:' + col + '">' + (PLANET_LABEL[p] || p) + ' on your ' + h.a.name + '</div>'
+          + '<div class="angle-dist">' + h.d.toFixed(1) + '° away in ' + cityName + '</div>'
+        + '</div>'
+      + '</div>'
+      + '<div class="shift-body">'
+        + (lineDesc ? '<div class="shift-prose">' + lineDesc + (signMod ? ' ' + signMod : '') + '</div>' : '')
+        + (bestFor || watchFor
+          ? '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">'
+            + (bestFor ? '<div style="background:var(--paper-2);border-radius:4px;padding:.55rem .65rem"><div class="shift-label">Best for</div><div style="font-family:var(--serif);font-size:0.89rem;font-style:italic;color:var(--ink-2);line-height:1.45;font-weight:500">' + bestFor + '</div></div>' : '')
+            + (watchFor ? '<div style="background:var(--paper-2);border-radius:4px;padding:.55rem .65rem"><div class="shift-label">Watch for</div><div style="font-family:var(--serif);font-size:0.89rem;font-style:italic;color:var(--ink-2);line-height:1.45;font-weight:500">' + watchFor + '</div></div>' : '')
+            + '</div>'
+          : '')
+      + '</div>';
+    box.appendChild(card);
+  });
+  document.getElementById('onAnglesWrap').style.display = '';
+  document.getElementById('anglesSection').style.display = '';
+}
+
+// ─── Your aspects here ───────────────────────────────────────
+// The same aspects the wheel draws (same orbs), each with the houses
+// its two planets fall in here and at birth. The paragraph comes from
+// /api/describe-aspect, written once per aspect and cached.
+var ASPECT_NAME = { 60: 'sextile', 90: 'square', 120: 'trine', 180: 'opposition' };
+function renderAspects(natal, reloc) {
+  var found = [];
+  for (var i = 0; i < ASPECT_POINTS.length; i++) {
+    for (var j = i + 1; j < ASPECT_POINTS.length; j++) {
+      var pa = ASPECT_POINTS[i], pb = ASPECT_POINTS[j];
+      var la = lonOf(reloc, pa), lb = lonOf(reloc, pb);
+      if (la == null || lb == null) continue;
+      var sep = sepOf(la, lb);
+      for (var k = 0; k < ASPECTS.length; k++) {
+        var orb = Math.abs(sep - ASPECTS[k].angle);
+        if (orb > ASPECTS[k].orb) continue;
+        found.push({ a: pa, b: pb, angle: ASPECTS[k].angle, color: ASPECTS[k].color, orb: orb, la: la, lb: lb });
+        break;
+      }
+    }
+  }
+  if (!found.length) return;
+  found.sort(function(x, y) { return x.orb - y.orb; });
+  var list = document.getElementById('aspectsList');
+  found.forEach(function(f, idx) {
+    var kind = (f.angle === 60 || f.angle === 120) ? 'Harmonious' : 'Challenging';
+    var name = (PLANET_LABEL[f.a] || f.a) + ' ' + ASPECT_NAME[f.angle] + ' ' + (PLANET_LABEL[f.b] || f.b);
+    var hereA = houseIn(f.la, reloc), hereB = houseIn(f.lb, reloc);
+    var bornA = lonOf(natal, f.a) != null ? houseIn(lonOf(natal, f.a), natal) : null;
+    var bornB = lonOf(natal, f.b) != null ? houseIn(lonOf(natal, f.b), natal) : null;
+    var houses = 'Here: ' + ordinal(hereA) + ' and ' + ordinal(hereB) + ' houses'
+      + (bornA && bornB && (bornA !== hereA || bornB !== hereB) ? ' · At birth: ' + ordinal(bornA) + ' and ' + ordinal(bornB) : '');
+    var textId = 'aspect-text-' + idx;
+    var row = document.createElement('div');
+    row.className = 'aspect-row';
+    row.innerHTML =
+      '<div class="aspect-top"><span class="aspect-name">' + name + '</span>'
+        + '<span class="aspect-kind" style="color:' + f.color + '">' + kind + '</span></div>'
+      + '<div class="aspect-houses">' + houses + '</div>'
+      + '<div class="aspect-text" id="' + textId + '" style="display:none"></div>';
+    list.appendChild(row);
+    loadAspectText(f.a, f.b, ASPECT_NAME[f.angle], textId);
+  });
+  document.getElementById('aspectsSection').style.display = '';
+}
+
+function loadAspectText(p1, p2, aspect, elId) {
+  fetch('/api/describe-aspect', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ planet1: p1, planet2: p2, aspect: aspect })
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var el = document.getElementById(elId);
+      if (!el || !d || !d.paragraph || d.source === 'fallback') return;
+      el.textContent = d.paragraph;
+      el.style.display = '';
+    })
+    .catch(function() {});
+}
+
 function fetchChartData(jd, lat, lng) {
   return fetch('/api/astro?jd=' + jd + '&lat=' + lat + '&lng=' + lng)
     .then(function(r) { return r.json(); })
@@ -967,6 +1138,12 @@ function finishPage(data, natalPlanets, relocPlanets, birthPlace, cityName) {
   }).catch(function() {
     setTimeout(drawBoth, 80);
   });
+
+  // Your angles, planets on them, and your aspects here
+  var cleanName = String(cityName).replace(/<[^>]+>/g, '').trim();
+  renderAngles(natalPlanets, relocPlanets);
+  renderOnAngles(relocPlanets, cleanName);
+  renderAspects(natalPlanets, relocPlanets);
 
   // Find planet house shifts
   var PLANET_ORDER = ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','Chiron','NNode'];
