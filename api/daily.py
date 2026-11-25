@@ -11,7 +11,9 @@
 #   view=tomorrow  the same for tomorrow.
 #   view=week      the next 7 days: aspects from the Sun to Pluto that are
 #                  exact this week or in effect now, each with dates.
-#   view=month     the next 30 days, including long-term transits, with dates.
+#   view=month     the calendar month (from the 1st to its last day, 28–31
+#                  days) when the date is the 1st; otherwise the next 30 days.
+#                  Includes long-term transits, with dates.
 #
 # Rules agreed with Sarah (app/daily-horoscope-plan.md, Nov 11–14, 2026):
 #   - Personal transits to the birth planets, five major aspects. Orbs: 1° for
@@ -35,7 +37,7 @@ import json, time
 
 import swisseph as swe
 
-VERSION = 'daily 3 (tabs: today, tomorrow, week, month; Nov 14, 2026)'
+VERSION = 'daily 4 (month = calendar month from the 1st; Nov 24, 2026)'
 FLAGS = 4 | 256                       # Moshier ephemeris + speeds, as api/astro.py
 FALLBACK = (b'O', 'Porphyry')         # houses above the polar circles (Sarah's call)
 
@@ -316,8 +318,12 @@ def daily(natal_jd, lat, lng, zone_name, view='today', day=None):
             x.pop('_next', None)
         top = exact + longer[:extra]
     else:
-        days = 7 if view == 'week' else 30
-        t1 = t0 + days
+        if view == 'month' and d0.day == 1:
+            # The whole calendar month: up to midnight on the 1st of next month.
+            nxt = Date(d0.year + (d0.month == 12), d0.month % 12 + 1, 1)
+            t1 = local_midnight(nxt, zone)
+        else:
+            t1 = t0 + (7 if view == 'week' else 30)
         cands = in_effect(t0, t1, targets, cusps, natal, zone, ref_year)
         # Exact within this tab's days counts most; background influences less.
         for x in cands:
